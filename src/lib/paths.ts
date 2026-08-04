@@ -23,6 +23,13 @@ export const WINDOW_PATH = join(LIVE_DIR, 'window.jsonl');
 export const META_PATH = join(DATA_DIR, 'meta.json');
 
 /**
+ * Generated prose, keyed by event id. Separate from the events themselves
+ * because those are append-only and never rewritten, and because measurement
+ * and interpretation are different things that should stay visibly apart.
+ */
+export const SUMMARIES_PATH = join(DATA_DIR, 'summaries.jsonl');
+
+/**
  * Static output root. Everything the site serves is written here and nowhere
  * else. Never committed — it is rebuilt from the ledger on every run.
  */

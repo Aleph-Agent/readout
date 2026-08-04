@@ -38,6 +38,12 @@ jobs:
       - name: Snapshot and classify
         run: node scripts/daily.ts
 
+      - name: Summarise
+        continue-on-error: true
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: node scripts/summarise.ts
+
       - name: Build bundles
         id: build
         run: node scripts/build.ts

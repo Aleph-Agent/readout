@@ -13,9 +13,11 @@ import {
   historyPath,
   LIVE_STATE_PATH,
   META_PATH,
+  SUMMARIES_PATH,
   WATCHLIST_PATH,
   WINDOW_PATH,
 } from './paths.ts';
+import { SUMMARY_KEYS, type SummaryRecord } from '../types/summaries.ts';
 import { WINDOW_KEYS, type WindowRow } from '../types/window.ts';
 import { EVENT_KEYS, type EventKind, type EventRecord } from '../types/events.ts';
 import { HISTORY_KEYS, type HistorySnapshotRow } from '../types/history.ts';
@@ -188,6 +190,29 @@ export function appendEvents(month: string, events: readonly EventRecord[]): voi
   }
 
   appendJsonl(path, events, EVENT_KEYS);
+}
+
+// ---------------------------------------------------------------- summaries
+
+export function readSummaries(): SummaryRecord[] {
+  return readJsonl<SummaryRecord>(SUMMARIES_PATH);
+}
+
+/**
+ * Overwritten in place, sorted by event id. Unlike events this file is a
+ * derived artifact, so rewriting it costs nothing in audit terms — and sorting
+ * keeps its diffs line-level like everything else.
+ */
+export function writeSummaries(rows: readonly SummaryRecord[]): void {
+  writeJsonl(SUMMARIES_PATH, rows, SUMMARY_KEYS, {
+    sortBy: (row) => row.eventId,
+    rejectDuplicates: true,
+  });
+}
+
+/** Event ids that already have a summary outcome. Never re-summarise these. */
+export function readSummarised(): Map<string, SummaryRecord> {
+  return new Map(readSummaries().map((row) => [row.eventId, row]));
 }
 
 // --------------------------------------------------------------------- meta

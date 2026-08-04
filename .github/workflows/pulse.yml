@@ -53,6 +53,15 @@ jobs:
           GITHUB_PAT: ${{ secrets.SIGNAL_GITHUB_PAT }}
         run: node scripts/pulse.ts ${{ inputs.limit && format('--limit={0}', inputs.limit) || '' }}
 
+      - name: Summarise
+        # Never blocks publishing. If Groq is down or out of quota, every event
+        # still ships with its raw numbers and no prose — which is the honest
+        # rendering anyway. Losing interpretation is not losing measurement.
+        continue-on-error: true
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: node scripts/summarise.ts
+
       - name: Build bundles
         id: build
         run: node scripts/build.ts

@@ -1,0 +1,27 @@
+version: 2
+
+updates:
+  # Actions were four major versions behind before anyone noticed, and the only
+  # reason it surfaced was a deprecation warning in a run log. Two of these
+  # workflows hold a deploy token and write to this repository, so a stale
+  # third-party action is a real surface rather than untidiness.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'ci'
+
+  # Dev dependencies only — there are no runtime dependencies to update.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'deps'
+    groups:
+      fonts:
+        patterns:
+          - '@fontsource/*'

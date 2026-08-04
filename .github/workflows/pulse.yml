@@ -53,6 +53,30 @@ jobs:
           GITHUB_PAT: ${{ secrets.SIGNAL_GITHUB_PAT }}
         run: node scripts/pulse.ts ${{ inputs.limit && format('--limit={0}', inputs.limit) || '' }}
 
+      - name: Build bundles
+        id: build
+        run: node scripts/build.ts
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        # Static assets only. No Workers, no KV, no D1 anywhere near the read
+        # path — that is what makes visitor traffic free and uncapped.
+        if: steps.build.outputs.deploy == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=signal-agent --branch=main
+
+      - name: Record deployment
+        # Advances the stored hash only on success, so a failed deploy leaves
+        # the gate open instead of marking a bundle as shipped that never was.
+        if: always() && steps.build.conclusion == 'success'
+        run: |
+          node scripts/record-deploy.ts \
+            --hash='${{ steps.build.outputs.hash }}' \
+            --deployed='${{ steps.deploy.conclusion == 'success' }}'
+
       - name: Commit ledger
         # Runs even when the collection step failed and even when nothing
         # changed. This is load-bearing: scheduled workflows are auto-disabled

@@ -5,7 +5,10 @@ import {
   writeJson,
   writeJsonl,
 } from './jsonl.ts';
+import { existsSync, readdirSync } from 'node:fs';
+
 import {
+  EVENTS_DIR,
   eventsPath,
   historyPath,
   LIVE_STATE_PATH,
@@ -145,6 +148,20 @@ export function eventId(kind: EventKind, repo: string, discriminator: string): s
 
 export function readEvents(month: string): EventRecord[] {
   return readJsonl<EventRecord>(eventsPath(month));
+}
+
+/** Months with an events file, oldest first. */
+export function listEventMonths(): string[] {
+  if (!existsSync(EVENTS_DIR)) return [];
+  return readdirSync(EVENTS_DIR)
+    .filter((name) => /^\d{4}-\d{2}\.jsonl$/.test(name))
+    .map((name) => name.slice(0, 7))
+    .sort();
+}
+
+/** Every event ever recorded, in chronological file order. */
+export function readAllEvents(): EventRecord[] {
+  return listEventMonths().flatMap((month) => readEvents(month));
 }
 
 /**

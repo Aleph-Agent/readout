@@ -22,6 +22,13 @@ export const LIVE_STATE_PATH = join(LIVE_DIR, 'state.jsonl');
 export const WINDOW_PATH = join(LIVE_DIR, 'window.jsonl');
 export const META_PATH = join(DATA_DIR, 'meta.json');
 
+/**
+ * Static output root. Everything the site serves is written here and nowhere
+ * else. Never committed — it is rebuilt from the ledger on every run.
+ */
+export const DIST_DIR = process.env['SIGNAL_DIST_DIR'] ?? join(ROOT, 'dist');
+export const DIST_DATA_DIR = join(DIST_DIR, 'data');
+
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_PATTERN = /^\d{4}-\d{2}$/;
 

@@ -38,6 +38,26 @@ jobs:
       - name: Snapshot and classify
         run: node scripts/daily.ts
 
+      - name: Build bundles
+        id: build
+        run: node scripts/build.ts
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        if: steps.build.outputs.deploy == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=signal-agent --branch=main
+
+      - name: Record deployment
+        if: always() && steps.build.conclusion == 'success'
+        run: |
+          node scripts/record-deploy.ts \
+            --hash='${{ steps.build.outputs.hash }}' \
+            --deployed='${{ steps.deploy.conclusion == 'success' }}'
+
       - name: Commit ledger
         if: always()
         run: |

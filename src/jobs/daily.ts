@@ -1,12 +1,17 @@
+import { collectIssues } from '../collectors/issues.ts';
+import { collectManifests } from '../collectors/manifests.ts';
 import { lastDetectionByRepo } from '../lib/confidence.ts';
+import { createGitHubClient, type GitHubClient } from '../lib/github.ts';
 import {
   appendEvents,
   eventId,
   readAllEvents,
   readLiveState,
+  readManifests,
   readMeta,
   readSnapshot,
   readWindow,
+  writeManifests,
   writeMeta,
   writeSnapshot,
 } from '../lib/ledger.ts';
@@ -36,6 +41,14 @@ export interface DailyOptions {
   thresholds?: SpikeThresholds;
   /** How far back to read history when building baselines. */
   historyDays?: number;
+  token?: string;
+  /** Pre-built client, for tests that never reach the network. */
+  client?: GitHubClient;
+  /**
+   * Skip the two network collectors. Snapshot and spike classification read
+   * only what the pulses already collected, so they still run.
+   */
+  offline?: boolean;
 }
 
 function readHistoryWindow(today: Date, days: number): Map<string, DailyForkCount[]> {
@@ -148,6 +161,61 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
     });
   }
 
+  // 3. Demand and dependencies. Both are daily-only: manifests barely change,
+  //    and polling them on the pulse would spend 2,000 requests watching files
+  //    sit still. Budget here is ~80 issue requests plus one manifest request
+  //    per active repository, well inside the thousand the daily job allows.
+  let requestsConsumed = 0;
+
+  if (options.offline !== true) {
+    const client =
+      options.client ??
+      createGitHubClient({ token: options.token ?? process.env['GITHUB_PAT'] ?? '' });
+
+    const seen = new Set([...allEvents.map((event) => event.id), ...events.map((e) => e.id)]);
+
+    const previousTerms = new Set(
+      allEvents
+        .filter(
+          (event) =>
+            event.kind === 'demand-cluster' &&
+            typeof event.metrics['term'] === 'string' &&
+            event.detectedAt.slice(0, 10) >= utcDate(new Date(now.getTime() - 2 * 86_400_000)),
+        )
+        .map((event) => event.metrics['term'] as string),
+    );
+
+    try {
+      const demand = await collectIssues(client, state, { now: nowIso, today, previousTerms, seen });
+      for (const event of demand.events) {
+        events.push(event);
+        seen.add(event.id);
+      }
+      errors.push(...demand.errors);
+    } catch (error) {
+      errors.push(`issues: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    try {
+      const manifests = await collectManifests(
+        client,
+        state,
+        new Map(readManifests().map((row) => [row.id, row])),
+        { now: nowIso, today, seen },
+      );
+      writeManifests(manifests.rows);
+      for (const event of manifests.events) {
+        events.push(event);
+        seen.add(event.id);
+      }
+      errors.push(...manifests.errors);
+    } catch (error) {
+      errors.push(`manifests: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    requestsConsumed = client.stats().consumed;
+  }
+
   if (events.length > 0) appendEvents(month, events);
 
   const previousMeta = readMeta();
@@ -157,6 +225,7 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
     lastSuccessfulRunAt: errors.length > 0 ? previousMeta.lastSuccessfulRunAt : nowIso,
     job: 'daily',
     partial: errors.length > 0,
+    requestsConsumed,
     reposChecked: snapshot.length,
     eventsDetected: events.length,
     collectorsErrored: errors,

@@ -45,6 +45,7 @@ The `:17` offset avoids peak congestion, never `:00`. 4-hourly is the ceiling: P
 data/
 ├── live/state.jsonl          Overwritten each pulse. Sorted by repo id.
 ├── live/window.jsonl         Timestamped fork samples. Rolling 24h delta.
+├── live/manifests.jsonl      Last-seen dependency set. Diffed daily.
 ├── history/YYYY-MM-DD.jsonl  Appended once daily. Immutable.
 ├── events/YYYY-MM.jsonl      Append-only. Never rewritten.
 ├── summaries.jsonl           Generated prose by event id. Rewritable.
@@ -52,8 +53,7 @@ data/
 └── meta.json                 Last run status.
 ```
 
-Sorted output with fixed key order keeps git diffs line-level. `window` and
-`summaries` were added in Prompts 2–3; MASTER.md Part 2 says why.
+Sorted output with fixed key order keeps git diffs line-level. `window`, `summaries`, and `manifests` were added during the build; MASTER.md Part 2 says why.
 
 Everything else — brief, architecture, full skill text, repository library map,
 build prompts, failure modes — is in `MASTER.md`.

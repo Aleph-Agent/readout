@@ -67,8 +67,8 @@ const LENS_KINDS: Record<LensName, readonly EventKind[]> = {
   lineage: ['lineage'],
 };
 
-/** Lenses whose collectors do not exist yet. Prompt 7 activates the first two. */
-const PENDING_LENSES = new Set<LensName>(['demand', 'stack', 'lineage']);
+/** Lenses with no collector behind them yet. Lineage is the weekly job, unbuilt. */
+const PENDING_LENSES = new Set<LensName>(['lineage']);
 
 const SITE_CSS = fileURLToPath(new URL('./site/site.css', import.meta.url));
 
@@ -79,11 +79,32 @@ const MAX_TIMELINE_EVENTS = 200;
  * Page copy. Names things by what the reader is looking at, not by the
  * collector that produced it.
  */
-const LENS_COPY: Record<LensName, { title: string; heading: string; noun: string }> = {
+const LENS_COPY: Record<
+  LensName,
+  { title: string; heading: string; noun: string; scope?: string }
+> = {
   ships: { title: 'Ships — releases', heading: 'Releases', noun: 'release' },
   forks: { title: 'Forks — copying above baseline', heading: 'Fork activity', noun: 'fork spike' },
-  demand: { title: 'Demand — what developers ask for', heading: 'Demand', noun: 'demand cluster' },
-  stack: { title: 'Stack — dependency movement', heading: 'Dependency movement', noun: 'dependency shift' },
+  demand: {
+    title: 'Demand — what developers ask for',
+    heading: 'Demand',
+    noun: 'demand cluster',
+    scope:
+      'Open issues on the most active repositories in this watchlist, not on GitHub as a whole. ' +
+      'A term is only reported once it appears across more than one repository. Terms are derived ' +
+      'from issue titles; the titles themselves belong to the people who wrote them and are linked, ' +
+      'not reproduced.',
+  },
+  stack: {
+    title: 'Stack — dependency movement',
+    heading: 'Dependency movement',
+    noun: 'dependency shift',
+    // The whole difference between a defensible product and an overclaim.
+    scope:
+      'One dependency manifest per repository in this watchlist, diffed against the previous day. ' +
+      'This says what the repositories we watch are doing. It is not a survey of the ecosystem and ' +
+      'nothing here should be read as one.',
+  },
   lineage: { title: 'Lineage — model descent', heading: 'Lineage', noun: 'lineage relation' },
 };
 

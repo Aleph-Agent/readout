@@ -37,6 +37,7 @@ function stateRow(id: string, forks: number, etag: string | null = null): LiveSt
     forks,
     stars: forks * 10,
     openIssues: 4,
+    language: null,
     pushedAt: '2026-08-04T00:00:00Z',
     latestReleaseTag: null,
     latestReleaseAt: null,

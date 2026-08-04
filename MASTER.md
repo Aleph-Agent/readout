@@ -139,6 +139,7 @@ works if it stays genuinely immutable — never force push the data branch.
 data/
 ├── live/state.jsonl          Overwritten each pulse. Sorted by repo id.
 ├── live/window.jsonl         Timestamped fork samples. Rolling 24h delta.
+├── live/manifests.jsonl      Last-seen dependency set. Diffed daily.
 ├── history/YYYY-MM-DD.jsonl  Appended once daily. Immutable.
 ├── events/YYYY-MM.jsonl      Append-only. Never rewritten.
 ├── summaries.jsonl           Generated prose by event id. Rewritable.
@@ -150,8 +151,8 @@ data/
 not cosmetic — it makes git diffs line-level, so unchanged repositories produce
 no delta and the file compresses to almost nothing across thousands of commits.
 
-**Two files were added during the build.** Both because the original five could
-not hold what was needed, not for convenience:
+**Three files were added during the build.** Each because the original five
+could not hold what was needed, not for convenience:
 
 `live/window.jsonl` — the spike rule compares against a *rolling* 24-hour delta.
 `state.jsonl` deliberately carries no per-row timestamp, because one that moved
@@ -166,6 +167,11 @@ event, because events are append-only and filling a summary in later would mean
 editing lines that are supposed to be permanent. Keeping interpretation in its
 own file also mirrors the display rule: the reader must be able to see where
 measurement ends and interpretation begins.
+
+`live/manifests.jsonl` — the dependency set last seen per repository. A
+dependency shift is a diff, and a diff needs the previous side of it stored
+somewhere. `state.jsonl` holds one reading per repository and cannot carry a
+variable-length map without wrecking its diff behaviour.
 
 History is written **once daily**, not six times. Six snapshots a day multiplies
 repository growth sixfold for no analytical gain; baselines only need daily

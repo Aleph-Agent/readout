@@ -37,6 +37,7 @@ function rowFromPayload(
     forks: payload.forks_count,
     stars: payload.stargazers_count,
     openIssues: payload.open_issues_count,
+    language: payload.language,
     pushedAt: payload.pushed_at,
     // Release fields belong to the releases collector. Carrying them forward
     // keeps one collector from erasing another's output.
@@ -54,6 +55,7 @@ function inactiveRow(entry: WatchlistEntry, previous: LiveStateRow | undefined):
     forks: previous?.forks ?? 0,
     stars: previous?.stars ?? 0,
     openIssues: previous?.openIssues ?? 0,
+    language: previous?.language ?? null,
     pushedAt: previous?.pushedAt ?? null,
     latestReleaseTag: previous?.latestReleaseTag ?? null,
     latestReleaseAt: previous?.latestReleaseAt ?? null,

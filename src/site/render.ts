@@ -322,7 +322,7 @@ export function renderLens(
   bundle: LensBundle,
   index: IndexBundle,
   meta: MetaRecord,
-  copy: { title: string; heading: string; noun: string },
+  copy: { title: string; heading: string; noun: string; scope?: string },
 ): string {
   let body: string;
 
@@ -334,11 +334,19 @@ export function renderLens(
     body = bundle.records.map(findingCard).join('\n');
   }
 
+  // Scope sits above the findings, not in a footnote. A reader who takes one of
+  // these as a statement about open source generally has been misled, and where
+  // the note appears decides whether that happens.
+  const scope =
+    copy.scope === undefined
+      ? ''
+      : `<div class="notice"><strong>What this covers</strong>${esc(copy.scope)}</div>`;
+
   return layout({
     title: copy.title,
     current: `/${bundle.lens}.html`,
     index,
     meta,
-    body: `<h1 class="label" style="padding:22px 0 4px">${esc(copy.heading)} — last ${bundle.windowDays} days, ${bundle.count} recorded</h1>\n${body}`,
+    body: `<h1 class="label" style="padding:22px 0 4px">${esc(copy.heading)} — last ${bundle.windowDays} days, ${bundle.count} recorded</h1>\n${scope}\n${body}`,
   });
 }

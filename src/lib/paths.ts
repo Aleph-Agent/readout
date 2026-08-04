@@ -20,6 +20,9 @@ export const EVENTS_DIR = join(DATA_DIR, 'events');
 export const WATCHLIST_PATH = join(DATA_DIR, 'watchlist.jsonl');
 export const LIVE_STATE_PATH = join(LIVE_DIR, 'state.jsonl');
 export const WINDOW_PATH = join(LIVE_DIR, 'window.jsonl');
+
+/** Last-seen dependency set per repository, so the next run can diff it. */
+export const MANIFESTS_PATH = join(LIVE_DIR, 'manifests.jsonl');
 export const META_PATH = join(DATA_DIR, 'meta.json');
 
 /**

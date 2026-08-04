@@ -33,9 +33,12 @@ jobs:
 
       - run: npm ci
 
-      # No token: the daily job reads what the pulses already collected and
-      # makes no network calls, so it costs nothing against the API budget.
-      - name: Snapshot and classify
+      - name: Snapshot, classify, and collect daily signals
+        env:
+          GITHUB_PAT: ${{ secrets.SIGNAL_GITHUB_PAT }}
+        # Roughly 80 issue requests plus one manifest request per active
+        # repository — inside the thousand this job is allowed, and far inside
+        # the daily ceiling once ETags start answering 304.
         run: node scripts/daily.ts
 
       - name: Summarise

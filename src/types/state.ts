@@ -19,6 +19,12 @@ export interface LiveStateRow {
   forks: number;
   stars: number;
   openIssues: number;
+  /**
+   * GitHub's primary-language guess. Already present in the base payload we
+   * fetch every pulse, so storing it is free — and it lets the manifest
+   * collector fetch one file per repository instead of probing five.
+   */
+  language: string | null;
   /** ISO 8601 UTC of the repository's last push, straight from GitHub. */
   pushedAt: string | null;
   /** Tag name of the most recent release, or null if it has never released. */
@@ -50,6 +56,7 @@ export const LIVE_STATE_KEYS = [
   'forks',
   'stars',
   'openIssues',
+  'language',
   'pushedAt',
   'latestReleaseTag',
   'latestReleaseAt',

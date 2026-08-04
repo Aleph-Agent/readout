@@ -201,6 +201,7 @@ export interface RepoPayload {
   forks_count: number;
   stargazers_count: number;
   open_issues_count: number;
+  language: string | null;
   pushed_at: string | null;
 }
 

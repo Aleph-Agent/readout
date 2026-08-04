@@ -41,6 +41,7 @@ function stateRow(id: string, forks: number): LiveStateRow {
     forks,
     stars: forks * 10,
     openIssues: 2,
+    language: 'TypeScript',
     pushedAt: '2026-08-04T00:00:00Z',
     latestReleaseTag: 'v1.0.0',
     latestReleaseAt: '2026-08-01T00:00:00Z',
@@ -93,8 +94,9 @@ describe('bundle emission', () => {
     // conflating them would imply coverage the project does not have.
     expect(read<LensBundle>('forks.json').status).toBe('active');
     expect(read<LensBundle>('forks.json').records).toEqual([]);
-    expect(read<LensBundle>('demand.json').status).toBe('pending');
-    expect(read<LensBundle>('stack.json').status).toBe('pending');
+    expect(read<LensBundle>('demand.json').status).toBe('active');
+    expect(read<LensBundle>('stack.json').status).toBe('active');
+    // Lineage is the weekly job, which has no collector yet.
     expect(read<LensBundle>('lineage.json').status).toBe('pending');
   });
 

@@ -12,6 +12,7 @@ import {
   eventsPath,
   historyPath,
   LIVE_STATE_PATH,
+  MANIFESTS_PATH,
   META_PATH,
   SUMMARIES_PATH,
   WATCHLIST_PATH,
@@ -19,6 +20,7 @@ import {
 } from './paths.ts';
 import { SUMMARY_KEYS, type SummaryRecord } from '../types/summaries.ts';
 import { WINDOW_KEYS, type WindowRow } from '../types/window.ts';
+import { MANIFEST_KEYS, type ManifestRow } from '../types/manifests.ts';
 import { EVENT_KEYS, type EventKind, type EventRecord } from '../types/events.ts';
 import { HISTORY_KEYS, type HistorySnapshotRow } from '../types/history.ts';
 import { EMPTY_META, META_KEYS, type MetaRecord } from '../types/meta.ts';
@@ -94,6 +96,19 @@ export function readWindow(): WindowRow[] {
 /** Sorted by repository id, duplicates rejected — same discipline as state. */
 export function writeWindow(rows: readonly WindowRow[]): void {
   writeJsonl(WINDOW_PATH, rows, WINDOW_KEYS, {
+    sortBy: repoSortKey,
+    rejectDuplicates: true,
+  });
+}
+
+// ------------------------------------------------------------------ manifests
+
+export function readManifests(): ManifestRow[] {
+  return readJsonl<ManifestRow>(MANIFESTS_PATH);
+}
+
+export function writeManifests(rows: readonly ManifestRow[]): void {
+  writeJsonl(MANIFESTS_PATH, rows, MANIFEST_KEYS, {
     sortBy: repoSortKey,
     rejectDuplicates: true,
   });

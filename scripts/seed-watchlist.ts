@@ -21,7 +21,7 @@
  */
 
 import { existsSync } from 'node:fs';
-import { WATCHLIST_PATH } from '../src/lib/paths.ts';
+import { isSafeRepoId, WATCHLIST_PATH } from '../src/lib/paths.ts';
 import { writeWatchlist } from '../src/lib/ledger.ts';
 import type { Category, WatchlistEntry } from '../src/types/watchlist.ts';
 
@@ -459,7 +459,7 @@ function build(): WatchlistEntry[] {
     readonly string[],
   ][]) {
     for (const id of repos) {
-      if (!/^[\w.-]+\/[\w.-]+$/.test(id)) {
+      if (!isSafeRepoId(id)) {
         throw new Error(`seed-watchlist: "${id}" is not a valid owner/repo`);
       }
 

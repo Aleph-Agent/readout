@@ -15,7 +15,7 @@ import {
   writeMeta,
 } from './lib/ledger.ts';
 import { lastDetectionByRepo } from './lib/confidence.ts';
-import { DIST_DATA_DIR, DIST_DIR, ROOT, utcDate } from './lib/paths.ts';
+import { assertSafeRepoId, DIST_DATA_DIR, DIST_DIR, ROOT, utcDate } from './lib/paths.ts';
 import { renderIndex, renderLens } from './site/render.ts';
 import {
   baselineFromHistory,
@@ -412,7 +412,9 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
       .sort((a, b) => (a.detectedAt < b.detectedAt ? 1 : a.detectedAt > b.detectedAt ? -1 : 0));
 
     pages.set(
-      `repo/${entry.id}.html`,
+      // Validated here rather than trusted: this string becomes a filesystem
+      // path a few lines below.
+      `repo/${assertSafeRepoId(entry.id)}.html`,
       renderRepoPage(
         {
           entry,

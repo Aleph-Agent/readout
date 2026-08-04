@@ -51,7 +51,18 @@ jobs:
           # the built-in Actions token: that one is capped at 1,000/hour per
           # repository, which is too close to the working budget.
           GITHUB_PAT: ${{ secrets.SIGNAL_GITHUB_PAT }}
-        run: node scripts/pulse.ts ${{ inputs.limit && format('--limit={0}', inputs.limit) || '' }}
+          # Passed as an environment variable, never interpolated into the
+          # command text. An expression expanded into `run:` is substituted
+          # before the shell ever sees it, so a crafted input would execute
+          # rather than be read as an argument.
+          LIMIT: ${{ inputs.limit }}
+        run: |
+          set -euo pipefail
+          if [ -n "${LIMIT:-}" ]; then
+            node scripts/pulse.ts --limit="${LIMIT}"
+          else
+            node scripts/pulse.ts
+          fi
 
       - name: Summarise
         # Never blocks publishing. If Groq is down or out of quota, every event

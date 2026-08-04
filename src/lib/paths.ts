@@ -39,6 +39,40 @@ export const SUMMARIES_PATH = join(DATA_DIR, 'summaries.jsonl');
 export const DIST_DIR = process.env['SIGNAL_DIST_DIR'] ?? join(ROOT, 'dist');
 export const DIST_DATA_DIR = join(DIST_DIR, 'data');
 
+/**
+ * A repository id becomes a file path — `dist/repo/{owner}/{name}.html` — so it
+ * has to be validated as one, not just as a plausible-looking string.
+ *
+ * The naive `owner/name` shape accepts `../..`, because `..` is a run of legal
+ * name characters and there is exactly one slash. That would write outside the
+ * output directory. The watchlist is committed and reviewed, so this is a guard
+ * against a mistake rather than an attacker, but it costs nothing and the
+ * failure it prevents is silent.
+ *
+ * Leading dots are allowed: `.github/.github` is a real repository. Segments
+ * that are *only* dots are not.
+ */
+function isSafeSegment(segment: string): boolean {
+  return (
+    segment.length > 0 &&
+    segment.length <= 100 &&
+    /^[A-Za-z0-9._-]+$/.test(segment) &&
+    !/^\.+$/.test(segment)
+  );
+}
+
+export function isSafeRepoId(id: string): boolean {
+  const parts = id.split('/');
+  return parts.length === 2 && parts.every((part) => isSafeSegment(part));
+}
+
+export function assertSafeRepoId(id: string): string {
+  if (!isSafeRepoId(id)) {
+    throw new Error(`unsafe repository id ${JSON.stringify(id)}: expected owner/name`);
+  }
+  return id;
+}
+
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_PATTERN = /^\d{4}-\d{2}$/;
 

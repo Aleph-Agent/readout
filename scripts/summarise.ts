@@ -9,6 +9,7 @@
  * that keeps scheduled runs alive.
  */
 
+import { readMeta, writeMeta } from '../src/lib/ledger.ts';
 import { runSummarise } from '../src/jobs/summarise.ts';
 
 function numericFlag(name: string): number | undefined {
@@ -26,7 +27,29 @@ if (apiKey === '') {
 }
 
 const limit = numericFlag('limit');
-const result = await runSummarise(limit === undefined ? { apiKey } : { apiKey, limit });
+
+let result;
+try {
+  result = await runSummarise(limit === undefined ? { apiKey } : { apiKey, limit });
+} catch (error) {
+  // The workflow runs this step with continue-on-error, because losing
+  // interpretation must never stop measurement from publishing. That makes a
+  // hard failure here invisible: green job, no alert, nothing in the ledger.
+  //
+  // So record it where the site will show it. The partial-run notice is the
+  // only thing that will tell anyone the prose stopped arriving.
+  const message = error instanceof Error ? error.message : String(error);
+  const previous = readMeta();
+  writeMeta({
+    ...previous,
+    partial: true,
+    collectorsErrored: [...previous.collectorsErrored, `summarise: ${message}`],
+  });
+
+  console.error(`summarise failed: ${message}`);
+  console.error('Recorded in meta.json. Readings still publish, without prose.');
+  process.exit(1);
+}
 
 console.log(
   [

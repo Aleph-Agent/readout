@@ -173,15 +173,18 @@ export function stripSvg(marks: readonly StripMark[], releasedToday: ReadonlySet
       const h = markHeight(mark.multiplier) * H;
       const x = (i * step).toFixed(3);
 
+      // Anomaly outranks activity. A repository that is both spiking and
+      // shipping must read as spiking: painting it with the nominal colour
+      // would hide the reading behind the healthier-looking one.
       const cls =
         mark.state === 'forming'
           ? 'mark-forming'
           : mark.state === 'confirmed'
             ? 'mark-confirmed'
-            : releasedToday.has(mark.id)
-              ? 'mark-growth'
-              : mark.state === 'detected'
-                ? 'mark-detected'
+            : mark.state === 'detected'
+              ? 'mark-detected'
+              : releasedToday.has(mark.id)
+                ? 'mark-growth'
                 : 'mark-quiet';
 
       return `<rect class="${cls}" x="${x}" y="${(H - h).toFixed(2)}" width="${width.toFixed(3)}" height="${h.toFixed(2)}"><title>${esc(mark.id)} — ${esc(mark.state)}</title></rect>`;
@@ -297,7 +300,7 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
       ? quietNotice(index.watchlist.active, meta.lastSuccessfulRunAt, 'signal')
       : `<div class="wrap"><table class="readout">
       <caption class="label">Today — ${index.today.length} signals</caption>
-      <thead><tr><th>UTC</th><th>Repository</th><th>Signal</th><th>Confidence</th><th>Reading</th><th>Link</th></tr></thead>
+      <thead><tr><th scope="col">UTC</th><th scope="col">Repository</th><th scope="col">Signal</th><th scope="col">Confidence</th><th scope="col">Reading</th><th scope="col">Link</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
 

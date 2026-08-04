@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+
+    // Node 22.18+/24 strips types natively, so there is no build step and no
+    // bundler. That only holds if every construct we use is erasable, which
+    // erasableSyntaxOnly enforces: no enums, no namespaces, no parameter
+    // properties. allowImportingTsExtensions lets source import "./x.ts",
+    // which is what the Node loader actually resolves.
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noEmit": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"]
+}

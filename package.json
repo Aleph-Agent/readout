@@ -1,0 +1,21 @@
+{
+  "name": "signal-agent",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Collector agent for a unified developer-signal instrument. See MASTER.md.",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed:watchlist": "node scripts/seed-watchlist.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}

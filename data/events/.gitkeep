@@ -1,0 +1,2 @@
+One YYYY-MM.jsonl per month, append-only. Never sorted, never pruned, never
+rewritten. A wrong event is superseded by a correction event, not deleted.

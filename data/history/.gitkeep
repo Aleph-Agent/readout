@@ -1,0 +1,2 @@
+One YYYY-MM-DD.jsonl per day, written once by the daily job and never rewritten.
+The spike detector's 30-day baseline is differenced out of these files.

@@ -1,0 +1,2 @@
+state.jsonl lands here on the first pulse. Overwritten every run, sorted by
+repository id, fixed key order — see src/lib/ledger.ts.

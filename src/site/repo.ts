@@ -204,7 +204,7 @@ ${sparkline(data.series, data.baselinePerDay)}
 ${timeline}`;
 
   return layout({
-    title: `${entry.id} — Signal Agent`,
+    title: `${entry.id} — Readout`,
     current: '',
     index,
     meta,

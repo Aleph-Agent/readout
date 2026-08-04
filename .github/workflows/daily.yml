@@ -58,7 +58,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=signal-agent --branch=main
+          command: pages deploy dist --project-name=readout --branch=main
 
       - name: Record deployment
         if: always() && steps.build.conclusion == 'success'
@@ -71,8 +71,8 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          git config user.name  "signal-agent"
-          git config user.email "signal-agent@users.noreply.github.com"
+          git config user.name  "readout-agent"
+          git config user.email "readout-agent@users.noreply.github.com"
           git add data
           git commit --allow-empty -m "Daily $(date -u +'%Y-%m-%d')"
           git push origin "HEAD:${GITHUB_REF_NAME}" || {

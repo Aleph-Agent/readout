@@ -94,7 +94,7 @@ export function createGitHubClient(options: GitHubClientOptions): GitHubClient {
     sleep = defaultSleep,
     floor = DEFAULT_FLOOR,
     maxAttempts = DEFAULT_MAX_ATTEMPTS,
-    userAgent = 'unified-developer-signal-agent',
+    userAgent = 'readout-developer-signal-agent',
   } = options;
 
   if (token.trim() === '') {

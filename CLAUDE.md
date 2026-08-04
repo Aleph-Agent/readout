@@ -1,4 +1,4 @@
-# Unified Developer Signal Agent — Robinhood Chain
+# Readout — Unified Developer Signal Agent
 
 One agent watches ~400 open-source repositories and reports five signals: Ships
 (releases), Forks (abnormal copying), Demand (developer requests), Stack

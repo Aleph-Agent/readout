@@ -81,7 +81,7 @@ function mastheadHtml(meta: MetaRecord, disclosure: Disclosure): string {
       : `<span data-at="${esc(at)}" data-stale-after="${staleAfter}">age unavailable without scripting</span>`;
 
   return `<header class="masthead shell">
-  <a class="wordmark" href="/">Signal Agent</a>
+  <a class="wordmark" href="/">Readout</a>
   <div class="reading-age">
     <span><span class="label">Last reading</span> ${reading}</span>
     ${age}
@@ -310,7 +310,7 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
       Their counts are shown raw; no multiplier is computed for them and none is implied.</div>`;
 
   return layout({
-    title: 'Signal Agent — developer activity readings',
+    title: 'Readout — developer activity readings',
     current: '/',
     index,
     meta,

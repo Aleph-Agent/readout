@@ -75,7 +75,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=signal-agent --branch=main
+          command: pages deploy dist --project-name=readout --branch=main
 
       - name: Record deployment
         # Advances the stored hash only on success, so a failed deploy leaves
@@ -94,8 +94,8 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          git config user.name  "signal-agent"
-          git config user.email "signal-agent@users.noreply.github.com"
+          git config user.name  "readout-agent"
+          git config user.email "readout-agent@users.noreply.github.com"
           git add data
           git commit --allow-empty -m "Pulse $(date -u +'%Y-%m-%dT%H:%MZ')"
           # The concurrency group serialises every ledger writer, so the plain

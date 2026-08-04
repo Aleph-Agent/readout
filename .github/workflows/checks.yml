@@ -1,0 +1,52 @@
+name: Checks
+
+# Runs on code, not on readings.
+#
+# The agent commits to data/ six times a day forever. Without the path filter
+# this workflow would fire on every one of those, burying real failures in a
+# stream of runs that could not possibly fail differently — the code did not
+# change. Anything that touches source, tests, config, or workflows still runs.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'data/**'
+      - '**.md'
+  pull_request:
+  workflow_dispatch:
+
+# Read-only. Nothing here writes to the repository or deploys anything; that is
+# what the scheduled workflows are for.
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      # The build reads the committed ledger and renders every page. It catches
+      # what a unit test cannot: a template that throws on real data, a bundle
+      # over the size limit, a repository id that is not a safe path.
+      - name: Build
+        run: node scripts/build.ts

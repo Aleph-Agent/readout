@@ -1,0 +1,21 @@
+# Byte determinism is load-bearing in this repository — see .gitattributes.
+# These settings keep an editor from undoing it before git ever sees the file.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Ledger files. Never hand-edited, never reformatted: one record per line with a
+# fixed key order is what keeps git diffs line-level.
+[*.jsonl]
+insert_final_newline = true
+trim_trailing_whitespace = false
+
+[*.md]
+trim_trailing_whitespace = false

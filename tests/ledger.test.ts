@@ -116,12 +116,12 @@ describe('live state', () => {
     expect(after[1]).not.toBe(before[1]);
   });
 
-  it('collects ETags for replay, skipping repositories that have none', () => {
+  it('round trips the ETag the next run replays as If-None-Match', () => {
     ledger.writeLiveState([stateRow('a/one', 3, 'W/"abc"'), stateRow('b/two', 5, null)]);
-    const etags = ledger.readEtags();
+    const rows = new Map(ledger.readLiveState().map((row) => [row.id, row]));
 
-    expect(etags.get('a/one')).toBe('W/"abc"');
-    expect(etags.has('b/two')).toBe(false);
+    expect(rows.get('a/one')?.etag).toBe('W/"abc"');
+    expect(rows.get('b/two')?.etag).toBeNull();
   });
 });
 

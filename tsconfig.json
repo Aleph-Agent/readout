@@ -18,6 +18,10 @@
     "noEmit": true,
 
     "strict": true,
+    // Dead code detection with no extra dependency. Cheaper than a linter and
+    // it fails the build rather than printing a warning nobody reads.
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "noImplicitOverride": true,

@@ -78,15 +78,6 @@ export function writeLiveState(rows: readonly LiveStateRow[]): void {
   });
 }
 
-/** Previous-run ETags, for replay as `If-None-Match`. */
-export function readEtags(): Map<string, string> {
-  const etags = new Map<string, string>();
-  for (const row of readLiveState()) {
-    if (row.etag !== null) etags.set(row.id, row.etag);
-  }
-  return etags;
-}
-
 // ---------------------------------------------------- rolling sample window
 
 export function readWindow(): WindowRow[] {

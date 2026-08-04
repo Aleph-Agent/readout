@@ -233,7 +233,9 @@ describe('output hygiene', () => {
 
   it('emits a page per lens alongside the bundles', () => {
     const result = runBuild({ now: NOW });
-    const pages = result.files.filter((f) => f.name.endsWith('.html')).map((f) => f.name);
+    const pages = result.files
+      .filter((f) => f.name.endsWith('.html') && !f.name.startsWith('repo/'))
+      .map((f) => f.name);
     expect(pages.sort()).toEqual([
       'demand.html',
       'forks.html',
@@ -242,6 +244,17 @@ describe('output hygiene', () => {
       'ships.html',
       'stack.html',
     ]);
+  });
+
+  it('emits a profile page for every watched repository, events or not', () => {
+    // A repository the agent has never had anything to say about still gets a
+    // page. A 404 reads as a broken link, not as an honest silence.
+    const result = runBuild({ now: NOW });
+    const profiles = result.files
+      .filter((f) => f.name.startsWith('repo/'))
+      .map((f) => f.name)
+      .sort();
+    expect(profiles).toEqual(['repo/a/one.html', 'repo/b/two.html']);
   });
 
   it('deploys when only the stylesheet changed', () => {

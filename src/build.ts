@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -18,12 +18,14 @@ import { lastDetectionByRepo } from './lib/confidence.ts';
 import { DIST_DATA_DIR, DIST_DIR, ROOT, utcDate } from './lib/paths.ts';
 import { renderIndex, renderLens } from './site/render.ts';
 import {
+  baselineFromHistory,
   classifySpike,
   DEFAULT_THRESHOLDS,
   roundMultiplier,
   type DailyForkCount,
 } from './lib/spikes.ts';
 import { windowAnchor } from './lib/window.ts';
+import { renderRepoPage, type RepoSeriesPoint } from './site/repo.ts';
 import {
   LENSES,
   type Disclosure,
@@ -69,6 +71,9 @@ const LENS_KINDS: Record<LensName, readonly EventKind[]> = {
 const PENDING_LENSES = new Set<LensName>(['demand', 'stack', 'lineage']);
 
 const SITE_CSS = fileURLToPath(new URL('./site/site.css', import.meta.url));
+
+/** Timeline entries per profile page. Keeps a long-lived page bounded. */
+const MAX_TIMELINE_EVENTS = 200;
 
 /**
  * Page copy. Names things by what the reader is looking at, not by the
@@ -184,13 +189,17 @@ function groupByLens(
   return grouped;
 }
 
-function buildStrip(now: Date, lastDetection: ReadonlyMap<string, string>): StripMark[] {
-  const today = utcDate(now);
-  const state = readLiveState();
-  const windows = new Map(readWindow().map((row) => [row.id, row.samples]));
-
+/**
+ * Daily snapshots for the baseline window, oldest first per repository.
+ *
+ * Read once and shared: the strip needs it for every repository and so does
+ * every profile page, and re-reading thirty files four hundred times would make
+ * the build quadratic for no reason.
+ */
+function readHistorySeries(now: Date, days: number): Map<string, DailyForkCount[]> {
   const history = new Map<string, DailyForkCount[]>();
-  for (let back = 1; back <= DEFAULT_THRESHOLDS.baselineWindowDays; back += 1) {
+
+  for (let back = days; back >= 1; back -= 1) {
     const day = utcDate(new Date(now.getTime() - back * 86_400_000));
     for (const row of readSnapshot(day)) {
       const list = history.get(row.id);
@@ -198,6 +207,30 @@ function buildStrip(now: Date, lastDetection: ReadonlyMap<string, string>): Stri
       else history.set(row.id, [{ date: row.date, forks: row.forks }]);
     }
   }
+
+  return history;
+}
+
+/** Totals differenced into daily additions, which is what the chart plots. */
+function toSeries(history: readonly DailyForkCount[]): RepoSeriesPoint[] {
+  return history.map((point, i) => {
+    const previous = history[i - 1];
+    return {
+      date: point.date,
+      forks: point.forks,
+      added: previous === undefined ? 0 : Math.max(0, point.forks - previous.forks),
+    };
+  });
+}
+
+function buildStrip(
+  now: Date,
+  lastDetection: ReadonlyMap<string, string>,
+  history: ReadonlyMap<string, DailyForkCount[]>,
+): StripMark[] {
+  const today = utcDate(now);
+  const state = readLiveState();
+  const windows = new Map(readWindow().map((row) => [row.id, row.samples]));
 
   const marks: StripMark[] = [];
 
@@ -309,8 +342,10 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     minBaselineDays: DEFAULT_THRESHOLDS.minBaselineDays,
   };
 
+  const history = readHistorySeries(now, DEFAULT_THRESHOLDS.baselineWindowDays);
+
   const index: IndexBundle = {
-    strip: buildStrip(now, lastDetectionByRepo(all)),
+    strip: buildStrip(now, lastDetectionByRepo(all), history),
     today: events.filter((event) => event.detectedAt.slice(0, 10) === today),
     watchlist: {
       total: watchlist.length,
@@ -335,6 +370,43 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
         ] as const,
     ),
   ]);
+
+  // One page per watched repository, including the ones with nothing recorded.
+  // A repository the agent has never had anything to say about still deserves a
+  // page that says so honestly, rather than a 404 that reads as a broken link.
+  const stateById = new Map(readLiveState().map((row) => [row.id, row]));
+  const eventsByRepo = new Map<string, EventRecord[]>();
+  for (const event of events) {
+    const list = eventsByRepo.get(event.repo);
+    if (list) list.push(event);
+    else eventsByRepo.set(event.repo, [event]);
+  }
+
+  for (const entry of watchlist) {
+    const series = toSeries(history.get(entry.id) ?? []);
+    const baseline = baselineFromHistory(history.get(entry.id) ?? [], today);
+
+    const repoEvents = (eventsByRepo.get(entry.id) ?? [])
+      .slice()
+      .sort((a, b) => (a.detectedAt < b.detectedAt ? 1 : a.detectedAt > b.detectedAt ? -1 : 0));
+
+    pages.set(
+      `repo/${entry.id}.html`,
+      renderRepoPage(
+        {
+          entry,
+          state: stateById.get(entry.id) ?? null,
+          series,
+          baselinePerDay: baseline.perDay,
+          baselineDays: baseline.days,
+          events: repoEvents.slice(0, MAX_TIMELINE_EVENTS),
+          totalEvents: repoEvents.length,
+        },
+        index,
+        previous,
+      ),
+    );
+  }
 
   // The gate hashes everything served — bundles, pages, and the stylesheet — so
   // a change to any of them deploys. Hashing only the JSON would have meant a
@@ -380,7 +452,10 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   // the published data is a first-class URL rather than an implementation
   // detail. Readers checking a claim should be able to fetch the same file.
   for (const [name, contents] of pages) {
-    writeFileSync(join(DIST_DIR, name), contents, 'utf8');
+    const target = join(DIST_DIR, name);
+    // Profile pages nest under repo/{owner}/{name}.html.
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, contents, 'utf8');
     const bytes = Buffer.byteLength(contents, 'utf8');
     files.push({ name, bytes });
     totalBytes += bytes;

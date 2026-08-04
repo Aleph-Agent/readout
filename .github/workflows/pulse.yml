@@ -83,9 +83,14 @@ jobs:
         # path — that is what makes visitor traffic free and uncapped.
         if: steps.build.outputs.deploy == 'true'
         uses: cloudflare/wrangler-action@v4
+        # Credentials go through the environment rather than through the
+        # action's inputs. v4 declares apiToken and accountId but does not put
+        # them where wrangler looks, and wrangler in a non-interactive shell
+        # reads only the environment. This works on any version of either.
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=readout --branch=main
 
       - name: Record deployment

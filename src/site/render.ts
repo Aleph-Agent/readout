@@ -19,13 +19,22 @@ export function esc(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
+/**
+ * Links are extensionless.
+ *
+ * Pages serves `ships.html` at `/ships` and answers `/ships.html` with a 308 to
+ * the same place. Writing the extension into every href would put a redirect in
+ * front of every navigation in the product. The files on disk keep their `.html`
+ * names — that is what Pages resolves against — but nothing links to them that
+ * way.
+ */
 const NAV: { href: string; label: string; lens: LensName | null }[] = [
   { href: '/', label: 'Index', lens: null },
-  { href: '/ships.html', label: 'Ships', lens: 'ships' },
-  { href: '/forks.html', label: 'Forks', lens: 'forks' },
-  { href: '/demand.html', label: 'Demand', lens: 'demand' },
-  { href: '/stack.html', label: 'Stack', lens: 'stack' },
-  { href: '/lineage.html', label: 'Lineage', lens: 'lineage' },
+  { href: '/ships', label: 'Ships', lens: 'ships' },
+  { href: '/forks', label: 'Forks', lens: 'forks' },
+  { href: '/demand', label: 'Demand', lens: 'demand' },
+  { href: '/stack', label: 'Stack', lens: 'stack' },
+  { href: '/lineage', label: 'Lineage', lens: 'lineage' },
 ];
 
 /**
@@ -222,7 +231,7 @@ export function stateBadge(state: string): string {
 }
 
 function repoLink(repo: string): string {
-  return `<a href="/repo/${esc(repo)}.html">${esc(repo)}</a>`;
+  return `<a href="/repo/${esc(repo)}">${esc(repo)}</a>`;
 }
 
 function timeOf(iso: string): string {
@@ -347,7 +356,7 @@ export function renderLens(
 
   return layout({
     title: copy.title,
-    current: `/${bundle.lens}.html`,
+    current: `/${bundle.lens}`,
     index,
     meta,
     body: `<h1 class="label" style="padding:22px 0 4px">${esc(copy.heading)} — last ${bundle.windowDays} days, ${bundle.count} recorded</h1>\n${scope}\n${body}`,

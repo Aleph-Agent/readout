@@ -175,4 +175,23 @@ describe('navigation', () => {
     expect(html).toContain('data-pending="true"');
     expect(html).toContain('aria-current="page"');
   });
+
+  it('never links to a .html path', () => {
+    // Pages serves ships.html at /ships and answers /ships.html with a 308.
+    // Linking with the extension puts a redirect in front of every navigation.
+    const pages = [
+      renderIndex(index({ today: [event()], strip: [mark()] }), meta()),
+      renderLens(lens({ records: [event()], count: 1 }), index(), meta(), COPY),
+    ];
+
+    for (const html of pages) {
+      const links = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1] as string);
+      expect(links.filter((href) => href.endsWith('.html'))).toEqual([]);
+    }
+  });
+
+  it('marks the current lens without the extension', () => {
+    const html = renderLens(lens(), index(), meta(), COPY);
+    expect(html).toContain('href="/forks" aria-current="page"');
+  });
 });

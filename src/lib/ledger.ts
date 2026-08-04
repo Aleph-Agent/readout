@@ -11,7 +11,9 @@ import {
   LIVE_STATE_PATH,
   META_PATH,
   WATCHLIST_PATH,
+  WINDOW_PATH,
 } from './paths.ts';
+import { WINDOW_KEYS, type WindowRow } from '../types/window.ts';
 import { EVENT_KEYS, type EventKind, type EventRecord } from '../types/events.ts';
 import { HISTORY_KEYS, type HistorySnapshotRow } from '../types/history.ts';
 import { EMPTY_META, META_KEYS, type MetaRecord } from '../types/meta.ts';
@@ -76,6 +78,20 @@ export function readEtags(): Map<string, string> {
     if (row.etag !== null) etags.set(row.id, row.etag);
   }
   return etags;
+}
+
+// ---------------------------------------------------- rolling sample window
+
+export function readWindow(): WindowRow[] {
+  return readJsonl<WindowRow>(WINDOW_PATH);
+}
+
+/** Sorted by repository id, duplicates rejected — same discipline as state. */
+export function writeWindow(rows: readonly WindowRow[]): void {
+  writeJsonl(WINDOW_PATH, rows, WINDOW_KEYS, {
+    sortBy: repoSortKey,
+    rejectDuplicates: true,
+  });
 }
 
 // ------------------------------------------------------------------ history

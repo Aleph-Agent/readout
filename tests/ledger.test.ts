@@ -41,6 +41,7 @@ function stateRow(id: string, forks: number, etag: string | null = null): LiveSt
     latestReleaseTag: null,
     latestReleaseAt: null,
     etag,
+    releaseEtag: null,
   };
 }
 

@@ -1,0 +1,85 @@
+name: Daily
+
+# 02:17 UTC. Writes the canonical snapshot and classifies spikes against it.
+#
+# History is written once a day, not once a pulse. Six snapshots daily would
+# multiply repository growth sixfold and buy nothing — a baseline only needs
+# daily resolution.
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: ledger
+  cancel-in-progress: false
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      # No token: the daily job reads what the pulses already collected and
+      # makes no network calls, so it costs nothing against the API budget.
+      - name: Snapshot and classify
+        run: node scripts/daily.ts
+
+      - name: Commit ledger
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name  "signal-agent"
+          git config user.email "signal-agent@users.noreply.github.com"
+          git add data
+          git commit --allow-empty -m "Daily $(date -u +'%Y-%m-%d')"
+          git push origin "HEAD:${GITHUB_REF_NAME}" || {
+            git fetch --unshallow --quiet origin "${GITHUB_REF_NAME}" \
+              || git fetch --quiet origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          }
+
+      - name: Open an issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'Daily job failed';
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'agent-failure',
+            });
+            const body = `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            if (existing.data.some((issue) => issue.title === title)) {
+              const issue = existing.data.find((i) => i.title === title);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['agent-failure'],
+              });
+            }

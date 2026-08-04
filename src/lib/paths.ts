@@ -19,6 +19,7 @@ export const EVENTS_DIR = join(DATA_DIR, 'events');
 
 export const WATCHLIST_PATH = join(DATA_DIR, 'watchlist.jsonl');
 export const LIVE_STATE_PATH = join(LIVE_DIR, 'state.jsonl');
+export const WINDOW_PATH = join(LIVE_DIR, 'window.jsonl');
 export const META_PATH = join(DATA_DIR, 'meta.json');
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;

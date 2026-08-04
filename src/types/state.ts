@@ -36,6 +36,12 @@ export interface LiveStateRow {
    * own file.
    */
   etag: string | null;
+  /**
+   * ETag for `GET /repos/{owner}/{repo}/releases/latest`, which is a separate
+   * endpoint with its own validator. Sharing one ETag between the two would
+   * make every releases call unconditional and double the pulse's real cost.
+   */
+  releaseEtag: string | null;
 }
 
 export const LIVE_STATE_KEYS = [
@@ -48,6 +54,7 @@ export const LIVE_STATE_KEYS = [
   'latestReleaseTag',
   'latestReleaseAt',
   'etag',
+  'releaseEtag',
 ] as const satisfies readonly (keyof LiveStateRow)[];
 
 export type _LiveStateKeysExhaustive = AssertExhaustive<

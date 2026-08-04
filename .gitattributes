@@ -1,0 +1,27 @@
+# Byte determinism is load-bearing here.
+#
+# The ledger's value comes from git storing line-level deltas: an unchanged
+# repository must produce no diff across thousands of commits. A platform that
+# rewrites line endings on checkout breaks that, and it breaks it silently —
+# the working tree looks fine while every line of every file reads as changed.
+#
+# core.autocrlf is true on at least one machine in this project. These rules
+# override it. Do not remove them.
+
+* text=auto eol=lf
+
+*.jsonl text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.ts    text eol=lf
+*.js    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+
+# Never normalise these.
+*.png   binary
+*.jpg   binary
+*.webp  binary
+*.woff  binary
+*.woff2 binary
+*.gguf  binary

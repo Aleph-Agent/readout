@@ -1,0 +1,344 @@
+import type { Disclosure, IndexBundle, LensBundle, LensName, StripMark } from '../types/bundles.ts';
+import type { EventRecord } from '../types/events.ts';
+import type { MetaRecord } from '../types/meta.ts';
+
+/**
+ * Static HTML generation.
+ *
+ * Pages are rendered at build time from the same bundles the site publishes,
+ * so there is no loading state, no client-side fetch, and nothing to render
+ * empty while a request is in flight. The only script on the page computes
+ * the age of a timestamp, which no static file can know on its own.
+ */
+
+export function esc(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+const NAV: { href: string; label: string; lens: LensName | null }[] = [
+  { href: '/', label: 'Index', lens: null },
+  { href: '/ships.html', label: 'Ships', lens: 'ships' },
+  { href: '/forks.html', label: 'Forks', lens: 'forks' },
+  { href: '/demand.html', label: 'Demand', lens: 'demand' },
+  { href: '/stack.html', label: 'Stack', lens: 'stack' },
+  { href: '/lineage.html', label: 'Lineage', lens: 'lineage' },
+];
+
+/**
+ * Reads a timestamp's age into the page.
+ *
+ * The absolute UTC time is rendered server-side and is always correct. This
+ * only adds the relative age and the staleness warning, both of which depend on
+ * when the page is being read rather than when it was built. Without scripting
+ * the reader still gets the exact reading time, which is the part that matters.
+ */
+const AGE_SCRIPT = `
+for (const el of document.querySelectorAll('[data-at]')) {
+  const at = Date.parse(el.dataset.at);
+  if (!Number.isFinite(at)) continue;
+  const mins = Math.max(0, Math.round((Date.now() - at) / 60000));
+  const h = Math.floor(mins / 60);
+  el.textContent = (h > 0 ? h + 'h ' : '') + (mins % 60) + 'm ago';
+  const limit = Number(el.dataset.staleAfter || 0);
+  if (limit && mins > limit) {
+    el.classList.add('stale');
+    el.textContent += ' — past the expected cadence';
+  }
+}`.trim();
+
+function navHtml(current: string, lenses: IndexBundle['lenses']): string {
+  const items = NAV.map((item) => {
+    const pending = item.lens !== null && lenses[item.lens].status === 'pending';
+    const attrs = [
+      `href="${item.href}"`,
+      item.href === current ? 'aria-current="page"' : '',
+      pending ? 'data-pending="true" title="No collector for this signal yet"' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    return `<li><a ${attrs}>${esc(item.label)}</a></li>`;
+  }).join('');
+
+  return `<nav aria-label="Signals"><ul class="nav shell">${items}</ul></nav>`;
+}
+
+function mastheadHtml(meta: MetaRecord, disclosure: Disclosure): string {
+  const at = meta.lastSuccessfulRunAt;
+  const staleAfter = disclosure.cadenceHours * 2 * 60;
+
+  const reading =
+    at === null
+      ? '<strong>No reading yet</strong>'
+      : `<strong>${esc(at.replace('T', ' ').slice(0, 16))} UTC</strong>`;
+
+  const age =
+    at === null
+      ? ''
+      : `<span data-at="${esc(at)}" data-stale-after="${staleAfter}">age unavailable without scripting</span>`;
+
+  return `<header class="masthead shell">
+  <a class="wordmark" href="/">Signal Agent</a>
+  <div class="reading-age">
+    <span><span class="label">Last reading</span> ${reading}</span>
+    ${age}
+  </div>
+</header>`;
+}
+
+function colophonHtml(index: IndexBundle, meta: MetaRecord): string {
+  const { disclosure, watchlist } = index;
+
+  const partial =
+    meta.partial && meta.collectorsErrored.length > 0
+      ? `<p>The most recent run was partial. ${esc(String(meta.collectorsErrored.length))} collector ${meta.collectorsErrored.length === 1 ? 'error was' : 'errors were'} recorded; the sections above show what was collected.</p>`
+      : '';
+
+  return `<footer class="colophon shell">
+  <p>${watchlist.active} repositories are checked every ${disclosure.cadenceHours} hours. The watchlist is
+  curated and partial — it is chosen by hand and is not a survey of open source.</p>
+  <p>Fork activity is compared against each repository's own trailing baseline. A repository needs
+  ${disclosure.minBaselineDays} days of history before any comparison is made; until then its counts are
+  shown raw and marked forming.</p>
+  <p>This data is not real-time. Every figure links to its source so it can be checked directly.
+  The underlying bundles are published at <a href="/data/index.json">/data/index.json</a>.</p>
+  ${partial}
+</footer>`;
+}
+
+export interface PageOptions {
+  title: string;
+  current: string;
+  index: IndexBundle;
+  meta: MetaRecord;
+  body: string;
+}
+
+export function layout(options: PageOptions): string {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(options.title)}</title>
+<meta name="description" content="Release, fork, demand, dependency and lineage readings across ${options.index.watchlist.active} open-source repositories.">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+${mastheadHtml(options.meta, options.index.disclosure)}
+${navHtml(options.current, options.index.lenses)}
+<main class="shell">
+${options.body}
+</main>
+${colophonHtml(options.index, options.meta)}
+<script>${AGE_SCRIPT}</script>
+</body>
+</html>
+`;
+}
+
+// --------------------------------------------------------------- the strip
+
+const STRIP_CAP = 50;
+
+/** Log scale, so ordinary activity reads as a low comb and a spike stands out. */
+function markHeight(multiplier: number | null): number {
+  if (multiplier === null) return 0.06;
+  const scaled = Math.log1p(Math.max(0, multiplier)) / Math.log1p(STRIP_CAP);
+  return Math.min(1, Math.max(0.03, scaled));
+}
+
+/** Where a multiplier of 1 — this repository behaving normally — sits. */
+const BASELINE_HEIGHT = markHeight(1);
+
+/**
+ * The velocity strip: one mark per watched repository, ordered consistently so
+ * its shape is comparable from one day to the next.
+ *
+ * The baseline is drawn explicitly. A comparison the reader cannot see the
+ * reference for is not a measurement they can check.
+ */
+export function stripSvg(marks: readonly StripMark[], releasedToday: ReadonlySet<string>): string {
+  if (marks.length === 0) return '';
+
+  const H = 100;
+  const step = 100 / marks.length;
+  const width = Math.max(step * 0.55, 0.12);
+
+  const bars = marks
+    .map((mark, i) => {
+      const h = markHeight(mark.multiplier) * H;
+      const x = (i * step).toFixed(3);
+
+      const cls =
+        mark.state === 'forming'
+          ? 'mark-forming'
+          : mark.state === 'confirmed'
+            ? 'mark-confirmed'
+            : releasedToday.has(mark.id)
+              ? 'mark-growth'
+              : mark.state === 'detected'
+                ? 'mark-detected'
+                : 'mark-quiet';
+
+      return `<rect class="${cls}" x="${x}" y="${(H - h).toFixed(2)}" width="${width.toFixed(3)}" height="${h.toFixed(2)}"><title>${esc(mark.id)} — ${esc(mark.state)}</title></rect>`;
+    })
+    .join('');
+
+  const baselineY = (H - BASELINE_HEIGHT * H).toFixed(2);
+
+  return `<section class="strip" aria-labelledby="strip-h">
+  <h2 class="label" id="strip-h">Fork velocity — ${marks.length} repositories, each against its own baseline</h2>
+  <svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" role="img"
+       aria-label="One mark per watched repository. Height is deviation from that repository's own fork baseline. ${marks.filter((m) => m.state === 'confirmed').length} confirmed above baseline.">
+    <line class="baseline-rule" x1="0" y1="${baselineY}" x2="100" y2="${baselineY}"></line>
+    ${bars}
+  </svg>
+  <div class="strip-scale">
+    <span class="label">First by name</span>
+    <span class="label">Dashed line = this repository's normal</span>
+    <span class="label">Last by name</span>
+  </div>
+  <div class="strip-legend">
+    <span class="state state-confirmed">Confirmed spike</span>
+    <span class="state state-detected">Detected once</span>
+    <span class="state state-forming">Baseline forming</span>
+  </div>
+</section>`;
+}
+
+// ---------------------------------------------------------------- fragments
+
+export function stateBadge(state: string): string {
+  const known = state === 'confirmed' || state === 'detected' || state === 'forming';
+  const cls = known ? `state state-${state}` : 'state state-forming';
+  return `<span class="${cls}">${esc(state)}</span>`;
+}
+
+function repoLink(repo: string): string {
+  return `<a href="/repo/${esc(repo)}.html">${esc(repo)}</a>`;
+}
+
+function timeOf(iso: string): string {
+  return esc(iso.slice(11, 16));
+}
+
+function metric(label: string, value: string): string {
+  return `<div class="metric"><span class="label">${esc(label)}</span><span class="metric-value num">${esc(value)}</span></div>`;
+}
+
+/**
+ * The only card in the product: a confirmed event that has prose attached.
+ * Everything else is a table row.
+ */
+function findingCard(event: EventRecord): string {
+  const numbers = Object.entries(event.metrics)
+    .filter(([, value]) => value !== null && value !== '')
+    .slice(0, 5)
+    .map(([key, value]) => metric(key.replace(/([A-Z])/g, ' $1'), String(value)))
+    .join('');
+
+  const prose =
+    event.summary === null ? '' : `<p class="prose">${esc(event.summary)}</p>`;
+
+  return `<article class="finding">
+  <div class="finding-head">
+    <span class="finding-repo">${repoLink(event.repo)}</span>
+    ${stateBadge(event.confidence)}
+    <span class="label">${esc(event.detectedAt.replace('T', ' ').slice(0, 16))} UTC</span>
+    <a class="label" href="${esc(event.evidenceUrl)}">Evidence</a>
+  </div>
+  <div class="finding-metrics">${numbers}</div>
+  ${prose}
+</article>`;
+}
+
+function quietNotice(checked: number, at: string | null, what: string): string {
+  return `<div class="notice">
+  <strong>Nothing crossed the threshold</strong>
+  ${checked} repositories were checked${at === null ? '' : ` at ${esc(at.replace('T', ' ').slice(0, 16))} UTC`}
+  and no ${esc(what)} met the reporting bar. A quiet reading is a reading.
+</div>`;
+}
+
+function pendingNotice(lens: string): string {
+  return `<div class="notice">
+  <strong>Not measured yet</strong>
+  No collector produces ${esc(lens)} signals so far. This page is empty because nothing has been
+  observed, not because nothing happened.
+</div>`;
+}
+
+// -------------------------------------------------------------------- pages
+
+export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
+  const releasedToday = new Set(
+    index.today.filter((event) => event.kind === 'release').map((event) => event.repo),
+  );
+
+  const rows = index.today
+    .map(
+      (event) => `<tr>
+      <td class="dim">${timeOf(event.detectedAt)}</td>
+      <td>${repoLink(event.repo)}</td>
+      <td><span class="label">${esc(event.kind)}</span></td>
+      <td>${stateBadge(event.confidence)}</td>
+      <td>${esc(String(event.metrics['tag'] ?? event.metrics['multiplier'] ?? '—'))}</td>
+      <td class="dim"><a href="${esc(event.evidenceUrl)}">source</a></td>
+    </tr>`,
+    )
+    .join('');
+
+  const table =
+    index.today.length === 0
+      ? quietNotice(index.watchlist.active, meta.lastSuccessfulRunAt, 'signal')
+      : `<div class="wrap"><table class="readout">
+      <caption class="label">Today — ${index.today.length} signals</caption>
+      <thead><tr><th>UTC</th><th>Repository</th><th>Signal</th><th>Confidence</th><th>Reading</th><th>Link</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+
+  const forming = index.strip.filter((m) => m.state === 'forming').length;
+  const formingNotice =
+    forming === 0
+      ? ''
+      : `<div class="notice"><strong>Baseline forming</strong>
+      ${forming} of ${index.strip.length} repositories have under ${index.disclosure.minBaselineDays} days of history.
+      Their counts are shown raw; no multiplier is computed for them and none is implied.</div>`;
+
+  return layout({
+    title: 'Signal Agent — developer activity readings',
+    current: '/',
+    index,
+    meta,
+    body: `${stripSvg(index.strip, releasedToday)}\n${table}\n${formingNotice}`,
+  });
+}
+
+export function renderLens(
+  bundle: LensBundle,
+  index: IndexBundle,
+  meta: MetaRecord,
+  copy: { title: string; heading: string; noun: string },
+): string {
+  let body: string;
+
+  if (bundle.status === 'pending') {
+    body = pendingNotice(copy.noun);
+  } else if (bundle.records.length === 0) {
+    body = quietNotice(index.watchlist.active, meta.lastSuccessfulRunAt, copy.noun);
+  } else {
+    body = bundle.records.map(findingCard).join('\n');
+  }
+
+  return layout({
+    title: copy.title,
+    current: `/${bundle.lens}.html`,
+    index,
+    meta,
+    body: `<h1 class="label" style="padding:22px 0 4px">${esc(copy.heading)} — last ${bundle.windowDays} days, ${bundle.count} recorded</h1>\n${body}`,
+  });
+}

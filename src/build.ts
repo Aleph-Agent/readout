@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   readActiveWatchlist,
@@ -14,7 +15,8 @@ import {
   writeMeta,
 } from './lib/ledger.ts';
 import { lastDetectionByRepo } from './lib/confidence.ts';
-import { DIST_DATA_DIR, utcDate } from './lib/paths.ts';
+import { DIST_DATA_DIR, DIST_DIR, ROOT, utcDate } from './lib/paths.ts';
+import { renderIndex, renderLens } from './site/render.ts';
 import {
   classifySpike,
   DEFAULT_THRESHOLDS,
@@ -65,6 +67,33 @@ const LENS_KINDS: Record<LensName, readonly EventKind[]> = {
 
 /** Lenses whose collectors do not exist yet. Prompt 7 activates the first two. */
 const PENDING_LENSES = new Set<LensName>(['demand', 'stack', 'lineage']);
+
+const SITE_CSS = fileURLToPath(new URL('./site/site.css', import.meta.url));
+
+/**
+ * Page copy. Names things by what the reader is looking at, not by the
+ * collector that produced it.
+ */
+const LENS_COPY: Record<LensName, { title: string; heading: string; noun: string }> = {
+  ships: { title: 'Ships — releases', heading: 'Releases', noun: 'release' },
+  forks: { title: 'Forks — copying above baseline', heading: 'Fork activity', noun: 'fork spike' },
+  demand: { title: 'Demand — what developers ask for', heading: 'Demand', noun: 'demand cluster' },
+  stack: { title: 'Stack — dependency movement', heading: 'Dependency movement', noun: 'dependency shift' },
+  lineage: { title: 'Lineage — model descent', heading: 'Lineage', noun: 'lineage relation' },
+};
+
+/**
+ * Self-hosted so the read path depends on nothing but Pages. A font CDN would
+ * put a third party between a visitor and a page that is otherwise entirely
+ * ours to serve.
+ */
+const FONT_FILES = [
+  '@fontsource/ibm-plex-sans-condensed/files/ibm-plex-sans-condensed-latin-500-normal.woff2',
+  '@fontsource/ibm-plex-sans-condensed/files/ibm-plex-sans-condensed-latin-600-normal.woff2',
+  '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2',
+  '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2',
+  '@fontsource/ibm-plex-serif/files/ibm-plex-serif-latin-400-normal.woff2',
+];
 
 export interface BuildResult {
   files: { name: string; bytes: number }[];
@@ -256,9 +285,11 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
 
   const emitted = new Map<string, string>();
   const lensSummary = {} as IndexBundle['lenses'];
+  const lensBundles = new Map<LensName, LensBundle>();
 
   for (const lens of LENSES) {
     const { bundle, archives } = buildLens(lens, grouped.get(lens) ?? [], now, windowDays);
+    lensBundles.set(lens, bundle);
     emitted.set(`${lens}.json`, stableJson(bundle));
     for (const [month, records] of archives) {
       emitted.set(`${lens}-${month}.json`, stableJson({ lens, month, records }));
@@ -292,38 +323,77 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
 
   emitted.set('index.json', stableJson(index));
 
-  // The gate hashes content only. Run telemetry — timestamps, request counts,
-  // remaining budget — changes every run by definition, so including it would
-  // mean the hash never matches and the gate never fires.
+  const previous = readMeta();
+
+  const pages = new Map<string, string>([
+    ['index.html', renderIndex(index, previous)],
+    ...LENSES.map(
+      (lens) =>
+        [
+          `${lens}.html`,
+          renderLens(lensBundles.get(lens) as LensBundle, index, previous, LENS_COPY[lens]),
+        ] as const,
+    ),
+  ]);
+
+  // The gate hashes everything served — bundles, pages, and the stylesheet — so
+  // a change to any of them deploys. Hashing only the JSON would have meant a
+  // CSS or template edit never reaching the site.
   //
-  // The consequence is deliberate: on a quiet day nothing deploys and the
-  // deployed timestamp stays put. That is honest rather than stale, because the
-  // timestamp describes when the data on screen was collected, and that data
-  // genuinely has not changed.
+  // Two exceptions. meta.json is excluded because it carries the hash and
+  // cannot hash itself. And lastSuccessfulRunAt is folded in deliberately,
+  // despite being run telemetry.
+  //
+  // That second one reverses the decision made in Prompt 4. Excluding it meant
+  // a quiet day deployed nothing and the published timestamp stayed put, which
+  // was defensible while the output was only JSON. But the page derives a
+  // staleness warning from that timestamp, and skipping the deploy would make a
+  // healthy agent that found nothing indistinguishable from a dead one — the
+  // exact failure the staleness warning exists to expose. Freshness wins. The
+  // cost is roughly 210 deployments a month against a ceiling of 500.
   const hash = createHash('sha256');
-  for (const name of [...emitted.keys()].sort()) {
-    hash.update(name);
-    hash.update(' ');
-    hash.update(emitted.get(name) as string);
+  const hashed = new Map([...emitted, ...pages]);
+  for (const name of [...hashed.keys()].sort()) {
+    hash.update(`${name} ${hashed.get(name) as string}`);
   }
+  hash.update(readFileSync(SITE_CSS, 'utf8'));
+  hash.update(previous.lastSuccessfulRunAt ?? 'never');
   const bundleHash = hash.digest('hex');
 
   // `meta.bundleHash` is the hash of what was last *successfully deployed*, not
   // the last thing built. Recording it here would mean a failed deployment
   // still marks the bundle as shipped, and the next run would skip deploying
   // something that never went out. `recordDeploy` writes it after the fact.
-  const previous = readMeta();
   const deploy = previous.bundleHash !== bundleHash;
 
   emitted.set('meta.json', stableJson({ ...previous, bundleHash, deploySkipped: !deploy }));
 
-  // Rebuild from scratch so a bundle deleted from the source cannot survive as
-  // a stale file the site keeps serving.
-  rmSync(DIST_DATA_DIR, { recursive: true, force: true });
+  // Rebuild from scratch so a file deleted from the source cannot survive as a
+  // stale asset the site keeps serving.
+  rmSync(DIST_DIR, { recursive: true, force: true });
   mkdirSync(DIST_DATA_DIR, { recursive: true });
 
   const files: BuildResult['files'] = [];
   let totalBytes = 0;
+
+  // Pages, stylesheet, and fonts sit at the root; bundles live under /data so
+  // the published data is a first-class URL rather than an implementation
+  // detail. Readers checking a claim should be able to fetch the same file.
+  for (const [name, contents] of pages) {
+    writeFileSync(join(DIST_DIR, name), contents, 'utf8');
+    const bytes = Buffer.byteLength(contents, 'utf8');
+    files.push({ name, bytes });
+    totalBytes += bytes;
+  }
+
+  copyFileSync(SITE_CSS, join(DIST_DIR, 'site.css'));
+
+  const fontDir = join(DIST_DIR, 'fonts');
+  mkdirSync(fontDir, { recursive: true });
+  for (const relative of FONT_FILES) {
+    const source = join(ROOT, 'node_modules', relative);
+    copyFileSync(source, join(fontDir, relative.split('/').pop() as string));
+  }
 
   for (const name of [...emitted.keys()].sort()) {
     const contents = emitted.get(name) as string;

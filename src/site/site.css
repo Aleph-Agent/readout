@@ -1,0 +1,468 @@
+/*
+ * Design tokens and components.
+ *
+ * The brief is `instrument-ui`: this is an instrument, not a dashboard. Every
+ * value below is derived from that, and the two things it warns about most are
+ * the two things this direction sits closest to.
+ *
+ * Not "near-black with a bright accent". The ground is warm graphite, the way
+ * painted equipment housing is warm, and the two signal colours are indicator
+ * lamps — earthy and desaturated — not neon. Nothing glows.
+ *
+ * Not a newspaper. There are no columns, no masthead, no kickers. Every number
+ * is labelled with its unit, its comparison window, and its sample count,
+ * because that is the vernacular of measurement rather than editorial.
+ */
+
+/* ------------------------------------------------------------------ fonts */
+
+@font-face {
+  font-family: 'Plex Condensed';
+  src: url('/fonts/ibm-plex-sans-condensed-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plex Condensed';
+  src: url('/fonts/ibm-plex-sans-condensed-latin-600-normal.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plex Mono';
+  src: url('/fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plex Mono';
+  src: url('/fonts/ibm-plex-mono-latin-600-normal.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plex Serif';
+  src: url('/fonts/ibm-plex-serif-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* ------------------------------------------------------------------ tokens */
+
+:root {
+  /* One neutral ramp. Warm, so it reads as equipment rather than as screen. */
+  --ink-000: #131211;
+  --ink-050: #191816;
+  --ink-100: #23211d;
+  --ink-200: #302d28;
+  --ink-300: #4a4740;
+  --ink-500: #85817a;
+  --ink-700: #b6b1a8;
+  --ink-900: #e8e4db;
+
+  /* Two signal colours. There is no third, and neither is ever the only
+     carrier of meaning — every coloured state also has a glyph and a label. */
+  --alert: #c9503a;
+  --nominal: #7d9b6a;
+
+  --face-label: 'Plex Condensed', ui-sans-serif, system-ui, sans-serif;
+  --face-data: 'Plex Mono', ui-monospace, monospace;
+  --face-prose: 'Plex Serif', ui-serif, Georgia, serif;
+
+  /* Nothing below 11px. Small type is acceptable where the region is dense. */
+  --t-micro: 11px;
+  --t-small: 12px;
+  --t-base: 13px;
+  --t-mid: 15px;
+  --t-large: 20px;
+  --t-display: 28px;
+
+  --gap: 4px;
+  --pad: 16px;
+  --rule: 1px solid var(--ink-100);
+}
+
+/* ------------------------------------------------------------------- base */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--ink-000);
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--ink-000);
+  color: var(--ink-700);
+  font-family: var(--face-data);
+  font-size: var(--t-base);
+  line-height: 1.45;
+  /* Every number in the product. Never assumed — stated. */
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--ink-300);
+}
+
+a:hover {
+  border-bottom-color: var(--ink-700);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink-900);
+  outline-offset: 2px;
+}
+
+/* Silkscreen. Labels on an instrument panel are small, spaced, and shouted
+   quietly — this is the one type treatment carrying the product's character. */
+.label {
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+.num {
+  font-family: var(--face-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Interpretation, visibly not measurement. The reader must be able to see
+   where one ends and the other begins; this is that rule made visual. */
+.prose {
+  font-family: var(--face-prose);
+  font-size: var(--t-mid);
+  line-height: 1.5;
+  color: var(--ink-900);
+  max-width: 62ch;
+}
+
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 var(--pad);
+}
+
+/* ----------------------------------------------------------------- header */
+
+.masthead {
+  border-bottom: var(--rule);
+  padding: 14px 0 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px var(--pad);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.wordmark {
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-mid);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-900);
+  border: 0;
+}
+
+.reading-age {
+  display: flex;
+  gap: 18px;
+  align-items: baseline;
+  font-size: var(--t-small);
+  color: var(--ink-500);
+}
+
+.reading-age strong {
+  color: var(--ink-700);
+  font-weight: 400;
+}
+
+/* Stale data is stated, never hidden. Past twice the expected cadence the
+   header says so in words, not by a colour a reader has to decode. */
+.stale {
+  color: var(--alert);
+  border-left: 2px solid var(--alert);
+  padding-left: 8px;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  border-bottom: var(--rule);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.nav a {
+  display: block;
+  padding: 9px 14px 8px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+.nav a:hover {
+  color: var(--ink-900);
+}
+
+.nav a[aria-current='page'] {
+  color: var(--ink-900);
+  border-bottom-color: var(--ink-900);
+}
+
+.nav a[data-pending='true'] {
+  color: var(--ink-300);
+}
+
+/* ---------------------------------------------------------- velocity strip */
+
+.strip {
+  padding: 20px 0 10px;
+  border-bottom: var(--rule);
+}
+
+.strip svg {
+  display: block;
+  width: 100%;
+  height: 96px;
+}
+
+.strip-scale {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 6px;
+}
+
+.strip-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-top: 10px;
+}
+
+.mark-quiet {
+  fill: var(--ink-300);
+}
+.mark-detected {
+  fill: var(--ink-900);
+}
+.mark-confirmed {
+  fill: var(--alert);
+}
+.mark-growth {
+  fill: var(--nominal);
+}
+/* Baseline still forming. Drawn as an outline, because "not measured yet" is
+   not the same claim as "measured at zero" and must not look like it. */
+.mark-forming {
+  fill: none;
+  stroke: var(--ink-200);
+  stroke-width: 0.4;
+}
+
+.baseline-rule {
+  stroke: var(--ink-500);
+  stroke-width: 0.5;
+  stroke-dasharray: 3 3;
+}
+
+/* ------------------------------------------------------------------ tables */
+
+.readout {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-small);
+}
+
+.readout caption {
+  text-align: left;
+  padding: 18px 0 8px;
+}
+
+.readout th {
+  text-align: left;
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  padding: 6px 12px 6px 0;
+  border-bottom: var(--rule);
+  white-space: nowrap;
+}
+
+.readout td {
+  padding: 5px 12px 5px 0;
+  border-bottom: 1px solid var(--ink-050);
+  vertical-align: baseline;
+}
+
+.readout tr:hover td {
+  background: var(--ink-050);
+}
+
+.readout .n {
+  text-align: right;
+  padding-right: 18px;
+}
+
+.readout .dim {
+  color: var(--ink-500);
+}
+
+.wrap {
+  overflow-x: auto;
+}
+
+/* ------------------------------------------------------------------ states */
+
+.state {
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.state::before {
+  margin-right: 6px;
+}
+
+.state-forming {
+  color: var(--ink-500);
+}
+.state-forming::before {
+  content: '○';
+}
+
+.state-detected {
+  color: var(--ink-900);
+}
+.state-detected::before {
+  content: '◐';
+}
+
+.state-confirmed {
+  color: var(--alert);
+}
+.state-confirmed::before {
+  content: '●';
+}
+
+/* ------------------------------------------------------------------ panels */
+
+.notice {
+  border-left: 2px solid var(--ink-200);
+  padding: 12px 0 12px 14px;
+  margin: 20px 0;
+  color: var(--ink-500);
+  font-size: var(--t-small);
+  max-width: 68ch;
+}
+
+.notice strong {
+  display: block;
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-700);
+  margin-bottom: 5px;
+}
+
+.notice-alert {
+  border-left-color: var(--alert);
+}
+
+/* The only card in the product: a confirmed event that has written prose
+   attached. Everything else is a row. */
+.finding {
+  border-top: var(--rule);
+  padding: 18px 0;
+  display: grid;
+  gap: 10px;
+}
+
+.finding-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  align-items: baseline;
+}
+
+.finding-repo {
+  font-size: var(--t-mid);
+  color: var(--ink-900);
+}
+
+.finding-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+}
+
+.metric {
+  display: grid;
+  gap: 1px;
+}
+
+.metric-value {
+  font-size: var(--t-base);
+  color: var(--ink-900);
+}
+
+.colophon {
+  border-top: var(--rule);
+  margin-top: 36px;
+  padding: 20px 0 44px;
+  color: var(--ink-500);
+  font-size: var(--t-micro);
+  display: grid;
+  gap: 8px;
+  max-width: 76ch;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --pad: 12px;
+  }
+  .strip svg {
+    height: 64px;
+  }
+  .readout {
+    font-size: var(--t-micro);
+  }
+}
+
+/* No animation in this product encodes a value, so there is none to reduce.
+   The declaration stays as a guard against anyone adding decoration later. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

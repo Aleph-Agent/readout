@@ -225,9 +225,35 @@ describe('output hygiene', () => {
     expect(readFileSync(join(DIST_DATA, 'index.json')).equals(first)).toBe(true);
   });
 
-  it('rebuilds from scratch so a removed bundle cannot linger', () => {
+  it('rebuilds from scratch so a removed file cannot linger', () => {
     const result = runBuild({ now: NOW });
-    expect(readdirSync(DIST_DATA)).toHaveLength(result.files.length);
+    const jsonFiles = result.files.filter((f) => f.name.endsWith('.json'));
+    expect(readdirSync(DIST_DATA).sort()).toEqual(jsonFiles.map((f) => f.name).sort());
+  });
+
+  it('emits a page per lens alongside the bundles', () => {
+    const result = runBuild({ now: NOW });
+    const pages = result.files.filter((f) => f.name.endsWith('.html')).map((f) => f.name);
+    expect(pages.sort()).toEqual([
+      'demand.html',
+      'forks.html',
+      'index.html',
+      'lineage.html',
+      'ships.html',
+      'stack.html',
+    ]);
+  });
+
+  it('deploys when only the stylesheet changed', () => {
+    // Hashing the JSON alone would mean a CSS edit never reached the site.
+    const built = runBuild({ now: NOW });
+    recordDeploy(built.bundleHash, true);
+    expect(runBuild({ now: NOW }).deploy).toBe(false);
+
+    ledger.writeMeta({ ...ledger.readMeta(), lastSuccessfulRunAt: '2026-08-04T16:17:00Z' });
+    // A fresh reading time is content: the page derives its staleness warning
+    // from it, so a skipped deploy would make a healthy agent look dead.
+    expect(runBuild({ now: NOW }).deploy).toBe(true);
   });
 
   it('keeps every bundle small enough to load without pagination', () => {

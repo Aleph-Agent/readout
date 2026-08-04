@@ -103,6 +103,18 @@ export function createGitHubClient(options: GitHubClientOptions): GitHubClient {
     throw new Error('createGitHubClient: token is empty; unauthenticated calls are not permitted');
   }
 
+  // A token is going into an HTTP header, which only carries printable ASCII.
+  // A byte order mark picked up from a file, or a newline from a paste, throws
+  // once per repository with a message about character codes that says nothing
+  // about what is actually wrong. Say it once, here, in words.
+  if (!/^[\x21-\x7E]+$/.test(token)) {
+    throw new Error(
+      'createGitHubClient: token contains characters that cannot go in an HTTP header. ' +
+        'A byte order mark or stray whitespace from a copy-paste is the usual cause. ' +
+        'Re-set the secret from a plain paste rather than from a file.',
+    );
+  }
+
   let consumed = 0;
   let unchanged = 0;
   let rateLimitRemaining: number | null = null;

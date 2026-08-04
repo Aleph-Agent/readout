@@ -36,6 +36,22 @@ describe('createGitHubClient', () => {
     // Unauthenticated calls are capped at 60/hour and exhaust in seconds.
     expect(() => createGitHubClient({ token: '' })).toThrow(/unauthenticated/);
   });
+
+  it('names the problem when a token carries a byte order mark', () => {
+    // This is not hypothetical: a BOM survived into the secret and every one of
+    // twenty repositories failed with "character at index 7 has a value of
+    // 65279", which describes the symptom and not the cause.
+    expect(() => createGitHubClient({ token: `﻿${TOKEN}` })).toThrow(/byte order mark/);
+    expect(() => createGitHubClient({ token: `${TOKEN}\n` })).toThrow(/HTTP header/);
+  });
+
+  it('does not echo the token while rejecting it', () => {
+    expect(() => createGitHubClient({ token: `﻿${TOKEN}` })).toThrow(
+      expect.objectContaining({
+        message: expect.not.stringContaining(TOKEN) as unknown as string,
+      }),
+    );
+  });
 });
 
 describe('conditional requests', () => {

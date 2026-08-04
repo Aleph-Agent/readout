@@ -240,7 +240,7 @@ describe('meta', () => {
       lastSuccessfulRunAt: '2026-08-04T02:17:00Z',
       job: 'daily' as const,
       reposChecked: 400,
-      reposUnchanged: 372,
+      requestsUnchanged: 372,
       requestsConsumed: 28,
     };
 

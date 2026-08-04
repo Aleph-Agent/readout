@@ -138,8 +138,10 @@ works if it stays genuinely immutable — never force push the data branch.
 ```
 data/
 ├── live/state.jsonl          Overwritten each pulse. Sorted by repo id.
+├── live/window.jsonl         Timestamped fork samples. Rolling 24h delta.
 ├── history/YYYY-MM-DD.jsonl  Appended once daily. Immutable.
 ├── events/YYYY-MM.jsonl      Append-only. Never rewritten.
+├── summaries.jsonl           Generated prose by event id. Rewritable.
 ├── watchlist.jsonl           Committed. Changes are reviewed commits.
 └── meta.json                 Last run status.
 ```
@@ -147,6 +149,23 @@ data/
 `live/state.jsonl` is sorted by repository ID with keys in fixed order. This is
 not cosmetic — it makes git diffs line-level, so unchanged repositories produce
 no delta and the file compresses to almost nothing across thousands of commits.
+
+**Two files were added during the build.** Both because the original five could
+not hold what was needed, not for convenience:
+
+`live/window.jsonl` — the spike rule compares against a *rolling* 24-hour delta.
+`state.jsonl` deliberately carries no per-row timestamp, because one that moved
+every pulse would rewrite all 400 lines six times a day and destroy the very
+property the layout exists for. `history/` has only daily resolution. So a
+rolling window needs timestamped samples somewhere, and this is the smallest
+form of that: a sample is appended only when the fork count actually changes,
+so a dormant repository still produces no diff.
+
+`summaries.jsonl` — generated prose, keyed by event id. It cannot live on the
+event, because events are append-only and filling a summary in later would mean
+editing lines that are supposed to be permanent. Keeping interpretation in its
+own file also mirrors the display rule: the reader must be able to see where
+measurement ends and interpretation begins.
 
 History is written **once daily**, not six times. Six snapshots a day multiplies
 repository growth sixfold for no analytical gain; baselines only need daily

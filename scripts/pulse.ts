@@ -39,7 +39,7 @@ console.log(
   [
     `job                  ${meta.job}`,
     `repos checked        ${meta.reposChecked}`,
-    `unchanged (304)      ${meta.reposUnchanged}`,
+    `unchanged (304)      ${meta.requestsUnchanged}`,
     `requests consumed    ${meta.requestsConsumed}`,
     `rate limit remaining ${meta.rateLimitRemaining ?? 'unknown'}`,
     `events detected      ${meta.eventsDetected}`,

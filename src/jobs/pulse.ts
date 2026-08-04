@@ -7,6 +7,7 @@ import {
   readEvents,
   readLiveState,
   readMeta,
+  readWatchlist,
   readWindow,
   writeLiveState,
   writeMeta,
@@ -65,17 +66,30 @@ export async function runPulse(options: PulseOptions = {}): Promise<MetaRecord> 
       .map((event) => event.repo),
   );
 
-  const releases = await collectReleases(client, base.rows, {
+  // Only repositories this run actually collected. base.rows also carries
+  // forward every previously known row, and iterating those would make
+  // --limit=20 quietly hit four hundred release endpoints.
+  const scope = new Set(entries.map((entry) => entry.id));
+  const collectedNow = base.rows.filter((row) => scope.has(row.id));
+
+  const releases = await collectReleases(client, collectedNow, {
     now: nowIso,
     today,
     alreadyReleasedToday,
     firstObservation,
   });
 
-  const rows: LiveStateRow[] = base.rows.map((row) => {
-    const update = releases.updates.get(row.id);
-    return update ? { ...row, ...update } : row;
-  });
+  // Rows for repositories no longer on the watchlist are dropped. Inactive
+  // entries keep theirs — the watchlist still lists them, which is the record
+  // that they were once watched.
+  const known = new Set(readWatchlist().map((entry) => entry.id));
+
+  const rows: LiveStateRow[] = base.rows
+    .filter((row) => known.has(row.id))
+    .map((row) => {
+      const update = releases.updates.get(row.id);
+      return update ? { ...row, ...update } : row;
+    });
 
   writeLiveState(rows);
 
@@ -106,7 +120,7 @@ export async function runPulse(options: PulseOptions = {}): Promise<MetaRecord> 
     requestsConsumed: stats.consumed,
     rateLimitRemaining: stats.rateLimitRemaining,
     reposChecked: entries.length,
-    reposUnchanged: stats.unchanged,
+    requestsUnchanged: stats.unchanged,
     eventsDetected: releases.events.length,
     collectorsErrored: errors,
   };

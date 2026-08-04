@@ -146,6 +146,32 @@ describe('corrections', () => {
     // The ledger keeps both. Only the published view collapses them.
     expect(ledger.readEvents('2026-08')).toHaveLength(3);
   });
+
+  it('shows the correction in the lens the original occupied', () => {
+    // A correction carries kind: 'correction', which matches no lens of its
+    // own. Routed by kind alone it would vanish from the site entirely — the
+    // original removed and nothing in its place, which is the opposite of a
+    // correction displaying with the same prominence as what it corrects.
+    runBuild({ now: NOW });
+    const ids = read<LensBundle>('ships.json').records.map((r) => r.id);
+    expect(ids).toContain('correction:a/one:1');
+  });
+
+  it('drops a correction that points at nothing rather than guessing a lens', () => {
+    ledger.appendEvents('2026-08', [
+      {
+        ...releaseEvent('correction:orphan', 'a/one', '2026-08-04T07:00:00Z'),
+        kind: 'correction',
+        supersedes: null,
+      },
+    ]);
+
+    runBuild({ now: NOW });
+    const everywhere = ['ships', 'forks', 'demand', 'stack', 'lineage'].flatMap((lens) =>
+      read<LensBundle>(`${lens}.json`).records.map((r) => r.id),
+    );
+    expect(everywhere).not.toContain('correction:orphan');
+  });
 });
 
 describe('deploy gate', () => {

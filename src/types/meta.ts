@@ -26,8 +26,14 @@ export interface MetaRecord {
   /** `X-RateLimit-Remaining` at the end of the run. Below 500, stop cleanly. */
   rateLimitRemaining: number | null;
   reposChecked: number;
-  /** Repositories that answered 304. High is good: it means ETags are working. */
-  reposUnchanged: number;
+  /**
+   * Conditional requests answered 304. High is good: it means ETags are
+   * working and most of the watchlist cost nothing this run.
+   *
+   * Counts requests, not repositories — a pulse makes two per repository, so
+   * this can legitimately reach twice `reposChecked`.
+   */
+  requestsUnchanged: number;
   eventsDetected: number;
   /** Collector names that threw. One failing must not abort the others. */
   collectorsErrored: string[];
@@ -52,7 +58,7 @@ export const META_KEYS = [
   'requestsConsumed',
   'rateLimitRemaining',
   'reposChecked',
-  'reposUnchanged',
+  'requestsUnchanged',
   'eventsDetected',
   'collectorsErrored',
   'summariesGenerated',
@@ -74,7 +80,7 @@ export const EMPTY_META: MetaRecord = {
   requestsConsumed: 0,
   rateLimitRemaining: null,
   reposChecked: 0,
-  reposUnchanged: 0,
+  requestsUnchanged: 0,
   eventsDetected: 0,
   collectorsErrored: [],
   summariesGenerated: 0,

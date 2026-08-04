@@ -13,6 +13,7 @@ import {
   readWindow,
   writeMeta,
 } from './lib/ledger.ts';
+import { lastDetectionByRepo } from './lib/confidence.ts';
 import { DIST_DATA_DIR, utcDate } from './lib/paths.ts';
 import {
   classifySpike,
@@ -48,7 +49,12 @@ const DEFAULT_WINDOW_DAYS = 90;
 
 const PULSE_CADENCE_HOURS = 4;
 
-/** Which event kinds feed which lens. Kinds with no collector yet map to none. */
+/**
+ * Which event kinds feed which lens.
+ *
+ * `correction` is absent deliberately: a correction has no lens of its own, it
+ * inherits the lens of the claim it replaces. See `groupByLens`.
+ */
 const LENS_KINDS: Record<LensName, readonly EventKind[]> = {
   ships: ['release'],
   forks: ['fork-spike'],
@@ -113,7 +119,43 @@ function withSummaries(events: readonly EventRecord[]): EventRecord[] {
   });
 }
 
-function buildStrip(now: Date): StripMark[] {
+/**
+ * Route every visible event to a lens.
+ *
+ * A correction lands wherever the claim it replaces landed. Without this it
+ * would carry `kind: 'correction'`, match no lens, and vanish from the site
+ * entirely — the original would disappear and nothing would take its place,
+ * which is the opposite of a correction displaying with the same prominence as
+ * the thing it corrects.
+ */
+function groupByLens(
+  visible: readonly EventRecord[],
+  byId: ReadonlyMap<string, EventRecord>,
+): Map<LensName, EventRecord[]> {
+  const kindToLens = new Map<EventKind, LensName>();
+  for (const lens of LENSES) {
+    for (const kind of LENS_KINDS[lens]) kindToLens.set(kind, lens);
+  }
+
+  const grouped = new Map<LensName, EventRecord[]>();
+  for (const lens of LENSES) grouped.set(lens, []);
+
+  for (const event of visible) {
+    const target =
+      event.kind === 'correction'
+        ? event.supersedes === null
+          ? undefined
+          : byId.get(event.supersedes)
+        : event;
+
+    const lens = target === undefined ? undefined : kindToLens.get(target.kind);
+    if (lens !== undefined) grouped.get(lens)?.push(event);
+  }
+
+  return grouped;
+}
+
+function buildStrip(now: Date, lastDetection: ReadonlyMap<string, string>): StripMark[] {
   const today = utcDate(now);
   const state = readLiveState();
   const windows = new Map(readWindow().map((row) => [row.id, row.samples]));
@@ -141,7 +183,9 @@ function buildStrip(now: Date): StripMark[] {
       observedAt: now.toISOString(),
       windowStartForks: anchor?.forks ?? null,
       windowStartAt: anchor?.at ?? null,
-      previousDetectionDate: null,
+      // Same input the daily job classified against, so a repository cannot be
+      // `confirmed` in the feed and `detected` on the strip at the same time.
+      previousDetectionDate: lastDetection.get(row.id) ?? null,
       today,
     });
 
@@ -165,10 +209,9 @@ function buildLens(
   now: Date,
   windowDays: number,
 ): { bundle: LensBundle; archives: Map<string, EventRecord[]> } {
-  const kinds = new Set<EventKind>(LENS_KINDS[lens]);
-  const mine = events
-    .filter((event) => kinds.has(event.kind))
-    .sort((a, b) => (a.detectedAt < b.detectedAt ? 1 : a.detectedAt > b.detectedAt ? -1 : 0));
+  const mine = [...events].sort((a, b) =>
+    a.detectedAt < b.detectedAt ? 1 : a.detectedAt > b.detectedAt ? -1 : 0,
+  );
 
   const cutoff = now.getTime() - windowDays * 86_400_000;
   const recent: EventRecord[] = [];
@@ -203,13 +246,19 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   const windowDays = options.windowDays ?? DEFAULT_WINDOW_DAYS;
   const today = utcDate(now);
 
-  const events = withSummaries(applyCorrections(readAllEvents()));
+  const all = readAllEvents();
+  // Indexed before corrections are applied: a correction needs to find the
+  // event it replaces, which by then is no longer in the visible set.
+  const byId = new Map(all.map((event) => [event.id, event]));
+
+  const events = withSummaries(applyCorrections(all));
+  const grouped = groupByLens(events, byId);
 
   const emitted = new Map<string, string>();
   const lensSummary = {} as IndexBundle['lenses'];
 
   for (const lens of LENSES) {
-    const { bundle, archives } = buildLens(lens, events, now, windowDays);
+    const { bundle, archives } = buildLens(lens, grouped.get(lens) ?? [], now, windowDays);
     emitted.set(`${lens}.json`, stableJson(bundle));
     for (const [month, records] of archives) {
       emitted.set(`${lens}-${month}.json`, stableJson({ lens, month, records }));
@@ -230,7 +279,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   };
 
   const index: IndexBundle = {
-    strip: buildStrip(now),
+    strip: buildStrip(now, lastDetectionByRepo(all)),
     today: events.filter((event) => event.detectedAt.slice(0, 10) === today),
     watchlist: {
       total: watchlist.length,

@@ -1,7 +1,8 @@
+import { lastDetectionByRepo } from '../lib/confidence.ts';
 import {
   appendEvents,
   eventId,
-  readEvents,
+  readAllEvents,
   readLiveState,
   readMeta,
   readSnapshot,
@@ -85,17 +86,12 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
   const history = readHistoryWindow(now, options.historyDays ?? thresholds.baselineWindowDays);
   const windows = new Map(readWindow().map((row) => [row.id, row.samples]));
 
-  const existing = readEvents(month);
-  const lastDetection = new Map<string, string>();
-  for (const event of existing) {
-    if (event.kind !== 'fork-spike') continue;
-    if (event.confidence !== 'detected' && event.confidence !== 'confirmed') continue;
-    const date = event.detectedAt.slice(0, 10);
-    const previous = lastDetection.get(event.repo);
-    if (previous === undefined || previous < date) lastDetection.set(event.repo, date);
-  }
-
-  const seen = new Set(existing.map((event) => event.id));
+  // Read the whole ledger, not this month's file. Scoped to one month, a spike
+  // detected on the 31st would drop back to `detected` on the 1st and
+  // confirmation would reset at every month boundary.
+  const allEvents = readAllEvents();
+  const lastDetection = lastDetectionByRepo(allEvents);
+  const seen = new Set(allEvents.map((event) => event.id));
   const events: EventRecord[] = [];
 
   for (const row of state) {

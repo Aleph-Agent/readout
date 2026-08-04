@@ -1,9 +1,9 @@
 # Unified Developer Signal Agent — Robinhood Chain
 
-One agent watches ~400 open-source repositories and reports five signals about
-them: Ships (releases), Forks (abnormal copying), Demand (what developers ask
-for), Stack (dependency migration), Lineage (model descent). One agent, one
-site, one token — not five products; if a task implies splitting, the task is wrong.
+One agent watches ~400 open-source repositories and reports five signals: Ships
+(releases), Forks (abnormal copying), Demand (developer requests), Stack
+(dependency migration), Lineage (model descent). One site, one token, not five —
+a task implying a split is wrong.
 
 ## Non-negotiables
 
@@ -13,7 +13,7 @@ site, one token — not five products; if a task implies splitting, the task is 
 4. **Never Vercel.** Its free tier forbids commercial use and this is commercial.
 5. **No wallet-connect on the site.** Contract address, copy button, nothing more.
 
-Code, comments, commits, and product copy in English. Conversation in Indonesian.
+Code, comments, commits, copy in English. Conversation in Indonesian.
 
 ## Skill routing by phase
 
@@ -37,22 +37,23 @@ If a phase's skills are not loaded, stop and load them before writing code.
 | Daily | 02:17 | `17 2 * * *` | Manifests, snapshot, prune |
 | Weekly | Sun 03:17 | `17 3 * * 0` | Lineage refresh |
 
-The `:17` offset avoids peak congestion — never `:00`. 4-hourly is the ceiling
-because Cloudflare Pages allows only 500 builds/month.
+The `:17` offset avoids peak congestion, never `:00`. 4-hourly is the ceiling: Pages allows 500 builds/month.
 
 ## Storage layout
 
 ```
 data/
 ├── live/state.jsonl          Overwritten each pulse. Sorted by repo id.
+├── live/window.jsonl         Timestamped fork samples. Rolling 24h delta.
 ├── history/YYYY-MM-DD.jsonl  Appended once daily. Immutable.
 ├── events/YYYY-MM.jsonl      Append-only. Never rewritten.
+├── summaries.jsonl           Generated prose by event id. Rewritable.
 ├── watchlist.jsonl           Committed. Changes are reviewed commits.
 └── meta.json                 Last run status.
 ```
 
-Sorted output with fixed key order is load-bearing: it keeps git diffs
-line-level, so unchanged repositories produce no delta.
+Sorted output with fixed key order keeps git diffs line-level. `window` and
+`summaries` were added in Prompts 2–3; MASTER.md Part 2 says why.
 
 Everything else — brief, architecture, full skill text, repository library map,
 build prompts, failure modes — is in `MASTER.md`.

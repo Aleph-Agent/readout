@@ -100,7 +100,7 @@ describe('pulse dry run', () => {
 
     // Two endpoints per repository: base, then releases.
     expect(meta.requestsConsumed).toBe(REPOS * 2);
-    expect(meta.reposUnchanged).toBe(0);
+    expect(meta.requestsUnchanged).toBe(0);
     expect(meta.reposChecked).toBe(REPOS);
     expect(ledger.readLiveState()).toHaveLength(REPOS);
   });
@@ -116,7 +116,7 @@ describe('pulse dry run', () => {
     const meta = await pulse('2026-08-04T08:17:00Z');
 
     expect(meta.requestsConsumed).toBe(0);
-    expect(meta.reposUnchanged).toBe(REPOS * 2);
+    expect(meta.requestsUnchanged).toBe(REPOS * 2);
     // The bar Prompt 2 sets is under 25. Conditional requests make it zero.
     expect(meta.requestsConsumed).toBeLessThan(25);
   });
@@ -155,10 +155,36 @@ describe('pulse dry run', () => {
     expect(ledger.readEvents('2026-08')).toHaveLength(REPOS);
   });
 
+  it('keeps a limited run limited on both endpoints', async () => {
+    // base carries forward every previously known row. Handing those to the
+    // release collector would make --limit=20 quietly hit four hundred release
+    // endpoints on a full watchlist.
+    ledger.writeWatchlist([
+      ...ledger.readWatchlist(),
+      { id: 'zz-extra/repo', category: 'devtool', added: '2026-08-04', active: true },
+    ]);
+
+    server.publish('v2.0.0');
+    const meta = await pulse('2026-08-05T00:17:00Z');
+
+    // Two calls for the one repository inside the limit, and nothing for the
+    // twenty carried-forward rows beyond it.
+    expect(meta.requestsConsumed + meta.requestsUnchanged).toBeLessThanOrEqual(REPOS * 2);
+  });
+
+  it('drops state rows for repositories removed from the watchlist', async () => {
+    const trimmed = ledger.readWatchlist().filter((entry) => entry.id !== 'owner00/repo');
+    ledger.writeWatchlist(trimmed);
+
+    await pulse('2026-08-05T04:17:00Z');
+
+    expect(ledger.readLiveState().map((row) => row.id)).not.toContain('owner00/repo');
+  });
+
   it('records the run in meta rather than in every state row', async () => {
     const meta = ledger.readMeta();
     expect(meta.job).toBe('pulse');
-    expect(meta.lastRunAt).toBe('2026-08-04T20:17:00.000Z');
+    expect(meta.lastRunAt).toBe('2026-08-05T04:17:00.000Z');
     expect(meta.partial).toBe(false);
   });
 });

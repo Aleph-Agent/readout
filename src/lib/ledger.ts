@@ -1,5 +1,6 @@
 import {
   appendJsonl,
+  conform,
   readJson,
   readJsonl,
   writeJson,
@@ -67,7 +68,10 @@ export function readActiveWatchlist(): WatchlistEntry[] {
 // --------------------------------------------------------------- live state
 
 export function readLiveState(): LiveStateRow[] {
-  return readJsonl<LiveStateRow>(LIVE_STATE_PATH);
+  // Conformed on the way in: the base collector carries unchanged rows forward
+  // verbatim, so a key left behind by a schema change would ride along into the
+  // next write and fail the key-order guard.
+  return readJsonl(LIVE_STATE_PATH).map((row) => conform<LiveStateRow>(row, LIVE_STATE_KEYS));
 }
 
 /** Overwritten every pulse. Sorted by repository id, duplicates rejected. */
@@ -81,7 +85,7 @@ export function writeLiveState(rows: readonly LiveStateRow[]): void {
 // ---------------------------------------------------- rolling sample window
 
 export function readWindow(): WindowRow[] {
-  return readJsonl<WindowRow>(WINDOW_PATH);
+  return readJsonl(WINDOW_PATH).map((row) => conform<WindowRow>(row, WINDOW_KEYS));
 }
 
 /** Sorted by repository id, duplicates rejected — same discipline as state. */
@@ -95,7 +99,7 @@ export function writeWindow(rows: readonly WindowRow[]): void {
 // ------------------------------------------------------------------ manifests
 
 export function readManifests(): ManifestRow[] {
-  return readJsonl<ManifestRow>(MANIFESTS_PATH);
+  return readJsonl(MANIFESTS_PATH).map((row) => conform<ManifestRow>(row, MANIFEST_KEYS));
 }
 
 export function writeManifests(rows: readonly ManifestRow[]): void {
@@ -201,7 +205,7 @@ export function appendEvents(month: string, events: readonly EventRecord[]): voi
 // ---------------------------------------------------------------- summaries
 
 export function readSummaries(): SummaryRecord[] {
-  return readJsonl<SummaryRecord>(SUMMARIES_PATH);
+  return readJsonl(SUMMARIES_PATH).map((row) => conform<SummaryRecord>(row, SUMMARY_KEYS));
 }
 
 /**
@@ -225,7 +229,18 @@ export function readSummarised(): Map<string, SummaryRecord> {
 
 /** Never null: a project that has not run yet still has an honest zero state. */
 export function readMeta(): MetaRecord {
-  return readJson<MetaRecord>(META_PATH) ?? { ...EMPTY_META };
+  const raw = readJson<Record<string, unknown>>(META_PATH);
+  if (raw === null) return { ...EMPTY_META };
+
+  // Start from the defaults, then take only declared keys that the file
+  // actually has. A field the file predates keeps its default; a field the
+  // schema no longer declares is dropped rather than carried into the next
+  // write, where the key-order guard would reject it.
+  const meta = { ...EMPTY_META } as Record<string, unknown>;
+  for (const key of META_KEYS) {
+    if (raw[key] !== undefined) meta[key] = raw[key];
+  }
+  return meta as unknown as MetaRecord;
 }
 
 export function writeMeta(meta: MetaRecord): void {

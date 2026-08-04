@@ -6,7 +6,7 @@
   "requestsConsumed": 0,
   "rateLimitRemaining": null,
   "reposChecked": 0,
-  "reposUnchanged": 0,
+  "requestsUnchanged": 0,
   "eventsDetected": 0,
   "collectorsErrored": [],
   "summariesGenerated": 0,

@@ -203,6 +203,28 @@ export function appendJsonl<T extends object>(
   appendFileSync(filePath, `${body}\n`, 'utf8');
 }
 
+/**
+ * Reshape a record read from disk to exactly the keys the schema declares.
+ *
+ * Renaming a field in code leaves the old name sitting in the committed file.
+ * Spreading that into the next write carries the stale key along, and the
+ * key-order guard rejects it — taking down a run that had nothing wrong with
+ * it. Dropping unknown keys on the way in makes a rename survivable: the file
+ * heals on the next write instead of blocking it.
+ *
+ * Keys the file is missing come back undefined, which serialises as null. A
+ * schema that grew a field reads old rows as having none, which is true.
+ */
+export function conform<T extends object>(
+  row: unknown,
+  keyOrder: readonly (keyof T & string)[],
+): T {
+  const source = (row ?? {}) as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const key of keyOrder) out[key] = source[key];
+  return out as T;
+}
+
 /** Read a single JSON object, or null when the file does not exist. */
 export function readJson<T>(filePath: string): T | null {
   if (!existsSync(filePath)) return null;

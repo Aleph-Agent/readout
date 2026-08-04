@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
@@ -247,6 +247,31 @@ describe('meta', () => {
 
     ledger.writeMeta(meta);
     expect(ledger.readMeta()).toEqual(meta);
+  });
+
+  it('drops a field the schema no longer declares', () => {
+    // This is not hypothetical. reposUnchanged was renamed to
+    // requestsUnchanged, the committed meta.json kept the old name, and the
+    // first real pipeline run died spreading it into the next write.
+    const path = join(dataDir, 'meta.json');
+    ledger.writeMeta(ledger.readMeta());
+    const raw = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+    writeFileSync(path, JSON.stringify({ ...raw, reposUnchanged: 372 }), 'utf8');
+
+    const meta = ledger.readMeta();
+    expect(Object.keys(meta)).not.toContain('reposUnchanged');
+    expect(() => ledger.writeMeta(meta)).not.toThrow();
+  });
+
+  it('keeps the default for a field the file predates', () => {
+    mkdirSync(dataDir, { recursive: true });
+    const path = join(dataDir, 'meta.json');
+    writeFileSync(path, JSON.stringify({ lastRunAt: '2026-08-04T02:17:00Z' }), 'utf8');
+
+    const meta = ledger.readMeta();
+    expect(meta.lastRunAt).toBe('2026-08-04T02:17:00Z');
+    expect(meta.requestsUnchanged).toBe(0);
+    expect(meta.collectorsErrored).toEqual([]);
   });
 
   it('writes stable bytes for the same record', () => {

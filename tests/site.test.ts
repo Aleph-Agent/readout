@@ -10,7 +10,18 @@ function meta(over: Partial<MetaRecord> = {}): MetaRecord {
 }
 
 function mark(over: Partial<StripMark> = {}): StripMark {
-  return { id: 'a/one', delta: 0, multiplier: 1, capped: false, state: 'quiet', forks: 100, ...over };
+  return {
+    id: 'a/one',
+    name: 'a/one',
+    delta: 0,
+    multiplier: 1,
+    capped: false,
+    state: 'quiet',
+    forks: 100,
+    stars: 1000,
+    language: 'TypeScript',
+    ...over,
+  };
 }
 
 function index(over: Partial<IndexBundle> = {}): IndexBundle {

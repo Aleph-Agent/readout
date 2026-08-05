@@ -18,8 +18,17 @@ import type { EventRecord } from '../types/events.ts';
 /** How long after a finding a release still counts as having followed it. */
 const FOLLOW_WINDOW_DAYS = 7;
 
-/** Below this many resolved findings the rate is noise, not a measurement. */
-const MIN_SAMPLE = 10;
+/**
+ * Below this many resolved findings the rate is noise rather than measurement.
+ *
+ * Set to five rather than ten, with the sample size always published beside it.
+ * Confirmed fork findings are rare by design, so a threshold of ten could keep
+ * the page silent for months — and a product that promises to score itself and
+ * then says nothing has made a promise it is not keeping. A small sample
+ * stated as small is more honest than silence that reads as having nothing to
+ * hide.
+ */
+const MIN_SAMPLE = 5;
 
 export interface Scorecard {
   /** Confirmed fork findings old enough for the window to have closed. */

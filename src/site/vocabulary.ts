@@ -85,6 +85,8 @@ const METRICS: Record<string, MetricLabel> = {
  */
 const NOT_A_MEASUREMENT = new Set(['scope', 'multiplierCapped', 'ratioCapped', 'withdrawn', 'reason', 'retractedTerm']);
 
+const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+
 export interface Reading {
   label: string;
   value: string;
@@ -99,7 +101,8 @@ export function readingsOf(event: EventRecord): Reading[] {
     if (NOT_A_MEASUREMENT.has(key)) continue;
 
     const known = METRICS[key];
-    const value = String(raw);
+    // A timestamp is a machine's way of writing a date. Readers want the day.
+    const value = ISO_TIMESTAMP.test(String(raw)) ? String(raw).slice(0, 10) : String(raw);
 
     if (known === undefined) {
       // An unmapped key is shown rather than dropped — losing a measurement is

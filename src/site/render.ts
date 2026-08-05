@@ -121,6 +121,7 @@ function scorecardHtml(index: IndexBundle): string {
     <strong>Our own record</strong>
     Of ${resolved} confirmed fork findings, ${followed} were followed by a release from the same
     repository within ${windowDays} days — ${(rate * 100).toFixed(0)}%.
+    ${resolved < 20 ? `That is ${resolved} findings, which is a small sample and should be read as one.` : ''}
     ${pending === 0 ? '' : `${pending} more are still inside the window.`}
     This measures co-occurrence, not cause, and it is published whatever it says.
   </div>`;
@@ -298,7 +299,16 @@ export function stripSvg(marks: readonly StripMark[], releasedToday: ReadonlySet
                 ? 'mark-growth'
                 : 'mark-quiet';
 
-      return `<rect class="${cls}" x="${x}" y="${(H - h).toFixed(2)}" width="${width.toFixed(3)}" height="${h.toFixed(2)}"><title>${esc(mark.id)} — ${esc(mark.state)}</title></rect>`;
+      // A confirmed anomaly beats, and its period comes from its own
+      // multiplier: the further above baseline, the faster. A quiet watchlist
+      // has nothing beating at all, which is the honest state of a quiet
+      // watchlist.
+      const beat =
+        cls === 'mark-confirmed' && mark.multiplier !== null
+          ? ` style="--beat:${Math.max(0.6, 3 - Math.log1p(mark.multiplier) / 2).toFixed(2)}s"`
+          : '';
+
+      return `<rect class="${cls}"${beat} x="${x}" y="${(H - h).toFixed(2)}" width="${width.toFixed(3)}" height="${h.toFixed(2)}"><title>${esc(mark.name)} — ${esc(mark.state)}</title></rect>`;
     })
     .join('');
 
@@ -379,7 +389,7 @@ function findingCard(event: EventRecord): string {
     .map((reading) => metric(reading.label, reading.value))
     .join('');
 
-  return `<article class="finding">
+  return `<article class="finding finding-${esc(event.confidence)}">
   <div class="finding-head">
     <span class="finding-repo">${repoLink(event.repo)}</span>
     <span class="label">${esc(SIGNAL_LABEL[event.kind])}</span>
@@ -410,6 +420,52 @@ function pendingNotice(lens: string): string {
 }
 
 // -------------------------------------------------------------------- pages
+
+/**
+ * The watchlist itself, as a readout.
+ *
+ * The homepage was three grey notices and an empty chart, which reads as a
+ * broken product rather than a working one. It was never short of data — 388
+ * repositories were being measured every four hours and none of them appeared
+ * anywhere. Density is what makes this look like an instrument, and the density
+ * was already collected.
+ *
+ * Busiest first, so the top of the page is where something is happening.
+ */
+function watchlistReadout(marks: readonly StripMark[]): string {
+  if (marks.length === 0) return '';
+
+  const SHOWN = 40;
+  const ranked = [...marks].sort(
+    (a, b) => (b.delta ?? -1) - (a.delta ?? -1) || b.forks - a.forks,
+  );
+
+  const rows = ranked
+    .slice(0, SHOWN)
+    .map(
+      (mark) => `<tr>
+      <td><a href="/repo/${esc(mark.id)}">${esc(mark.name)}</a></td>
+      <td class="dim">${esc(mark.language ?? '—')}</td>
+      <td class="n num">${mark.forks.toLocaleString('en')}</td>
+      <td class="n num">${mark.stars.toLocaleString('en')}</td>
+      <td class="n num">${mark.delta === null ? '<span class="dim">—</span>' : mark.delta}</td>
+      <td>${mark.state === 'quiet' ? '<span class="label dim">nominal</span>' : stateBadge(mark.state)}</td>
+    </tr>`,
+    )
+    .join('');
+
+  return `<div class="wrap"><table class="readout">
+  <caption class="label">Watchlist — ${marks.length} repositories, busiest ${Math.min(SHOWN, marks.length)} shown</caption>
+  <thead><tr>
+    <th scope="col">Repository</th><th scope="col">Language</th>
+    <th scope="col" class="n">Forks</th><th scope="col" class="n">Stars</th>
+    <th scope="col" class="n">Added</th><th scope="col">Reading</th>
+  </tr></thead>
+  <tbody>${rows}</tbody>
+</table></div>
+<p class="basis label">Added counts forks gained across the current observation window. A repository
+whose window has not filled yet shows no figure rather than a zero.</p>`;
+}
 
 export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
   const releasedToday = new Set(
@@ -451,7 +507,11 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     current: '/',
     index,
     meta,
-    body: `${stripSvg(index.strip, releasedToday)}\n${table}\n${formingNotice}\n${scorecardHtml(index)}`,
+    body: `${stripSvg(index.strip, releasedToday)}
+${table}
+${watchlistReadout(index.strip)}
+${formingNotice}
+${scorecardHtml(index)}`,
   });
 }
 

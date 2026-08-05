@@ -64,6 +64,11 @@ export interface StripMark {
   /** `forming` and `quiet` are the overwhelming majority. That is correct. */
   state: ConfidenceState | 'quiet';
   forks: number;
+  stars: number;
+  /** GitHub's primary-language guess. Null for repositories it cannot tell. */
+  language: string | null;
+  /** The name GitHub uses now, which is not always the id it is watched under. */
+  name: string;
 }
 
 export interface WatchlistSummary {

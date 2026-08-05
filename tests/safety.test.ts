@@ -5,7 +5,18 @@ import { stripSvg } from '../src/site/render.ts';
 import type { StripMark } from '../src/types/bundles.ts';
 
 function mark(over: Partial<StripMark> = {}): StripMark {
-  return { id: 'a/one', delta: 0, multiplier: 1, capped: false, state: 'quiet', forks: 10, ...over };
+  return {
+    id: 'a/one',
+    name: 'a/one',
+    delta: 0,
+    multiplier: 1,
+    capped: false,
+    state: 'quiet',
+    forks: 10,
+    stars: 100,
+    language: 'TypeScript',
+    ...over,
+  };
 }
 
 describe('repository id validation', () => {

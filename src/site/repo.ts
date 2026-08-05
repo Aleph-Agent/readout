@@ -85,6 +85,15 @@ function sparkline(series: readonly RepoSeriesPoint[], baselinePerDay: number | 
     })
     .join('');
 
+  // A line over the bars that draws in reading order on load. The dash length
+  // is the path length, so a longer series takes the same time to trace but
+  // covers more ground — the motion is the shape of this repository's history,
+  // not an effect applied to it.
+  const points = series
+    .map((point, i) => `${(i * step + width / 2).toFixed(2)},${(H - (point.added / peak) * H).toFixed(2)}`)
+    .join(' ');
+  const traceLength = Math.round(W * 1.3);
+
   const meanLine =
     baselinePerDay === null
       ? ''
@@ -98,6 +107,7 @@ function sparkline(series: readonly RepoSeriesPoint[], baselinePerDay: number | 
     <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
          aria-label="Daily fork additions from ${esc(first.date)} to ${esc(last.date)}. Peak ${peak} in one day.${baselinePerDay === null ? '' : ` Trailing mean ${baselinePerDay.toFixed(1)} per day.`}">
       ${bars}
+      <polyline class="trace" style="--len:${traceLength}" points="${points}" fill="none" stroke="var(--ink-700)" stroke-width="0.4" pathLength="${traceLength}"></polyline>
       ${meanLine}
     </svg>
     <div class="strip-scale">

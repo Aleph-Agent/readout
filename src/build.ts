@@ -305,6 +305,9 @@ function buildStrip(
       capped: verdict.multiplierCapped,
       state: verdict.state,
       forks: row.forks,
+      stars: row.stars,
+      language: row.language,
+      name: row.fullName ?? row.id,
     });
   }
 

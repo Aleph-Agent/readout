@@ -437,6 +437,22 @@ a:hover {
   gap: 10px;
 }
 
+/* A detection is one observation. It gets a card, because it is a finding, but
+   not the same weight as one that survived a second daily snapshot — a reader
+   skimming should be able to see the difference without reading the badge. */
+.finding-detected {
+  padding: 12px 0;
+  opacity: 0.82;
+}
+
+.finding-detected .finding-repo {
+  font-size: var(--t-base);
+}
+
+.finding-confirmed {
+  border-top-color: var(--ink-300);
+}
+
 .finding-head {
   display: flex;
   flex-wrap: wrap;
@@ -600,13 +616,57 @@ a:hover {
   }
 }
 
-/* No animation in this product encodes a value, so there is none to reduce.
-   The declaration stays as a guard against anyone adding decoration later. */
+/* ------------------------------------------------------------------ motion
+
+   Two animations, and both are readings.
+
+   The brief allows motion exactly where it encodes a value, and offers these
+   two by name: a pulse whose rate follows fork velocity, and a sparkline that
+   draws in reading order. The test it sets is whether the animation would look
+   identical with different data. Neither of these would — the pulse period
+   comes from the multiplier, so a 30x spike beats faster than a 5x one, and a
+   quiet watchlist has nothing beating at all.
+
+   That is also why the page is often still: stillness here means nothing has
+   crossed the threshold, which is information. Decoration that moved anyway
+   would be saying something untrue. */
+
+.mark-confirmed {
+  transform-box: fill-box;
+  transform-origin: center;
+  /* --beat is set per mark from its own multiplier. */
+  animation: beat var(--beat, 2s) ease-in-out infinite;
+}
+
+@keyframes beat {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Draws left to right, the order the axis is read in. */
+.chart svg .trace {
+  stroke-dasharray: var(--len, 200);
+  stroke-dashoffset: var(--len, 200);
+  animation: trace 1.1s ease-out forwards;
+}
+
+@keyframes trace {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

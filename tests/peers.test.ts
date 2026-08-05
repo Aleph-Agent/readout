@@ -133,6 +133,7 @@ describe('what it is allowed to say', () => {
     confidence: 'confirmed',
     summaryState: 'pending',
     summary: null,
+    summarySource: null,
     evidenceUrl: 'https://github.com/loud/repo',
     metrics: {
       forksAdded: 300,

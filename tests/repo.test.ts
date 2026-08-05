@@ -80,6 +80,7 @@ function event(over: Partial<EventRecord>): EventRecord {
     confidence: 'confirmed',
     summaryState: 'skipped',
     summary: null,
+    summarySource: null,
     evidenceUrl: 'https://github.com/a/one/releases/tag/v2.9.0',
     metrics: {},
     supersedes: null,

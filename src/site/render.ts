@@ -1,3 +1,4 @@
+import { COMPARISON, isCapped, readingsOf, SIGNAL_LABEL } from './vocabulary.ts';
 import type { Disclosure, IndexBundle, LensBundle, LensName, StripMark } from '../types/bundles.ts';
 import type { EventRecord } from '../types/events.ts';
 import type { MetaRecord } from '../types/meta.ts';
@@ -347,25 +348,48 @@ function metric(label: string, value: string): string {
  * The only card in the product: a confirmed event that has prose attached.
  * Everything else is a table row.
  */
-function findingCard(event: EventRecord): string {
-  const numbers = Object.entries(event.metrics)
-    .filter(([, value]) => value !== null && value !== '')
-    .slice(0, 5)
-    .map(([key, value]) => metric(key.replace(/([A-Z])/g, ' $1'), String(value)))
-    .join('');
+/**
+ * A sentence, and where it came from.
+ *
+ * A template restates the record and is certainly true. A model sentence is a
+ * reading of it. They arrived in the same typeface with nothing to tell them
+ * apart, which is precisely the distinction the reader most needs.
+ */
+export function proseHtml(event: EventRecord): string {
+  if (event.summary === null) return '';
 
-  const prose =
-    event.summary === null ? '' : `<p class="prose">${esc(event.summary)}</p>`;
+  const written = event.summarySource === 'model';
+  return `<div class="explains ${written ? 'explains-written' : 'explains-assembled'}">
+  <p class="prose">${esc(event.summary)}</p>
+  <span class="label">${written ? 'Written from the readings above' : 'Assembled from the readings above'}</span>
+</div>`;
+}
+
+/** The comparison a finding rests on, stated rather than left to be inferred. */
+export function basisHtml(event: EventRecord): string {
+  const basis = COMPARISON[event.kind];
+  if (basis === undefined) return '';
+  const capped = isCapped(event) ? ' The figure shown is a bound, not a measurement.' : '';
+  return `<p class="basis label">${esc(basis)}.${esc(capped)}</p>`;
+}
+
+function findingCard(event: EventRecord): string {
+  const numbers = readingsOf(event)
+    .slice(0, 5)
+    .map((reading) => metric(reading.label, reading.value))
+    .join('');
 
   return `<article class="finding">
   <div class="finding-head">
     <span class="finding-repo">${repoLink(event.repo)}</span>
+    <span class="label">${esc(SIGNAL_LABEL[event.kind])}</span>
     ${stateBadge(event.confidence)}
     <a class="label" href="/e/${esc(eventSlug(event.id))}">${esc(event.detectedAt.replace('T', ' ').slice(0, 16))} UTC</a>
     <a class="label" href="${esc(event.evidenceUrl)}">Evidence</a>
   </div>
+  ${basisHtml(event)}
   <div class="finding-metrics">${numbers}</div>
-  ${prose}
+  ${proseHtml(event)}
 </article>`;
 }
 

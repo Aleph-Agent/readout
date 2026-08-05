@@ -370,6 +370,38 @@ a:hover {
   content: '●';
 }
 
+/* --------------------------------------------------- measurement vs reading
+
+   The one distinction the reader most needs and the hardest to see: a sentence
+   assembled from the record is measurement restated, a sentence a model wrote
+   is a reading of it. Both are sentences. Only the marker separates them. */
+
+.basis {
+  margin: 0;
+  color: var(--ink-500);
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: var(--t-small);
+}
+
+.explains {
+  border-left: 2px solid var(--ink-200);
+  padding-left: 14px;
+  display: grid;
+  gap: 4px;
+}
+
+/* Assembled from the record. Certainly true, adds no reading of its own. */
+.explains-assembled {
+  border-left-style: solid;
+}
+
+/* Written by a model. Checked against the record, but still an interpretation,
+   and marked with a dashed edge so it is visibly a different kind of thing. */
+.explains-written {
+  border-left-style: dashed;
+}
+
 /* ------------------------------------------------------------------ panels */
 
 .notice {

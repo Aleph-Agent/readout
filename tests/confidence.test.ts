@@ -12,6 +12,7 @@ function spike(repo: string, detectedAt: string, confidence: EventRecord['confid
     confidence,
     summaryState: 'skipped',
     summary: null,
+    summarySource: null,
     evidenceUrl: `https://github.com/${repo}`,
     metrics: {},
     supersedes: null,

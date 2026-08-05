@@ -31,6 +31,7 @@ function spike(over: Partial<EventRecord> = {}): EventRecord {
     confidence: 'confirmed',
     summaryState: 'pending',
     summary: null,
+    summarySource: null,
     evidenceUrl: 'https://github.com/owner/repo',
     metrics: spikeMetrics,
     supersedes: null,

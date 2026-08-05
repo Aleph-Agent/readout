@@ -60,6 +60,7 @@ function releaseEvent(id: string, repo: string, detectedAt: string): EventRecord
     confidence: 'confirmed',
     summaryState: 'pending',
     summary: null,
+    summarySource: null,
     evidenceUrl: `https://github.com/${repo}/releases/tag/v1.0.0`,
     metrics: { tag: 'v1.0.0', forks: 10 },
     supersedes: null,

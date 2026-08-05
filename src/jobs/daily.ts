@@ -191,6 +191,7 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       // tomorrow should never have had a sentence written about it.
       summaryState: verdict.state === 'confirmed' ? 'pending' : 'skipped',
       summary: null,
+      summarySource: null,
       evidenceUrl: `https://github.com/${row.id}`,
       metrics: {
         forksAdded: verdict.delta,
@@ -308,6 +309,7 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       confidence: confirmed ? 'confirmed' : 'detected',
       summaryState: confirmed ? 'pending' : 'skipped',
       summary: null,
+      summarySource: null,
       evidenceUrl: `https://github.com/${peer.id}`,
       metrics: {
         forksAdded: peer.delta,

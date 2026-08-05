@@ -37,6 +37,7 @@ function event(id: string, summaryState: EventRecord['summaryState'] = 'pending'
     confidence: 'confirmed',
     summaryState,
     summary: null,
+    summarySource: null,
     evidenceUrl: 'https://github.com/owner/repo',
     metrics: METRICS,
     supersedes: null,

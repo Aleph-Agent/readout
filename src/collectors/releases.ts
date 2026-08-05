@@ -105,6 +105,7 @@ export async function collectReleases(
         // feed; the model is kept for signals that have a shape to describe.
         summaryState: 'skipped',
         summary: null,
+        summarySource: null,
         evidenceUrl: release.html_url,
         // The whole evidence base a summary is allowed to explain. Deliberately
         // no release notes: third-party prose is copyrighted, and it is also

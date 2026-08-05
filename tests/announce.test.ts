@@ -41,6 +41,7 @@ function finding(id: string, over: Partial<EventRecord> = {}): EventRecord {
     confidence: 'confirmed',
     summaryState: 'pending',
     summary: null,
+    summarySource: null,
     evidenceUrl: 'https://github.com/owner/repo',
     metrics: SPIKE_METRICS,
     supersedes: null,

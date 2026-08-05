@@ -1,4 +1,5 @@
-import { esc, eventSlug, layout, stateBadge } from './render.ts';
+import { basisHtml, esc, eventSlug, layout, proseHtml, stateBadge } from './render.ts';
+import { readingsOf, SIGNAL_LABEL } from './vocabulary.ts';
 import type { IndexBundle } from '../types/bundles.ts';
 import type { EventRecord } from '../types/events.ts';
 import type { MetaRecord } from '../types/meta.ts';
@@ -119,15 +120,12 @@ function gapLabel(newer: string, older: string): string {
 function timelineEntry(event: EventRecord, previous: EventRecord | undefined): string {
   const gap = previous === undefined ? '' : gapLabel(previous.detectedAt, event.detectedAt);
 
-  const metrics = Object.entries(event.metrics)
-    .filter(([, value]) => value !== null && value !== '')
+  const metrics = readingsOf(event)
     .map(
-      ([key, value]) =>
-        `<span class="tl-metric"><span class="label">${esc(key.replace(/([A-Z])/g, ' $1'))}</span> <span class="num">${esc(String(value))}</span></span>`,
+      (reading) =>
+        `<span class="tl-metric"><span class="label">${esc(reading.label)}</span> <span class="num">${esc(reading.value)}</span></span>`,
     )
     .join('');
-
-  const prose = event.summary === null ? '' : `<p class="prose">${esc(event.summary)}</p>`;
 
   return `${gap === '' ? '' : `<li class="tl-gap"><span class="label">${esc(gap)}</span></li>`}
   <li class="tl-entry">
@@ -137,12 +135,13 @@ function timelineEntry(event: EventRecord, previous: EventRecord | undefined): s
     </div>
     <div class="tl-body">
       <div class="finding-head">
-        <span class="label">${esc(event.kind)}</span>
+        <span class="label">${esc(SIGNAL_LABEL[event.kind])}</span>
         ${stateBadge(event.confidence)}
         <a class="label" href="${esc(event.evidenceUrl)}">Evidence</a>
       </div>
+      ${basisHtml(event)}
       <div class="tl-metrics">${metrics}</div>
-      ${prose}
+      ${proseHtml(event)}
     </div>
   </li>`;
 }

@@ -15,6 +15,7 @@ import {
   writeMeta,
 } from './lib/ledger.ts';
 import { lastDetectionByRepo } from './lib/confidence.ts';
+import { templatedSentence } from './lib/validate.ts';
 import { scoreFindings } from './lib/scorecard.ts';
 import { assertSafeRepoId, DIST_DATA_DIR, DIST_DIR, ROOT, utcDate } from './lib/paths.ts';
 import { eventSlug, renderIndex, renderLens } from './site/render.ts';
@@ -175,11 +176,26 @@ function applyCorrections(events: readonly EventRecord[]): EventRecord[] {
  */
 function withSummaries(events: readonly EventRecord[]): EventRecord[] {
   const overlay = readSummarised();
+
   return events.map((event) => {
     const summary = overlay.get(event.id);
-    return summary === undefined
+    if (summary !== undefined && summary.text !== null) {
+      return {
+        ...event,
+        summary: summary.text,
+        summaryState: summary.state,
+        summarySource: summary.source === 'model' ? 'model' : 'template',
+      };
+    }
+
+    // Everything else gets the templated sentence. It is assembled from the
+    // record and certainly true, and a finding that states itself in words is
+    // easier to read than one that leaves the reader to assemble the sentence
+    // out of labelled numbers. It is marked as assembled, not written.
+    const templated = templatedSentence(event);
+    return templated === null
       ? event
-      : { ...event, summary: summary.text, summaryState: summary.state };
+      : { ...event, summary: templated, summarySource: 'template' };
   });
 }
 

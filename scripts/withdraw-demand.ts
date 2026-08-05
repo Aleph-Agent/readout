@@ -64,6 +64,7 @@ const retractions: EventRecord[] = doomed.map<EventRecord>((event) => ({
   confidence: 'confirmed',
   summaryState: 'skipped',
   summary: null,
+  summarySource: null,
   evidenceUrl: event.evidenceUrl,
   metrics: {
     withdrawn: 'yes',

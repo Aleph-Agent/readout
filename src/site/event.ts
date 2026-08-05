@@ -1,4 +1,5 @@
-import { esc, eventSlug, layout, SITE_ORIGIN, stateBadge } from './render.ts';
+import { basisHtml, esc, eventSlug, layout, proseHtml, SITE_ORIGIN, stateBadge } from './render.ts';
+import { readingsOf } from './vocabulary.ts';
 import { templatedSentence } from '../lib/validate.ts';
 import type { IndexBundle } from '../types/bundles.ts';
 import type { EventRecord } from '../types/events.ts';
@@ -52,18 +53,14 @@ export function renderEventPage(
   index: IndexBundle,
   meta: MetaRecord,
 ): string {
-  const measurements = Object.entries(event.metrics)
-    .filter(([, value]) => value !== null && value !== '')
+  const measurements = readingsOf(event)
     .map(
-      ([key, value]) => `<div class="metric">
-      <span class="label">${esc(key.replace(/([A-Z])/g, ' $1'))}</span>
-      <span class="metric-value num">${esc(String(value))}</span>
+      (reading) => `<div class="metric">
+      <span class="label">${esc(reading.label)}</span>
+      <span class="metric-value num">${esc(reading.value)}</span>
     </div>`,
     )
     .join('');
-
-  // Generated prose stays visually apart from the measurements it explains.
-  const prose = event.summary === null ? '' : `<p class="prose">${esc(event.summary)}</p>`;
 
   const description = eventDescription(event);
 
@@ -79,10 +76,11 @@ export function renderEventPage(
     <a class="label" href="/repo/${esc(event.repo)}">All signals for this repository</a>
     <a class="label" href="${esc(event.evidenceUrl)}">Verify on GitHub</a>
   </div>
+  ${basisHtml(event)}
 </section>
 
 <div class="finding-metrics" style="padding-top:18px">${measurements}</div>
-${prose}
+${proseHtml(event)}
 
 <div class="notice">
   <strong>How to read this</strong>

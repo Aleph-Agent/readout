@@ -56,6 +56,7 @@ function event(id: string, kind: EventRecord['kind'] = 'release'): EventRecord {
     confidence: 'detected',
     summaryState: 'pending',
     summary: null,
+    summarySource: null,
     evidenceUrl: 'https://github.com/owner/repo/releases/tag/v1.0.0',
     metrics: { forks: 12, baseline: 3 },
     supersedes: null,

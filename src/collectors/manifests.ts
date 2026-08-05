@@ -117,6 +117,7 @@ export async function collectManifests(
         confidence: 'confirmed',
         summaryState: changes >= 2 ? 'pending' : 'skipped',
         summary: null,
+        summarySource: null,
         evidenceUrl: `https://github.com/${row.id}/blob/HEAD/${path}`,
         metrics: {
           manifest: path,

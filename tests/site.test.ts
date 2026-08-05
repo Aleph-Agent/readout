@@ -40,6 +40,7 @@ function event(over: Partial<EventRecord> = {}): EventRecord {
     confidence: 'confirmed',
     summaryState: 'summarised',
     summary: "Forks rose by 60 over 24 hours, 24× this repository's 19-day baseline.",
+    summarySource: 'model',
     evidenceUrl: 'https://github.com/a/one',
     metrics: { forksAdded: 60, observationHours: 24, multiplier: 24 },
     supersedes: null,
@@ -164,6 +165,72 @@ describe('retractions', () => {
 
   it('says nothing when nothing was withdrawn', () => {
     expect(renderLens(lens(), index(), meta(), COPY)).not.toContain('Withdrawn');
+  });
+});
+
+describe('telling one kind of claim from another', () => {
+  it('states which comparison a finding rests on', () => {
+    // fork-spike and fork-outlier are different claims resting on different
+    // evidence and available at different times. Rendered identically, a reader
+    // cannot tell whether 12x means twelve times this project's own history or
+    // twelve times the rest of its category.
+    const own = renderLens(lens({ records: [event()], count: 1 }), index(), meta(), COPY);
+    expect(own).toContain('own trailing baseline');
+
+    const peer = renderLens(
+      lens({ records: [event({ kind: 'fork-outlier' })], count: 1 }),
+      index(),
+      meta(),
+      COPY,
+    );
+    expect(peer).toContain('other repositories in its category');
+  });
+
+  it('marks a written sentence differently from an assembled one', () => {
+    const written = renderLens(
+      lens({ records: [event({ summarySource: 'model' })], count: 1 }),
+      index(),
+      meta(),
+      COPY,
+    );
+    const assembled = renderLens(
+      lens({ records: [event({ summarySource: 'template' })], count: 1 }),
+      index(),
+      meta(),
+      COPY,
+    );
+
+    expect(written).toContain('Written from the readings above');
+    expect(written).toContain('explains-written');
+    expect(assembled).toContain('Assembled from the readings above');
+    expect(assembled).toContain('explains-assembled');
+  });
+
+  it('says a bounded figure is bounded', () => {
+    const capped = event({ metrics: { multiplier: 50, multiplierCapped: 'yes' } });
+    const html = renderLens(lens({ records: [capped], count: 1 }), index(), meta(), COPY);
+    expect(html).toContain('a bound, not a measurement');
+  });
+
+  it('names measurements in words with their units', () => {
+    const html = renderLens(lens({ records: [event()], count: 1 }), index(), meta(), COPY);
+    expect(html).toContain('Forks added');
+    expect(html).toContain('Measured over');
+    expect(html).toContain('24 hours');
+    // Not a variable name.
+    expect(html).not.toContain('observation Hours');
+    expect(html).not.toContain('forksAdded');
+  });
+
+  it('keeps caveats out of the measurement tiles', () => {
+    // A caveat rendered as a tile makes a qualification look like a reading.
+    const html = renderLens(
+      lens({ records: [event({ metrics: { forksAdded: 60, scope: 'watchlist' } })], count: 1 }),
+      index(),
+      meta(),
+      COPY,
+    );
+    expect(html).not.toContain('>scope<');
   });
 });
 

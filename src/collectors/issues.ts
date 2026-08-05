@@ -122,6 +122,7 @@ export async function collectIssues(
       confidence: options.previousTerms.has(cluster.term) ? 'confirmed' : 'detected',
       summaryState: options.previousTerms.has(cluster.term) ? 'pending' : 'skipped',
       summary: null,
+      summarySource: null,
       evidenceUrl: cluster.topUrl,
       metrics: {
         term: cluster.term,

@@ -76,8 +76,20 @@ export interface EventRecord {
   detectedAt: string;
   confidence: ConfidenceState;
   summaryState: SummaryState;
-  /** Generated prose, or null. Only ever explains numbers in `metrics`. */
+  /** Prose, or null. Only ever explains numbers in `metrics`. */
   summary: string | null;
+  /**
+   * Where that sentence came from, so the page can say.
+   *
+   * `template` is measurement restated: assembled from the record, certainly
+   * true, adding no reading of its own. `model` is interpretation: a sentence
+   * somebody's model wrote, checked against the record but still a reading.
+   *
+   * They must not look alike. A reader has to be able to see where measurement
+   * ends and interpretation begins, and until this existed both arrived in the
+   * same typeface with nothing to tell them apart.
+   */
+  summarySource: 'model' | 'template' | null;
   /**
    * Where a reader verifies this themselves — the release page, the repository,
    * the manifest. Required: every claim links to its evidence.
@@ -96,6 +108,7 @@ export const EVENT_KEYS = [
   'confidence',
   'summaryState',
   'summary',
+  'summarySource',
   'evidenceUrl',
   'metrics',
   'supersedes',

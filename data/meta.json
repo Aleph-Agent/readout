@@ -1,16 +1,18 @@
 {
-  "lastRunAt": "2026-08-05T15:01:01.019Z",
-  "lastSuccessfulRunAt": "2026-08-05T15:01:01.019Z",
+  "lastRunAt": "2026-08-05T15:35:30.284Z",
+  "lastSuccessfulRunAt": "2026-08-05T15:35:30.284Z",
   "job": "pulse",
-  "partial": false,
-  "requestsConsumed": 13,
-  "rateLimitRemaining": 4802,
-  "reposChecked": 20,
-  "requestsUnchanged": 27,
+  "partial": true,
+  "requestsConsumed": 386,
+  "rateLimitRemaining": 4777,
+  "reposChecked": 400,
+  "requestsUnchanged": 413,
   "eventsDetected": 0,
-  "collectorsErrored": [],
+  "collectorsErrored": [
+    "summarise: GROQ_API_KEY is not set"
+  ],
   "summariesGenerated": 0,
   "insufficientRate": null,
-  "bundleHash": "f245532e0acfc38fd6e8612d83798a9d714bde0d58af66257bb474161f0ee3b9",
+  "bundleHash": "4008fd6e80a905a6f69a2898b5021e6e84f8597ec4c0c46a02d819b3cd795fd6",
   "deploySkipped": false
 }

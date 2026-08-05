@@ -34,8 +34,23 @@ function recordFailure(message: string): never {
 }
 
 const required = ['X_API_KEY', 'X_API_SECRET', 'X_ACCESS_TOKEN', 'X_ACCESS_SECRET'];
-const missing = required.filter((name) => (process.env[name] ?? '') === '');
-if (missing.length > 0) recordFailure(`missing credentials: ${missing.join(', ')}`);
+const configured = required.filter((name) => (process.env[name] ?? '') !== '');
+
+// Announcing is optional. With none of the credentials set this is a
+// deliberate choice, not a fault, and it must not raise a partial-run notice.
+// With some but not all of them set, something is half-wired and that is worth
+// saying out loud.
+if (configured.length === 0) {
+  console.log('No X credentials set — skipping announcements.');
+  console.log('Findings still publish on the site and in feed.xml.');
+  process.exit(0);
+}
+
+if (configured.length < required.length) {
+  recordFailure(
+    `partially configured: ${required.filter((n) => !configured.includes(n)).join(', ')} missing`,
+  );
+}
 
 const limit = numericFlag('limit');
 

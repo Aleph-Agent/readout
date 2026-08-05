@@ -44,7 +44,16 @@ function recordFailure(message: string): never {
 }
 
 const apiKey = process.env['GROQ_API_KEY'] ?? '';
-if (apiKey === '') recordFailure('GROQ_API_KEY is not set');
+
+// Not configured is not broken. Recording an absent key as a collector error
+// would put a permanent "this run was partial" notice on a site that is working
+// exactly as intended, and a warning that is always on is a warning nobody
+// reads. Findings publish with their numbers; only the prose is absent.
+if (apiKey === '') {
+  console.log('GROQ_API_KEY is not set — skipping summarisation.');
+  console.log('Findings still publish with their measurements. No prose is generated.');
+  process.exit(0);
+}
 
 const limit = numericFlag('limit');
 

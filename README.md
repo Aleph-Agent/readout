@@ -106,6 +106,15 @@ of repository inactivity, and that commit is what prevents it.
 | `CLOUDFLARE_API_TOKEN` | Cloudflare Pages: Edit |
 | `CLOUDFLARE_ACCOUNT_ID` | |
 | `GROQ_API_KEY` | Optional. Without it every reading still publishes, with numbers and no prose. |
+| `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET` | Optional. Without them confirmed findings still publish on the site and in the feed; they are simply not announced. |
+
+Both optional groups are genuinely optional: unset, their steps skip and say so.
+Nothing is marked as a failed run, because choosing not to configure something
+is not a fault, and a warning that is always on is a warning nobody reads.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
 
 ## Cost
 

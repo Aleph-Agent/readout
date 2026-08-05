@@ -128,7 +128,9 @@
     rgba(226, 96, 74, 0.13) 85%,
     transparent
   );
-  animation: sweep 11s linear infinite;
+  /* Slow on purpose. A fast pass behind a table of numbers reads as a loading
+     shimmer and pulls the eye off the figures. */
+  animation: sweep 19s linear infinite;
 }
 
 @keyframes sweep {

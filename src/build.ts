@@ -16,7 +16,14 @@ import {
 } from './lib/ledger.ts';
 import { lastDetectionByRepo } from './lib/confidence.ts';
 import { assertSafeRepoId, DIST_DATA_DIR, DIST_DIR, ROOT, utcDate } from './lib/paths.ts';
-import { renderIndex, renderLens } from './site/render.ts';
+import { eventSlug, renderIndex, renderLens } from './site/render.ts';
+import {
+  eventPath,
+  renderEventPage,
+  renderFeed,
+  renderRobots,
+  renderSitemap,
+} from './site/event.ts';
 import {
   baselineFromHistory,
   classifySpike,
@@ -471,6 +478,35 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   const deploy = previous.bundleHash !== bundleHash;
 
   emitted.set('meta.json', stableJson({ ...previous, bundleHash, deploySkipped: !deploy }));
+
+  // One page per finding. What anybody shares is a single reading, and until
+  // there is an address for one there is no way to send it to somebody.
+  // Retractions are excluded: a page per withdrawal is noise, and the count is
+  // already disclosed on the lens.
+  const addressable = events.filter(
+    (event) => !(event.kind === 'correction' && event.metrics['withdrawn'] === 'yes'),
+  );
+
+  const slugs = new Set<string>();
+  for (const event of addressable) {
+    const slug = eventSlug(event.id);
+    if (slugs.has(slug)) {
+      throw new Error(`build: two events share the slug "${slug}"; ids must stay distinguishable`);
+    }
+    slugs.add(slug);
+    pages.set(`e/${slug}.html`, renderEventPage(event, index, previous));
+  }
+
+  const sitemapPaths = [
+    '/',
+    ...LENSES.map((lens) => `/${lens}`),
+    ...watchlist.map((entry) => `/repo/${entry.id}`),
+    ...addressable.map((event) => eventPath(event)),
+  ];
+
+  pages.set('feed.xml', renderFeed(addressable, previous.lastSuccessfulRunAt ?? now.toISOString()));
+  pages.set('sitemap.xml', renderSitemap(sitemapPaths));
+  pages.set('robots.txt', renderRobots());
 
   // Rebuild from scratch so a file deleted from the source cannot survive as a
   // stale asset the site keeps serving.

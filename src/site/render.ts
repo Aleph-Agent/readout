@@ -118,22 +118,58 @@ function colophonHtml(index: IndexBundle, meta: MetaRecord): string {
 </footer>`;
 }
 
+/** Absolute origin, needed because link previews reject relative URLs. */
+export const SITE_ORIGIN = process.env['SITE_ORIGIN'] ?? 'https://readout-7pt.pages.dev';
+
 export interface PageOptions {
   title: string;
   current: string;
   index: IndexBundle;
   meta: MetaRecord;
   body: string;
+  /** One sentence for search results and link previews. */
+  description?: string;
+  /** Canonical path, e.g. `/e/release-ollama-ollama-v0-1`. */
+  path?: string;
+}
+
+/**
+ * A filesystem- and URL-safe name for an event.
+ *
+ * Event ids carry colons and slashes — `release:ollama/ollama:v0.12.1` — which
+ * are meaningful in the id and unusable in a path.
+ */
+export function eventSlug(id: string): string {
+  return id
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 120);
 }
 
 export function layout(options: PageOptions): string {
+  const description =
+    options.description ??
+    `Release, fork, demand, dependency and lineage readings across ${options.index.watchlist.active} open-source repositories.`;
+  const url = `${SITE_ORIGIN}${options.path ?? '/'}`;
+
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(options.title)}</title>
-<meta name="description" content="Release, fork, demand, dependency and lineage readings across ${options.index.watchlist.active} open-source repositories.">
+<meta name="description" content="${esc(description)}">
+<link rel="canonical" href="${esc(url)}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Readout">
+<meta property="og:title" content="${esc(options.title)}">
+<meta property="og:description" content="${esc(description)}">
+<meta property="og:url" content="${esc(url)}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="${esc(options.title)}">
+<meta name="twitter:description" content="${esc(description)}">
+<link rel="alternate" type="application/rss+xml" title="Readout findings" href="/feed.xml">
 <link rel="stylesheet" href="/site.css">
 </head>
 <body>
@@ -260,7 +296,7 @@ function findingCard(event: EventRecord): string {
   <div class="finding-head">
     <span class="finding-repo">${repoLink(event.repo)}</span>
     ${stateBadge(event.confidence)}
-    <span class="label">${esc(event.detectedAt.replace('T', ' ').slice(0, 16))} UTC</span>
+    <a class="label" href="/e/${esc(eventSlug(event.id))}">${esc(event.detectedAt.replace('T', ' ').slice(0, 16))} UTC</a>
     <a class="label" href="${esc(event.evidenceUrl)}">Evidence</a>
   </div>
   <div class="finding-metrics">${numbers}</div>

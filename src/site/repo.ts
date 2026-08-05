@@ -1,4 +1,4 @@
-import { esc, layout, stateBadge } from './render.ts';
+import { esc, eventSlug, layout, stateBadge } from './render.ts';
 import type { IndexBundle } from '../types/bundles.ts';
 import type { EventRecord } from '../types/events.ts';
 import type { MetaRecord } from '../types/meta.ts';
@@ -124,7 +124,7 @@ function timelineEntry(event: EventRecord, previous: EventRecord | undefined): s
   return `${gap === '' ? '' : `<li class="tl-gap"><span class="label">${esc(gap)}</span></li>`}
   <li class="tl-entry">
     <div class="tl-when">
-      <span class="num">${esc(event.detectedAt.slice(0, 10))}</span>
+      <a class="num" href="/e/${esc(eventSlug(event.id))}">${esc(event.detectedAt.slice(0, 10))}</a>
       <span class="num dim">${esc(event.detectedAt.slice(11, 16))} UTC</span>
     </div>
     <div class="tl-body">

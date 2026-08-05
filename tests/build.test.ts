@@ -236,7 +236,10 @@ describe('output hygiene', () => {
   it('emits a page per lens alongside the bundles', () => {
     const result = runBuild({ now: NOW });
     const pages = result.files
-      .filter((f) => f.name.endsWith('.html') && !f.name.startsWith('repo/'))
+      .filter(
+        (f) =>
+          f.name.endsWith('.html') && !f.name.startsWith('repo/') && !f.name.startsWith('e/'),
+      )
       .map((f) => f.name);
     expect(pages.sort()).toEqual([
       'demand.html',
@@ -246,6 +249,37 @@ describe('output hygiene', () => {
       'ships.html',
       'stack.html',
     ]);
+  });
+
+  it('gives every finding its own address, and none to retractions', () => {
+    // What anybody shares is one reading, so one reading needs a URL. A
+    // correction that replaces a claim is itself a finding and keeps its page;
+    // a withdrawal has nothing to show and the lens already counts it.
+    ledger.appendEvents('2026-08', [
+      {
+        ...releaseEvent('release:c/three:v9.0.0', 'c/three', '2026-08-04T11:00:00Z'),
+      },
+      {
+        ...releaseEvent('correction:withdrawn:1', 'c/three', '2026-08-04T11:30:00Z'),
+        kind: 'correction',
+        supersedes: 'release:c/three:v9.0.0',
+        metrics: { withdrawn: 'yes' },
+      },
+    ]);
+
+    const names = runBuild({ now: NOW }).files.map((f) => f.name);
+
+    expect(names.filter((n) => n.startsWith('e/')).length).toBeGreaterThan(0);
+    expect(names).not.toContain('e/correction-withdrawn-1.html');
+    // The claim it withdrew is gone too, since it was superseded.
+    expect(names).not.toContain('e/release-c-three-v9-0-0.html');
+  });
+
+  it('emits a feed, a sitemap, and robots so the site can be found and followed', () => {
+    const names = runBuild({ now: NOW }).files.map((f) => f.name);
+    expect(names).toContain('feed.xml');
+    expect(names).toContain('sitemap.xml');
+    expect(names).toContain('robots.txt');
   });
 
   it('emits a profile page for every watched repository, events or not', () => {

@@ -86,8 +86,19 @@ export interface Disclosure {
   minBaselineDays: number;
 }
 
+/** See `src/lib/scorecard.ts`. Published whatever it says. */
+export interface ScorecardSummary {
+  resolved: number;
+  followed: number;
+  rate: number | null;
+  windowDays: number;
+  pending: number;
+}
+
 export interface IndexBundle {
   strip: StripMark[];
+  /** How the project's own confirmed findings have held up so far. */
+  scorecard: ScorecardSummary;
   /** Everything detected today, across every lens, newest first. */
   today: EventRecord[];
   watchlist: WatchlistSummary;

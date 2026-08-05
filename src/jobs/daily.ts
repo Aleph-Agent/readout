@@ -1,3 +1,6 @@
+import { existsSync, readdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { collectIssues } from '../collectors/issues.ts';
 import { collectManifests } from '../collectors/manifests.ts';
 import { lastDetectionByRepo } from '../lib/confidence.ts';
@@ -16,7 +19,7 @@ import {
   writeMeta,
   writeSnapshot,
 } from '../lib/ledger.ts';
-import { utcDate, utcMonth } from '../lib/paths.ts';
+import { HISTORY_DIR, utcDate, utcMonth } from '../lib/paths.ts';
 import {
   classifySpike,
   DEFAULT_THRESHOLDS,
@@ -46,11 +49,46 @@ export interface DailyOptions {
   token?: string;
   /** Pre-built client, for tests that never reach the network. */
   client?: GitHubClient;
+  /** Days of daily-resolution history to keep before weekly thinning. */
+  retainDailyDays?: number;
   /**
    * Skip the two network collectors. Snapshot and spike classification read
    * only what the pulses already collected, so they still run.
    */
   offline?: boolean;
+}
+
+/** Days of daily-resolution history kept before weekly thinning begins. */
+const RETAIN_DAILY_DAYS = 90;
+
+/**
+ * Collapse old daily snapshots to one per week.
+ *
+ * Keeps the Monday of each week and removes the rest, but only beyond the
+ * retention window, so the trailing baseline never loses resolution it uses.
+ * Returns how many files were removed.
+ */
+function pruneHistory(now: Date, retainDays: number): number {
+  if (!existsSync(HISTORY_DIR)) return 0;
+
+  const cutoff = now.getTime() - retainDays * 86_400_000;
+  let removed = 0;
+
+  for (const name of readdirSync(HISTORY_DIR)) {
+    const match = /^(\d{4}-\d{2}-\d{2})\.jsonl$/.exec(name);
+    if (match === null) continue;
+
+    const date = new Date(`${match[1] as string}T00:00:00Z`);
+    if (date.getTime() >= cutoff) continue;
+    // getUTCDay: 1 is Monday. One kept sample per week, chosen by rule rather
+    // than by whichever file happened to be first.
+    if (date.getUTCDay() === 1) continue;
+
+    rmSync(join(HISTORY_DIR, name));
+    removed += 1;
+  }
+
+  return removed;
 }
 
 function daysBetween(from: string, to: string): number {
@@ -285,6 +323,15 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       supersedes: null,
     });
   }
+
+  // 4. Prune. Snapshots older than 90 days collapse to one per week.
+  //
+  //    Daily resolution matters for a trailing 30-day baseline and for nothing
+  //    else; past that the files are dead weight that every clone of this
+  //    repository has to carry forever. Events are never pruned — they are the
+  //    claims, and the audit trail only means something if it is complete.
+  const pruned = pruneHistory(now, options.retainDailyDays ?? RETAIN_DAILY_DAYS);
+  if (pruned > 0) console.log(`pruned ${pruned} daily snapshots older than 90 days`);
 
   if (events.length > 0) appendEvents(month, events);
 

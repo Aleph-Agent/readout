@@ -47,6 +47,18 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: node scripts/summarise.ts
 
+      - name: Announce confirmed findings
+        # Never blocks publishing, for the same reason summarisation does not.
+        # Only confirmed findings are eligible: a post is the one thing that
+        # cannot be taken back.
+        continue-on-error: true
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+        run: node scripts/announce.ts
+
       - name: Build bundles
         id: build
         run: node scripts/build.ts

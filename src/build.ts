@@ -15,6 +15,7 @@ import {
   writeMeta,
 } from './lib/ledger.ts';
 import { lastDetectionByRepo } from './lib/confidence.ts';
+import { scoreFindings } from './lib/scorecard.ts';
 import { assertSafeRepoId, DIST_DATA_DIR, DIST_DIR, ROOT, utcDate } from './lib/paths.ts';
 import { eventSlug, renderIndex, renderLens } from './site/render.ts';
 import {
@@ -383,6 +384,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
 
   const index: IndexBundle = {
     strip: buildStrip(now, lastDetectionByRepo(all), history),
+    scorecard: scoreFindings(all, now),
     today: events.filter((event) => event.detectedAt.slice(0, 10) === today),
     watchlist: {
       total: watchlist.length,

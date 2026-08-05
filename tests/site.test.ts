@@ -16,6 +16,7 @@ function mark(over: Partial<StripMark> = {}): StripMark {
 function index(over: Partial<IndexBundle> = {}): IndexBundle {
   return {
     strip: [],
+    scorecard: { resolved: 0, followed: 0, rate: null, windowDays: 7, pending: 0 },
     today: [],
     watchlist: { total: 400, active: 400, byCategory: { devtool: 400 } },
     lenses: {

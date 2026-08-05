@@ -9,6 +9,7 @@ import {
 import { existsSync, readdirSync } from 'node:fs';
 
 import {
+  ANNOUNCEMENTS_PATH,
   EVENTS_DIR,
   eventsPath,
   historyPath,
@@ -22,6 +23,7 @@ import {
 import { SUMMARY_KEYS, type SummaryRecord } from '../types/summaries.ts';
 import { WINDOW_KEYS, type WindowRow } from '../types/window.ts';
 import { MANIFEST_KEYS, type ManifestRow } from '../types/manifests.ts';
+import { ANNOUNCEMENT_KEYS, type AnnouncementRecord } from '../types/announcements.ts';
 import { EVENT_KEYS, type EventKind, type EventRecord } from '../types/events.ts';
 import { HISTORY_KEYS, type HistorySnapshotRow } from '../types/history.ts';
 import { EMPTY_META, META_KEYS, type MetaRecord } from '../types/meta.ts';
@@ -223,6 +225,21 @@ export function writeSummaries(rows: readonly SummaryRecord[]): void {
 /** Event ids that already have a summary outcome. Never re-summarise these. */
 export function readSummarised(): Map<string, SummaryRecord> {
   return new Map(readSummaries().map((row) => [row.eventId, row]));
+}
+
+// ------------------------------------------------------------ announcements
+
+export function readAnnouncements(): AnnouncementRecord[] {
+  return readJsonl(ANNOUNCEMENTS_PATH).map((row) =>
+    conform<AnnouncementRecord>(row, ANNOUNCEMENT_KEYS),
+  );
+}
+
+export function writeAnnouncements(rows: readonly AnnouncementRecord[]): void {
+  writeJsonl(ANNOUNCEMENTS_PATH, rows, ANNOUNCEMENT_KEYS, {
+    sortBy: (row) => row.eventId,
+    rejectDuplicates: true,
+  });
 }
 
 // --------------------------------------------------------------------- meta

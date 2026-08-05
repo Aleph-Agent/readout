@@ -98,6 +98,33 @@ function mastheadHtml(meta: MetaRecord, disclosure: Disclosure): string {
 </header>`;
 }
 
+/**
+ * The project's own record, stated whatever it says.
+ *
+ * A low rate is information about the detector, and a reader deserves it before
+ * being asked to believe the next finding.
+ */
+function scorecardHtml(index: IndexBundle): string {
+  const { resolved, followed, rate, windowDays, pending } = index.scorecard;
+
+  if (rate === null) {
+    return `<div class="notice">
+      <strong>Our own record</strong>
+      ${resolved} confirmed fork ${resolved === 1 ? 'finding has' : 'findings have'} been resolved so
+      far${pending === 0 ? '' : `, with ${pending} still inside the ${windowDays}-day window`}. Too
+      few to state a rate. It will appear here once there are enough, whatever it turns out to be.
+    </div>`;
+  }
+
+  return `<div class="notice">
+    <strong>Our own record</strong>
+    Of ${resolved} confirmed fork findings, ${followed} were followed by a release from the same
+    repository within ${windowDays} days — ${(rate * 100).toFixed(0)}%.
+    ${pending === 0 ? '' : `${pending} more are still inside the window.`}
+    This measures co-occurrence, not cause, and it is published whatever it says.
+  </div>`;
+}
+
 function colophonHtml(index: IndexBundle, meta: MetaRecord): string {
   const { disclosure, watchlist } = index;
 
@@ -362,7 +389,7 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     current: '/',
     index,
     meta,
-    body: `${stripSvg(index.strip, releasedToday)}\n${table}\n${formingNotice}`,
+    body: `${stripSvg(index.strip, releasedToday)}\n${table}\n${formingNotice}\n${scorecardHtml(index)}`,
   });
 }
 

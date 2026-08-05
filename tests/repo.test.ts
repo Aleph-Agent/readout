@@ -11,6 +11,7 @@ const meta: MetaRecord = { ...EMPTY_META, lastSuccessfulRunAt: '2026-08-04T04:17
 
 const index: IndexBundle = {
   strip: [],
+  scorecard: { resolved: 0, followed: 0, rate: null, windowDays: 7, pending: 0 },
   today: [],
   watchlist: { total: 400, active: 400, byCategory: {} },
   lenses: {

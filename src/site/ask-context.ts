@@ -19,11 +19,28 @@ import type { EventMetrics, EventRecord } from '../types/events.ts';
 import type { IndexBundle } from '../types/bundles.ts';
 import type { StripMark } from '../types/bundles.ts';
 
-/** Recent findings only. Older ones stay addressable at their own URLs. */
-const MAX_FINDINGS = 150;
+/**
+ * Recent findings only. Older ones stay addressable at their own URLs.
+ *
+ * The ceiling is not editorial, it is arithmetic. Groq's free tier allows 6,000
+ * tokens a minute and counts a single request against it, so a context that
+ * exceeds it is not throttled — it is refused outright, with a 413, every time.
+ * The first version shipped at 18KB and never answered anything.
+ */
+const MAX_FINDINGS = 50;
 
 /** Enough of the watchlist to answer "what is being watched" concretely. */
-const MAX_REPOS = 80;
+const MAX_REPOS = 30;
+
+/**
+ * Hard ceiling on the serialised context, in bytes.
+ *
+ * Asserted at build time rather than discovered in production. Roughly four
+ * bytes to the token, so this is about 3,000 tokens; the system prompt and the
+ * answer fit in the remainder with margin. The ledger only grows, and without
+ * this the endpoint would go quietly dead again on whichever day it crossed.
+ */
+export const MAX_CONTEXT_BYTES = 12_000;
 
 export interface AskFinding {
   date: string;
@@ -32,8 +49,16 @@ export interface AskFinding {
   confidence: string;
   /** The sentence already published for this finding, whatever its source. */
   reading: string | null;
-  metrics: EventMetrics;
-  url: string;
+  /**
+   * Omitted when a reading exists.
+   *
+   * The published sentence is assembled from these same values and states all
+   * of them, so carrying both doubles the cost of the finding to say it twice.
+   * When there is no sentence, the metrics are the only record of the numbers
+   * and every one of them has to be here — the answer is allowed to quote a
+   * figure only if it appears in this file.
+   */
+  metrics?: EventMetrics;
 }
 
 export interface AskRepo {
@@ -112,17 +137,16 @@ export function buildAskContext(
   const recent = [...findings]
     .sort((a, b) => (a.detectedAt < b.detectedAt ? 1 : a.detectedAt > b.detectedAt ? -1 : 0))
     .slice(0, MAX_FINDINGS)
-    .map(
-      (event): AskFinding => ({
+    .map((event): AskFinding => {
+      const base = {
         date: event.detectedAt.slice(0, 10),
         kind: event.kind,
         repo: event.repo,
         confidence: event.confidence,
         reading: event.summary,
-        metrics: event.metrics,
-        url: event.evidenceUrl,
-      }),
-    );
+      };
+      return event.summary === null ? { ...base, metrics: event.metrics } : base;
+    });
 
   const repositories = [...strip]
     .sort((a, b) => (b.delta ?? -1) - (a.delta ?? -1) || b.forks - a.forks)
@@ -140,7 +164,7 @@ export function buildAskContext(
 
   const { resolved, followed, rate, windowDays } = index.scorecard;
 
-  return {
+  const context: AskContext = {
     generatedAt,
     instrument: {
       watching: index.watchlist.active,
@@ -158,4 +182,19 @@ export function buildAskContext(
     findings: recent,
     repositories,
   };
+
+  // The budget is bytes, not rows. A count-based cap only holds while the
+  // sentences stay the length they are today: fifty findings fit now and would
+  // not if the summariser grew wordier, and the failure that produces is a 413
+  // on every question rather than anything visible in the build. Findings are
+  // dropped oldest-first until it fits, because the newest are what get asked
+  // about and every one of them stays addressable at its own URL regardless.
+  while (
+    context.findings.length > 1 &&
+    Buffer.byteLength(JSON.stringify(context), 'utf8') > MAX_CONTEXT_BYTES
+  ) {
+    context.findings.pop();
+  }
+
+  return context;
 }

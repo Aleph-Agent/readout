@@ -18,7 +18,7 @@ import { lastDetectionByRepo } from './lib/confidence.ts';
 import { templatedSentence } from './lib/validate.ts';
 import { scoreFindings } from './lib/scorecard.ts';
 import { assertSafeRepoId, DIST_DATA_DIR, DIST_DIR, ROOT, utcDate } from './lib/paths.ts';
-import { buildAskContext } from './site/ask-context.ts';
+import { buildAskContext, MAX_CONTEXT_BYTES } from './site/ask-context.ts';
 import { eventSlug, renderIndex, renderLens } from './site/render.ts';
 import {
   eventPath,
@@ -470,10 +470,22 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   // like every other bundle: the endpoint fetches it from this same deployment,
   // so the model's grounding is a URL anybody can open and check against the
   // answer they were given.
-  emitted.set(
-    'ask-context.json',
-    stableJson(buildAskContext(index, addressable, index.strip, now.toISOString())),
-  );
+  const askContext = stableJson(buildAskContext(index, addressable, index.strip, now.toISOString()));
+
+  // Asserted here rather than discovered in production. Groq's free tier counts
+  // a single request against a 6,000-token-per-minute allowance and refuses
+  // anything over it outright — not throttled, refused, every time. The first
+  // version of this file shipped at 18KB and the endpoint never answered once.
+  // The ledger only grows, so without this it would go quietly dead again on
+  // whichever day it crossed back over.
+  if (Buffer.byteLength(askContext, 'utf8') > MAX_CONTEXT_BYTES) {
+    throw new Error(
+      `build: ask-context.json is ${Buffer.byteLength(askContext, 'utf8')} bytes, over the ` +
+        `${MAX_CONTEXT_BYTES} the answer endpoint can send. Lower MAX_FINDINGS in ask-context.ts.`,
+    );
+  }
+
+  emitted.set('ask-context.json', askContext);
 
   const previous = readMeta();
 

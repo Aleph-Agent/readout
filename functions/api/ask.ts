@@ -216,6 +216,13 @@ export async function onRequestPost(context: PagesContext): Promise<Response> {
     if (upstream.status === 429) {
       return json({ error: 'The answer box is busy. Try again in a minute.' }, 429);
     }
+    // Groq answers 413, not 429, when one request exceeds the per-minute token
+    // allowance. It is the same condition and the reader should hear the same
+    // thing; the build asserts the record stays small enough that this only
+    // ever means contention.
+    if (upstream.status === 413) {
+      return json({ error: 'The answer box is busy. Try again in a minute.' }, 429);
+    }
     if (!upstream.ok) {
       // The upstream status is carried out rather than swallowed. A generic
       // "unavailable" cost an hour of guessing the first time this failed, and

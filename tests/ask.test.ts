@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildAskContext } from '../src/site/ask-context.ts';
+import { buildAskContext, MAX_CONTEXT_BYTES } from '../src/site/ask-context.ts';
 import { extractNumbers } from '../src/lib/validate.ts';
 import type { EventRecord } from '../src/types/events.ts';
 import type { IndexBundle, StripMark } from '../src/types/bundles.ts';
@@ -111,13 +111,30 @@ describe('what the model is allowed to see', () => {
     expect(context.findings.map((finding) => finding.repo)).toEqual(['new/one', 'old/one']);
   });
 
-  it('stays bounded as the ledger grows', () => {
-    // The endpoint pays for every byte it sends and the free tier is the
-    // budget. Older findings stay addressable at their own URLs.
+  it('stays under the size the endpoint can actually send', () => {
+    // Not editorial, arithmetic. Groq's free tier counts one request against a
+    // 6,000-token minute and refuses anything over it outright — 413, every
+    // time. The first version shipped at 18KB and never answered once.
     const many = Array.from({ length: 400 }, (_, i) =>
       event({ id: `e${i}`, detectedAt: `2026-08-04T04:${String(i % 60).padStart(2, '0')}:00.000Z` }),
     );
-    expect(buildAskContext(index(), many, [], NOW).findings.length).toBeLessThanOrEqual(150);
+    const marks = Array.from({ length: 400 }, (_, i) => mark({ id: `r${i}`, name: `owner${i}/repo` }));
+    const serialised = JSON.stringify(buildAskContext(index(), many, marks, NOW));
+
+    expect(Buffer.byteLength(serialised, 'utf8')).toBeLessThanOrEqual(MAX_CONTEXT_BYTES);
+  });
+
+  it('does not carry the metrics twice when a reading already states them', () => {
+    // The published sentence is assembled from the metrics and states all of
+    // them. Carrying both doubles the cost of a finding to say it twice.
+    const summarised = buildAskContext(index(), [event()], [], NOW).findings[0];
+    expect(summarised?.metrics).toBeUndefined();
+    expect(summarised?.reading).toContain('60');
+
+    // With no sentence, the metrics are the only record of the numbers, and
+    // the answer may only quote a figure that appears in this file.
+    const bare = buildAskContext(index(), [event({ summary: null })], [], NOW).findings[0];
+    expect(bare?.metrics?.['forksAdded']).toBe(60);
   });
 });
 

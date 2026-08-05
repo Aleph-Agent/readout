@@ -18,6 +18,7 @@ import { lastDetectionByRepo } from './lib/confidence.ts';
 import { templatedSentence } from './lib/validate.ts';
 import { scoreFindings } from './lib/scorecard.ts';
 import { assertSafeRepoId, DIST_DATA_DIR, DIST_DIR, ROOT, utcDate } from './lib/paths.ts';
+import { buildAskContext } from './site/ask-context.ts';
 import { eventSlug, renderIndex, renderLens } from './site/render.ts';
 import {
   eventPath,
@@ -464,6 +465,15 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   };
 
   emitted.set('index.json', stableJson(index));
+
+  // What the ask endpoint is allowed to answer from. Published as a static file
+  // like every other bundle: the endpoint fetches it from this same deployment,
+  // so the model's grounding is a URL anybody can open and check against the
+  // answer they were given.
+  emitted.set(
+    'ask-context.json',
+    stableJson(buildAskContext(index, addressable, index.strip, now.toISOString())),
+  );
 
   const previous = readMeta();
 

@@ -1,0 +1,26 @@
+{
+  // The Pages Function runs on workerd, not Node, and the two global sets
+  // conflict — both define fetch, Request and Response with different shapes.
+  // They cannot share a tsconfig, so the endpoint gets its own and CI runs
+  // both. Untyped was the alternative, and this file holds an API key.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "types": ["@cloudflare/workers-types"],
+
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noEmit": true,
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true
+  },
+  "include": ["functions/**/*.ts"]
+}

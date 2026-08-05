@@ -1329,3 +1329,45 @@ cannot copy without also being honest.
 | Pages build quota exhausted | Build gate skips deployment when output is unchanged. |
 | Groq quota exhausted during development | Develop prompts against a local model first. |
 | Published claim turns out wrong | Append a correction event. Never delete, never force push. |
+| Ask endpoint quota drained by one client | Per-IP, per-colo limit through the cache API; identical questions answered from cache. |
+| Ask endpoint down or out of quota | It answers with the reason and the site is untouched. No page may depend on it. |
+
+---
+
+# PART 9 — THE ASK ENDPOINT
+
+Part 1 states that no LLM call happens on the visitor path, ever. `/api/ask`
+breaks that. The maintainer asked for a live answer box, was shown what it
+costs and what it puts at risk, and chose it anyway. That is theirs to choose.
+This part records the decision and the fence built around it, so the rule and
+the exception are written in the same place rather than the code quietly
+contradicting the spec.
+
+**What it is.** One Cloudflare Pages Function at `/api/ask`. POST a question,
+get at most three sentences back. Free tier on both sides: Pages Functions
+allow 100,000 requests a day and Groq's free tier covers the model.
+
+**What grounds it.** `/data/ask-context.json`, built by the same build step as
+every other bundle and served from the same deployment. It carries the recent
+findings, the busiest repositories, the instrument's disclosures, and its own
+stated limits. The model is given that file and told to answer from nothing
+else. Because it is a published URL, a reader can open the grounding and check
+any answer against it.
+
+**What guarantees it.** The anchoring rule from Prompt 3, applied a second time
+and at a second place: every numeric token in the answer must appear in the
+context, or the answer is discarded and the reader is told it was discarded.
+A refusal that is certainly true beats a fluent answer that might not be.
+
+**What it must never become.** Not a chat — no history, no persona, no session.
+Not a route to anything: every reading it can describe is already on the page
+under it, and the box is hidden entirely when scripting is off. Not a place
+that predicts, ranks, advises on buying or selling, or claims cause.
+
+**The limits, honestly.** The rate limiter is per IP and per colo, which is
+approximate by construction — exact counting needs durable storage and durable
+storage is not free. The Cache API is a no-op on `*.pages.dev`, so on the
+current hostname neither the limiter nor the answer cache does anything; both
+begin working when a custom domain is attached. Until then the real ceiling is
+Groq's own rate limit, which the endpoint surfaces as "busy, try again" rather
+than swallowing.

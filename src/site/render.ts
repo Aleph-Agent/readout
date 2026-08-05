@@ -60,6 +60,82 @@ for (const el of document.querySelectorAll('[data-at]')) {
   }
 }`.trim();
 
+/**
+ * The answer box.
+ *
+ * Progressive enhancement, and strictly so: without scripting the form is
+ * inert and says why, and every reading it could have described is on the page
+ * underneath it anyway. Nothing here is the only route to anything.
+ */
+const ASK_SCRIPT = `
+const form = document.getElementById('ask-form');
+if (form) {
+  const field = form.querySelector('input');
+  const button = form.querySelector('button');
+  const out = document.getElementById('ask-answer');
+  form.hidden = false;
+
+  for (const example of form.querySelectorAll('.ask-example')) {
+    example.addEventListener('click', () => {
+      field.value = example.textContent;
+      form.requestSubmit();
+    });
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const question = field.value.trim();
+    if (question === '') return;
+
+    button.disabled = true;
+    out.hidden = false;
+    out.className = 'ask-answer ask-waiting';
+    out.textContent = 'Reading the record…';
+
+    try {
+      const res = await fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ question }),
+      });
+      const data = await res.json();
+      out.className = res.ok ? 'ask-answer' : 'ask-answer ask-declined';
+      out.textContent = res.ok ? data.answer : data.error;
+    } catch {
+      out.className = 'ask-answer ask-declined';
+      out.textContent = 'The answer box could not be reached. Every reading it draws on is on this page.';
+    } finally {
+      button.disabled = false;
+    }
+  });
+}`.trim();
+
+/** Questions that demonstrate the shape of what the record can answer. */
+const ASK_EXAMPLES = [
+  'What has released a new version recently?',
+  'Which repositories gained the most forks?',
+  'What can this instrument not tell me?',
+];
+
+function askHtml(): string {
+  const examples = ASK_EXAMPLES.map(
+    (question) => `<button type="button" class="ask-example">${esc(question)}</button>`,
+  ).join('');
+
+  return `<form class="ask" id="ask-form" hidden>
+    <div class="ask-row">
+      <input type="text" name="question" maxlength="280" autocomplete="off"
+             aria-label="Ask a question about these readings"
+             placeholder="Ask about the readings on this page…">
+      <button type="submit">Ask</button>
+    </div>
+    <div class="ask-examples">${examples}</div>
+  </form>
+  <output class="ask-answer" id="ask-answer" hidden></output>
+  <noscript><p class="notice">The answer box needs scripting. Everything it draws on is on this
+  page and in <a href="/data/ask-context.json">the record it reads</a>.</p></noscript>`;
+}
+
 function navHtml(current: string, lenses: IndexBundle['lenses']): string {
   const items = NAV.map((item) => {
     const pending = item.lens !== null && lenses[item.lens].status === 'pending';
@@ -231,7 +307,8 @@ ${navHtml(options.current, options.index.lenses)}
 ${options.body}
 </main>
 ${colophonHtml(options.index, options.meta)}
-<script>${AGE_SCRIPT}</script>${analyticsHtml()}
+<script>${AGE_SCRIPT}
+${ASK_SCRIPT}</script>${analyticsHtml()}
 </body>
 </html>
 `;
@@ -612,12 +689,13 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     index,
     meta,
     body: `${heroHtml(index, meta)}
-${band('01', 'Readings', lensesHtml(index), 'What each of the five readings answers, and how many findings each has on record.')}
-${band('02', 'Fork velocity', stripSvg(index.strip, releasedToday), `One mark per repository, each measured against its own trailing baseline rather than against the others.`)}
-${band('03', 'Today', `${table}${formingNotice}`, 'Everything detected since midnight UTC. Empty is the ordinary state and is reported as such.')}
-${band('04', 'Watchlist', watchlistReadout(index.strip), 'Every repository being read, ordered by what it gained across the current window.')}
-${band('05', 'Our record', scorecardHtml(index), 'How often this instrument has been right, published whatever it says.')}
-${band('06', 'The token', tokenHtml(), 'What funds this, stated before anyone has to ask.')}`,
+${band('01', 'Ask', askHtml(), 'Answered from the readings below and from nothing else. Any figure not in the record is discarded rather than smoothed over.')}
+${band('02', 'Readings', lensesHtml(index), 'What each of the five readings answers, and how many findings each has on record.')}
+${band('03', 'Fork velocity', stripSvg(index.strip, releasedToday), `One mark per repository, each measured against its own trailing baseline rather than against the others.`)}
+${band('04', 'Today', `${table}${formingNotice}`, 'Everything detected since midnight UTC. Empty is the ordinary state and is reported as such.')}
+${band('05', 'Watchlist', watchlistReadout(index.strip), 'Every repository being read, ordered by what it gained across the current window.')}
+${band('06', 'Our record', scorecardHtml(index), 'How often this instrument has been right, published whatever it says.')}
+${band('07', 'The token', tokenHtml(), 'What funds this, stated before anyone has to ask.')}`,
   });
 }
 

@@ -327,12 +327,13 @@ describe('telling a first-time visitor what this is', () => {
     );
 
     for (const [no, name] of [
-      ['01', 'Readings'],
-      ['02', 'Fork velocity'],
-      ['03', 'Today'],
-      ['04', 'Watchlist'],
-      ['05', 'Our record'],
-      ['06', 'The token'],
+      ['01', 'Ask'],
+      ['02', 'Readings'],
+      ['03', 'Fork velocity'],
+      ['04', 'Today'],
+      ['05', 'Watchlist'],
+      ['06', 'Our record'],
+      ['07', 'The token'],
     ]) {
       expect(html).toContain(`<span class="band-no num">${no}</span>`);
       expect(html).toContain(`<h2 class="band-name">${name}</h2>`);

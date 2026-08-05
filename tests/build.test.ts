@@ -77,10 +77,13 @@ beforeAll(() => {
 });
 
 describe('bundle emission', () => {
-  it('emits one bundle per lens, plus an index and meta', () => {
+  it('emits one bundle per lens, plus an index, meta, and the ask record', () => {
     runBuild({ now: NOW });
     const names = readdirSync(DIST_DATA).sort();
     expect(names).toEqual([
+      // What the answer endpoint is allowed to answer from. Published rather
+      // than held server-side, so the grounding is checkable by the reader.
+      'ask-context.json',
       'demand.json',
       'forks.json',
       'index.json',

@@ -8,7 +8,9 @@ a task implying a split is wrong.
 ## Non-negotiables
 
 1. **$0 infrastructure.** Cloudflare Pages, GitHub Actions, Groq free tier.
-2. **Static-first.** No database read and no LLM call on the visitor path, ever.
+2. **Static-first.** Every page and bundle is a file. One exception, `/api/ask`
+   — overruled by the maintainer, scoped in MASTER.md Part 9. No page may
+   depend on it.
 3. **Public agent repository.** Free Actions minutes; the commit log is the credibility argument.
 4. **Never Vercel.** Its free tier forbids commercial use and this is commercial.
 5. **No wallet-connect on the site.** Contract address, copy button, nothing more.
@@ -36,8 +38,9 @@ If a phase's skills are not loaded, stop and load them before writing code.
 | Pulse | every 4h | `17 */4 * * *` | Repo base + releases |
 | Daily | 02:17 | `17 2 * * *` | Manifests, snapshot, prune |
 | Weekly | Sun 03:17 | `17 3 * * 0` | Lineage refresh |
+| Configure Pages | — | dispatch only | Push the Groq key into the Pages project |
 
-The `:17` offset avoids peak congestion, never `:00`. 4-hourly is the ceiling: Pages allows 500 builds/month.
+The `:17` offset avoids peak congestion. 4-hourly is the ceiling: Pages allows 500 builds/month.
 
 ## Storage layout
 
@@ -55,5 +58,5 @@ data/
 
 Sorted output with fixed key order keeps git diffs line-level. `window`, `summaries`, and `manifests` were added during the build; MASTER.md Part 2 says why.
 
-Everything else — brief, architecture, full skill text, repository library map,
-build prompts, failure modes — is in `MASTER.md`.
+Everything else — brief, architecture, skills, library map, build prompts, the
+ask endpoint, failure modes — is in `MASTER.md`.

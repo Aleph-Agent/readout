@@ -1,0 +1,253 @@
+/**
+ * The one dynamic endpoint on the site.
+ *
+ * Everything else here is a static file, and that is a stated non-negotiable:
+ * no database read and no LLM call on the visitor path. This breaks it, at the
+ * maintainer's explicit instruction and on their call, and the rest of this
+ * file is the work of breaking it as narrowly as possible.
+ *
+ * What that means concretely:
+ *
+ *   - The model answers from `/data/ask-context.json` and nothing else. That
+ *     file is served from this same deployment, so a reader can open the
+ *     grounding and check the answer against it.
+ *   - Every number in the answer must appear in that context. This is the same
+ *     anchoring rule the build-time summariser has enforced since Prompt 4, and
+ *     the same failure mode: on a mismatch the answer is discarded rather than
+ *     softened. A refusal that is certainly true beats a fluent answer that
+ *     might not be.
+ *   - Identical questions are answered from the edge cache, so a question asked
+ *     a thousand times costs one call.
+ *   - Each colo rate-limits by IP through the cache API, which needs no KV, no
+ *     D1, and no paid binding.
+ *   - If any of it fails — quota, outage, timeout — the endpoint says so and
+ *     the site is untouched, because the site never depended on it.
+ */
+
+import { extractNumbers } from '../../src/lib/validate.ts';
+
+interface Env {
+  GROQ_API_KEY?: string;
+}
+
+interface PagesContext {
+  request: Request;
+  env: Env;
+  waitUntil: (promise: Promise<unknown>) => void;
+}
+
+/** Small, fast, and inside the free tier's per-minute allowance. */
+const MODEL = 'llama-3.1-8b-instant';
+
+const MAX_QUESTION = 280;
+const MAX_ANSWER_TOKENS = 320;
+
+/** Per IP, per colo, per window. Generous for a reader, useless for a scraper. */
+const RATE_LIMIT = 12;
+const RATE_WINDOW_SECONDS = 300;
+
+/** How long an identical question keeps its answer. */
+const ANSWER_TTL_SECONDS = 900;
+
+/** Groq is not allowed to hold the request open indefinitely. */
+const UPSTREAM_TIMEOUT_MS = 12_000;
+
+const SYSTEM_PROMPT = `You answer questions about a measurement instrument called Readout, using only the JSON record you are given.
+
+The record contains every finding this instrument has published, the repositories it watches, and its own stated limits.
+
+Rules, in order of importance:
+
+1. Answer only from the record. If the record does not contain the answer, say so plainly in one sentence and stop. Never reason from anything you know outside it.
+2. Never write a number that does not appear in the record. Not an estimate, not a rounding, not a total you computed yourself. If you want to state a quantity, it must already be there.
+3. Never claim cause. This instrument measures co-occurrence. "X released after Y" is in the record; "X released because of Y" is not.
+4. Never predict, never rank projects as better or worse, never advise anyone to buy or sell anything.
+5. When the record's limits are relevant to the question, state the limit rather than working around it. The limits are in the record under instrument.limits.
+6. Three sentences at most. Plain declarative English. No exclamation marks, no bullet points, no markdown, no preamble like "Based on the record".
+
+Name repositories exactly as the record spells them.`;
+
+function json(body: unknown, status = 200, extra: Record<string, string> = {}): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      ...extra,
+    },
+  });
+}
+
+/**
+ * A per-IP counter held in the edge cache.
+ *
+ * Not exact, and not meant to be: each colo counts independently and the window
+ * is a TTL rather than a sliding count. It is enough to stop one client from
+ * draining a shared free-tier quota, which is the actual threat. Anything more
+ * precise needs durable storage, and durable storage is not free.
+ */
+async function overRateLimit(ip: string): Promise<boolean> {
+  const cache = caches.default;
+  const key = new Request(`https://ratelimit.invalid/${encodeURIComponent(ip)}`);
+
+  const hit = await cache.match(key);
+  const used = hit === undefined ? 0 : Number(await hit.text());
+  if (Number.isFinite(used) && used >= RATE_LIMIT) return true;
+
+  await cache.put(
+    key,
+    new Response(String((Number.isFinite(used) ? used : 0) + 1), {
+      headers: { 'cache-control': `max-age=${RATE_WINDOW_SECONDS}` },
+    }),
+  );
+
+  return false;
+}
+
+/** Same question, same deployment, same answer. */
+function answerCacheKey(origin: string, question: string, generatedAt: string): Request {
+  const slug = encodeURIComponent(`${generatedAt}:${question.toLowerCase().replace(/\s+/g, ' ').trim()}`);
+  return new Request(`${origin}/__ask/${slug}`);
+}
+
+/**
+ * The anchoring rule, enforced after generation rather than requested before it.
+ *
+ * A prompt is a request. A public claim needs a guarantee, and this is it: the
+ * set of numeric tokens in the context is the entire vocabulary of numbers the
+ * answer is allowed to use.
+ */
+function anchored(answer: string, contextText: string): boolean {
+  const allowed = new Set(extractNumbers(contextText).map((token) => token.replace(/,/g, '')));
+
+  for (const token of extractNumbers(answer)) {
+    const bare = token.replace(/,/g, '');
+    // Single digits are almost always ordinal prose — "one repository", "the
+    // first three" — rather than a claimed measurement, and rejecting them
+    // fails honest answers for no gain.
+    if (bare.length === 1) continue;
+    if (!allowed.has(bare)) return false;
+  }
+
+  return true;
+}
+
+export async function onRequestPost(context: PagesContext): Promise<Response> {
+  const { request, env } = context;
+
+  if (env.GROQ_API_KEY === undefined || env.GROQ_API_KEY === '') {
+    return json({ error: 'The answer box is not configured on this deployment.' }, 503);
+  }
+
+  let question: string;
+  try {
+    const body = (await request.json()) as { question?: unknown };
+    question = typeof body.question === 'string' ? body.question.trim() : '';
+  } catch {
+    return json({ error: 'Send JSON with a question field.' }, 400);
+  }
+
+  if (question === '') return json({ error: 'Ask something.' }, 400);
+  if (question.length > MAX_QUESTION) {
+    return json({ error: `Questions are limited to ${MAX_QUESTION} characters.` }, 400);
+  }
+
+  const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
+  if (await overRateLimit(ip)) {
+    return json(
+      { error: 'That is a lot of questions at once. Try again in a few minutes.' },
+      429,
+    );
+  }
+
+  const origin = new URL(request.url).origin;
+
+  const contextResponse = await fetch(`${origin}/data/ask-context.json`, {
+    cf: { cacheTtl: 300, cacheEverything: true },
+  } as RequestInit);
+
+  if (!contextResponse.ok) {
+    return json({ error: 'The readings could not be loaded. Nothing was answered.' }, 502);
+  }
+
+  const contextText = await contextResponse.text();
+  const generatedAt = (JSON.parse(contextText) as { generatedAt?: string }).generatedAt ?? '';
+
+  const cache = caches.default;
+  const cacheKey = answerCacheKey(origin, question, generatedAt);
+  const cached = await cache.match(cacheKey);
+  if (cached !== undefined) return cached;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, UPSTREAM_TIMEOUT_MS);
+
+  let answer: string;
+  try {
+    const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        authorization: `Bearer ${env.GROQ_API_KEY}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        temperature: 0.2,
+        max_tokens: MAX_ANSWER_TOKENS,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: `RECORD:\n${contextText}\n\nQUESTION: ${question}` },
+        ],
+      }),
+    });
+
+    if (upstream.status === 429) {
+      return json({ error: 'The answer box is busy. Try again in a minute.' }, 429);
+    }
+    if (!upstream.ok) {
+      return json({ error: 'The answer box is unavailable right now.' }, 502);
+    }
+
+    const payload = (await upstream.json()) as {
+      choices?: { message?: { content?: string } }[];
+    };
+    answer = (payload.choices?.[0]?.message?.content ?? '').trim();
+  } catch {
+    return json({ error: 'The answer box timed out. The readings themselves are all above.' }, 504);
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (answer === '') {
+    return json({ error: 'No answer came back. Nothing has been made up in its place.' }, 502);
+  }
+
+  if (!anchored(answer, contextText)) {
+    // The one failure worth spelling out to the reader, because it is the
+    // guarantee this endpoint is built around rather than an error in it.
+    return json(
+      {
+        error:
+          'The answer contained a figure that is not in the record, so it was discarded. Nothing here is invented to fill the gap.',
+      },
+      422,
+    );
+  }
+
+  const response = json({ answer, groundedAt: generatedAt });
+
+  // Cached under a key that includes the deployment's own timestamp, so the
+  // next pulse invalidates every stored answer without anything to purge.
+  const cacheable = new Response(response.clone().body, response);
+  cacheable.headers.set('cache-control', `public, max-age=${ANSWER_TTL_SECONDS}`);
+  context.waitUntil(cache.put(cacheKey, cacheable));
+
+  return response;
+}
+
+/** Anything but POST. Stated, so a curious GET gets an explanation. */
+export function onRequest(): Response {
+  return json({ error: 'POST a JSON body with a question field.' }, 405);
+}

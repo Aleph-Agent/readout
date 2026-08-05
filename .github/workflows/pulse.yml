@@ -84,8 +84,9 @@ jobs:
 
       - name: Deploy to Cloudflare Pages
         id: deploy
-        # Static assets only. No Workers, no KV, no D1 anywhere near the read
-        # path — that is what makes visitor traffic free and uncapped.
+        # Static assets, plus one Pages Function. Every page and every bundle is
+        # a file on the edge; the single dynamic route is /api/ask, which no
+        # page depends on and which is compiled from functions/ by wrangler.
         if: steps.build.outputs.deploy == 'true'
         # wrangler is invoked directly rather than through cloudflare's action.
         # The action installs wrangler at runtime with npx, npm refuses to

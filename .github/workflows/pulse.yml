@@ -75,6 +75,11 @@ jobs:
 
       - name: Build bundles
         id: build
+        env:
+          # Public value, not a credential — it appears in the page source of
+          # every site using it. Stored as a secret only so it is easy to set
+          # once and forget; unset, no analytics script is emitted at all.
+          CF_BEACON_TOKEN: ${{ secrets.CF_BEACON_TOKEN }}
         run: node scripts/build.ts
 
       - name: Deploy to Cloudflare Pages

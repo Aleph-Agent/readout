@@ -148,6 +148,26 @@ function colophonHtml(index: IndexBundle, meta: MetaRecord): string {
 /** Absolute origin, needed because link previews reject relative URLs. */
 export const SITE_ORIGIN = process.env['SITE_ORIGIN'] ?? 'https://readout-7pt.pages.dev';
 
+/**
+ * Cloudflare Web Analytics beacon tag.
+ *
+ * Not a credential — it is visible in the page source of every site that uses
+ * one, and it grants nothing. Kept in an environment variable only so the
+ * script is absent entirely until analytics is actually set up, rather than
+ * shipping a broken tag.
+ *
+ * This is the one third-party request on the read path. It is here because the
+ * project has to answer which lens people actually open before it can name
+ * anything after the answer, and that question cannot be answered from static
+ * files alone.
+ */
+const BEACON_TOKEN = process.env['CF_BEACON_TOKEN'] ?? '';
+
+function analyticsHtml(): string {
+  if (BEACON_TOKEN === '') return '';
+  return `\n<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"${esc(BEACON_TOKEN)}"}'></script>`;
+}
+
 export interface PageOptions {
   title: string;
   current: string;
@@ -206,7 +226,7 @@ ${navHtml(options.current, options.index.lenses)}
 ${options.body}
 </main>
 ${colophonHtml(options.index, options.meta)}
-<script>${AGE_SCRIPT}</script>
+<script>${AGE_SCRIPT}</script>${analyticsHtml()}
 </body>
 </html>
 `;

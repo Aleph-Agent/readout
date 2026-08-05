@@ -61,6 +61,8 @@ jobs:
 
       - name: Build bundles
         id: build
+        env:
+          CF_BEACON_TOKEN: ${{ secrets.CF_BEACON_TOKEN }}
         run: node scripts/build.ts
 
       - name: Deploy to Cloudflare Pages

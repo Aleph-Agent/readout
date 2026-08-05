@@ -13,6 +13,7 @@ import {
   EVENTS_DIR,
   eventsPath,
   historyPath,
+  LINEAGE_ROOTS_PATH,
   LIVE_STATE_PATH,
   MANIFESTS_PATH,
   META_PATH,
@@ -24,6 +25,7 @@ import { SUMMARY_KEYS, type SummaryRecord } from '../types/summaries.ts';
 import { WINDOW_KEYS, type WindowRow } from '../types/window.ts';
 import { MANIFEST_KEYS, type ManifestRow } from '../types/manifests.ts';
 import { ANNOUNCEMENT_KEYS, type AnnouncementRecord } from '../types/announcements.ts';
+import { LINEAGE_ROOT_KEYS, type LineageRoot } from '../types/lineage.ts';
 import { EVENT_KEYS, type EventKind, type EventRecord } from '../types/events.ts';
 import { HISTORY_KEYS, type HistorySnapshotRow } from '../types/history.ts';
 import { EMPTY_META, META_KEYS, type MetaRecord } from '../types/meta.ts';
@@ -65,6 +67,21 @@ export function writeWatchlist(entries: readonly WatchlistEntry[]): void {
 
 export function readActiveWatchlist(): WatchlistEntry[] {
   return readWatchlist().filter((entry) => entry.active);
+}
+
+// ------------------------------------------------------------ lineage roots
+
+export function readLineageRoots(): LineageRoot[] {
+  return readJsonl(LINEAGE_ROOTS_PATH).map((row) =>
+    conform<LineageRoot>(row, LINEAGE_ROOT_KEYS),
+  );
+}
+
+export function writeLineageRoots(rows: readonly LineageRoot[]): void {
+  writeJsonl(LINEAGE_ROOTS_PATH, rows, LINEAGE_ROOT_KEYS, {
+    sortBy: (row) => row.id.toLowerCase(),
+    rejectDuplicates: true,
+  });
 }
 
 // --------------------------------------------------------------- live state

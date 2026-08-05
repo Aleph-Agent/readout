@@ -115,6 +115,18 @@ export function templatedSentence(event: EventRecord): string | null {
       : `${event.repo} published ${tag}${when}, following ${previous}.`;
   }
 
+  if (event.kind === 'lineage') {
+    const base = metricString(metrics, 'baseModel');
+    const added = metricNumber(metrics, 'newDescendants');
+    const uploaders = metricNumber(metrics, 'uploaders');
+    if (base === null || added === null || uploaders === null) return null;
+
+    // "declared" carries the whole claim. The base-model relation is written by
+    // whoever uploaded the model; it is what they say they built on, and the
+    // sentence must not quietly upgrade that into what they did build on.
+    return `${added} models from ${uploaders} accounts declared ${base} as their base model this week.`;
+  }
+
   if (event.kind === 'fork-outlier') {
     const added = metricNumber(metrics, 'forksAdded');
     const hours = metricNumber(metrics, 'observationHours');

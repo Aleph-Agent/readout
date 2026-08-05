@@ -34,6 +34,7 @@ export const COMPARISON: Partial<Record<EventKind, string>> = {
   'fork-outlier': 'measured against other repositories in its category, the same day',
   'demand-cluster': 'measured across the open issues of the repositories watched here',
   'dependency-shift': 'read from this repository’s dependency manifest',
+  lineage: 'counted from base-model relations, which uploaders declare themselves',
 };
 
 interface MetricLabel {
@@ -66,6 +67,12 @@ const METRICS: Record<string, MetricLabel> = {
   repositories: { label: 'Across', unit: ' repositories' },
   issues: { label: 'Open issues', unit: '' },
   engagement: { label: 'Reactions and comments', unit: '' },
+
+  baseModel: { label: 'Base model', unit: '' },
+  newDescendants: { label: 'New models this week', unit: '' },
+  uploaders: { label: 'From accounts', unit: '' },
+  totalSinceWatching: { label: 'Since watching began', unit: '' },
+  mostDownloaded: { label: 'Most downloaded', unit: '' },
 
   manifest: { label: 'Manifest', unit: '' },
   added: { label: 'Dependencies added', unit: '' },

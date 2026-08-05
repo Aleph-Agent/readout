@@ -1,0 +1,121 @@
+name: Weekly
+
+# Sunday 03:17 UTC. Model descent: which models declare which as their base.
+#
+# Weekly because descent moves at the speed of people training models, and a
+# daily read would report noise as news. This row has been in the cadence table
+# since the beginning; this is the job that fills it.
+on:
+  schedule:
+    - cron: '17 3 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: ledger
+  cancel-in-progress: false
+
+jobs:
+  weekly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      # Hugging Face only. Costs nothing against the GitHub budget, and public
+      # model metadata needs no token.
+      - name: Trace descent
+        run: node scripts/weekly.ts
+
+      - name: Summarise
+        continue-on-error: true
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: node scripts/summarise.ts
+
+      - name: Announce confirmed findings
+        continue-on-error: true
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+        run: node scripts/announce.ts
+
+      - name: Build bundles
+        id: build
+        env:
+          CF_BEACON_TOKEN: ${{ secrets.CF_BEACON_TOKEN }}
+        run: node scripts/build.ts
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        if: steps.build.outputs.deploy == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 pages deploy dist --project-name=readout --branch=main
+
+      - name: Record deployment
+        if: always() && steps.build.conclusion == 'success'
+        run: |
+          node scripts/record-deploy.ts \
+            --hash='${{ steps.build.outputs.hash }}' \
+            --deployed='${{ steps.deploy.conclusion == 'success' }}'
+
+      - name: Commit ledger
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name  "readout-agent"
+          git config user.email "readout-agent@users.noreply.github.com"
+          git add data
+          git commit --allow-empty -m "chore(data): weekly lineage $(date -u +'%Y-%m-%d')"
+          git push origin "HEAD:${GITHUB_REF_NAME}" || {
+            git fetch --unshallow --quiet origin "${GITHUB_REF_NAME}" \
+              || git fetch --quiet origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          }
+
+      - name: Open an issue on failure
+        if: failure()
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const title = 'Weekly job failed';
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'agent-failure',
+            });
+            const body = `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            if (existing.data.some((issue) => issue.title === title)) {
+              const issue = existing.data.find((i) => i.title === title);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['agent-failure'],
+              });
+            }

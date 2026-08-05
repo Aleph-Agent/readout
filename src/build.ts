@@ -77,8 +77,8 @@ const LENS_KINDS: Record<LensName, readonly EventKind[]> = {
   lineage: ['lineage'],
 };
 
-/** Lenses with no collector behind them yet. Lineage is the weekly job, unbuilt. */
-const PENDING_LENSES = new Set<LensName>(['lineage']);
+/** Every lens now has a collector. Kept so a future one can be honest about it. */
+const PENDING_LENSES = new Set<LensName>();
 
 const SITE_CSS = fileURLToPath(new URL('./site/site.css', import.meta.url));
 

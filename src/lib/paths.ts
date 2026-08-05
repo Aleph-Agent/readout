@@ -18,6 +18,9 @@ export const HISTORY_DIR = join(DATA_DIR, 'history');
 export const EVENTS_DIR = join(DATA_DIR, 'events');
 
 export const WATCHLIST_PATH = join(DATA_DIR, 'watchlist.jsonl');
+
+/** Base models whose descendants are traced. Curated, like the watchlist. */
+export const LINEAGE_ROOTS_PATH = join(DATA_DIR, 'lineage-roots.jsonl');
 export const LIVE_STATE_PATH = join(LIVE_DIR, 'state.jsonl');
 export const WINDOW_PATH = join(LIVE_DIR, 'window.jsonl');
 

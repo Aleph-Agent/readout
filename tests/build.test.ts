@@ -91,15 +91,14 @@ describe('bundle emission', () => {
     ]);
   });
 
-  it('separates "no collector yet" from "nothing detected"', () => {
-    // Both render as an empty list. Only the data can say which is which, and
-    // conflating them would imply coverage the project does not have.
-    expect(read<LensBundle>('forks.json').status).toBe('active');
+  it('can still say "no collector yet" as distinct from "nothing detected"', () => {
+    // Both render as an empty list, and only the data can say which is which.
+    // Every lens now has a collector, so all five report active — but the
+    // distinction stays wired, because a sixth lens would need it on day one.
+    for (const lens of ['ships', 'forks', 'demand', 'stack', 'lineage']) {
+      expect(read<LensBundle>(`${lens}.json`).status).toBe('active');
+    }
     expect(read<LensBundle>('forks.json').records).toEqual([]);
-    expect(read<LensBundle>('demand.json').status).toBe('active');
-    expect(read<LensBundle>('stack.json').status).toBe('active');
-    // Lineage is the weekly job, which has no collector yet.
-    expect(read<LensBundle>('lineage.json').status).toBe('pending');
   });
 
   it('orders a lens newest first', () => {

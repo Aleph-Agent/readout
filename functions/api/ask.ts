@@ -64,6 +64,7 @@ Rules, in order of importance:
 4. Never predict, never rank projects as better or worse, never advise anyone to buy or sell anything.
 5. When the record's limits are relevant to the question, state the limit rather than working around it. The limits are in the record under instrument.limits.
 6. Three sentences at most. Plain declarative English. No exclamation marks, no bullet points, no markdown, no preamble like "Based on the record".
+7. If more than five things match the question, say how many there are and name at most five of them. A list of everything is not an answer.
 
 Name repositories exactly as the record spells them.`;
 
@@ -85,23 +86,31 @@ function json(body: unknown, status = 200, extra: Record<string, string> = {}): 
  * is a TTL rather than a sliding count. It is enough to stop one client from
  * draining a shared free-tier quota, which is the actual threat. Anything more
  * precise needs durable storage, and durable storage is not free.
+ *
+ * Reading and charging are separate on purpose. The quota is consumed by
+ * answers, so only an answer should spend it — the first version charged for
+ * every request, which meant an outage rate-limited the people discovering it
+ * was down. A cached answer and a refusal both cost nothing and are billed
+ * nothing.
  */
-async function overRateLimit(ip: string): Promise<boolean> {
-  const cache = caches.default;
-  const key = new Request(`https://ratelimit.invalid/${encodeURIComponent(ip)}`);
+function rateLimitKey(ip: string): Request {
+  return new Request(`https://ratelimit.invalid/${encodeURIComponent(ip)}`);
+}
 
-  const hit = await cache.match(key);
-  const used = hit === undefined ? 0 : Number(await hit.text());
-  if (Number.isFinite(used) && used >= RATE_LIMIT) return true;
+async function requestsUsed(ip: string): Promise<number> {
+  const hit = await caches.default.match(rateLimitKey(ip));
+  if (hit === undefined) return 0;
+  const used = Number(await hit.text());
+  return Number.isFinite(used) ? used : 0;
+}
 
-  await cache.put(
-    key,
-    new Response(String((Number.isFinite(used) ? used : 0) + 1), {
+async function chargeRequest(ip: string, used: number): Promise<void> {
+  await caches.default.put(
+    rateLimitKey(ip),
+    new Response(String(used + 1), {
       headers: { 'cache-control': `max-age=${RATE_WINDOW_SECONDS}` },
     }),
   );
-
-  return false;
 }
 
 /** Same question, same deployment, same answer. */
@@ -153,7 +162,8 @@ export async function onRequestPost(context: PagesContext): Promise<Response> {
   }
 
   const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
-  if (await overRateLimit(ip)) {
+  const used = await requestsUsed(ip);
+  if (used >= RATE_LIMIT) {
     return json(
       { error: 'That is a lot of questions at once. Try again in a few minutes.' },
       429,
@@ -242,6 +252,10 @@ export async function onRequestPost(context: PagesContext): Promise<Response> {
       422,
     );
   }
+
+  // Charged here and nowhere else: an answer was generated, so the quota it
+  // came out of was actually spent.
+  context.waitUntil(chargeRequest(ip, used));
 
   const response = json({ answer, groundedAt: generatedAt });
 

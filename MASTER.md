@@ -1366,8 +1366,11 @@ that predicts, ranks, advises on buying or selling, or claims cause.
 
 **The limits, honestly.** The rate limiter is per IP and per colo, which is
 approximate by construction — exact counting needs durable storage and durable
-storage is not free. The Cache API is a no-op on `*.pages.dev`, so on the
-current hostname neither the limiter nor the answer cache does anything; both
-begin working when a custom domain is attached. Until then the real ceiling is
-Groq's own rate limit, which the endpoint surfaces as "busy, try again" rather
-than swallowing.
+storage is not free. A client that reaches several colos gets several buckets.
+Beyond it sits Groq's own rate limit, which the endpoint surfaces as "busy, try
+again" rather than swallowing.
+
+The limiter charges for answers, not for requests. The quota is spent by
+generation, so a cached answer, a refusal and an outage all cost nothing and
+are billed nothing — the first version charged for every request, which meant a
+broken endpoint rate-limited the people discovering it was broken.

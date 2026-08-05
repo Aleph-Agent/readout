@@ -17,7 +17,7 @@ import type { EventRecord } from '../types/events.ts';
  */
 
 /** Kept low deliberately. A feed that posts fifteen times an hour is noise. */
-export const DEFAULT_POSTS_PER_RUN = 4;
+const DEFAULT_POSTS_PER_RUN = 4;
 
 export interface AnnounceOptions {
   client?: XClient;

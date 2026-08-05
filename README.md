@@ -92,6 +92,24 @@ node scripts/daily.ts
 node scripts/build.ts              # emits dist/
 ```
 
+### Watchlist maintenance
+
+The watchlist is curated. Deriving it from a search query was tried and produced
+a worse list — topic search only finds repositories that tagged themselves, and
+sorting by stars ranks tutorials and link collections above infrastructure.
+`derive-watchlist.ts` is kept for proposing candidates a curator might have
+missed, and because the negative result is worth being able to reproduce.
+
+```sh
+node scripts/verify-watchlist.ts   # check every entry against the API
+node scripts/retire-watchlist.ts   # mark archived and deleted ones inactive
+node scripts/derive-watchlist.ts   # propose candidates, writes nothing
+```
+
+Nothing is ever removed. Retired entries stay on the list with `active: false`,
+because deleting one would erase the record that it was watched at all, and the
+findings collected while it was still link to it.
+
 Two scheduled workflows do the rest. `pulse.yml` runs every four hours for
 repository base and releases; `daily.yml` writes the canonical snapshot,
 classifies spikes, and collects issues and manifests. Both commit every run,

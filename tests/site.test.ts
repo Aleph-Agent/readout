@@ -122,9 +122,25 @@ describe('the velocity strip', () => {
 
   it('draws a forming baseline as an outline rather than a zero-height bar', () => {
     // "Not measured yet" must not render as "measured at zero".
-    expect(stripSvg([mark({ state: 'forming', multiplier: null })], new Set())).toContain(
-      'mark-forming',
+    const svg = stripSvg(
+      [mark({ state: 'forming', multiplier: null }), mark({ id: 'b/two', state: 'quiet' })],
+      new Set(),
     );
+    expect(svg).toContain('mark-forming');
+  });
+
+  it('says so in a sentence rather than drawing 400 identical marks', () => {
+    // Before any window fills, every mark is the same height and colour: fifty
+    // kilobytes of SVG conveying nothing.
+    const nothing = Array.from({ length: 400 }, (_, i) =>
+      mark({ id: `r${i}/x`, state: 'forming', multiplier: null }),
+    );
+    const html = stripSvg(nothing, new Set());
+
+    expect(html).not.toContain('<rect');
+    expect(html).toContain('Baseline forming');
+    expect(html).toContain('400 repositories');
+    expect(html.length).toBeLessThan(1000);
   });
 
   it('carries a text alternative, since the table below is the accessible path', () => {

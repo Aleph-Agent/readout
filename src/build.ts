@@ -25,6 +25,7 @@ import {
   renderRobots,
   renderSitemap,
 } from './site/event.ts';
+import { archiveNav, archivePath, renderArchive } from './site/archive.ts';
 import {
   baselineFromHistory,
   classifySpike,
@@ -403,10 +404,12 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   const emitted = new Map<string, string>();
   const lensSummary = {} as IndexBundle['lenses'];
   const lensBundles = new Map<LensName, LensBundle>();
+  const lensArchives = new Map<LensName, Map<string, EventRecord[]>>();
 
   for (const lens of LENSES) {
     const { bundle, archives } = buildLens(lens, grouped.get(lens) ?? [], now, windowDays);
     lensBundles.set(lens, bundle);
+    lensArchives.set(lens, archives);
     emitted.set(`${lens}.json`, stableJson(bundle));
     for (const [month, records] of archives) {
       emitted.set(`${lens}-${month}.json`, stableJson({ lens, month, records }));
@@ -451,10 +454,27 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
       (lens) =>
         [
           `${lens}.html`,
-          renderLens(lensBundles.get(lens) as LensBundle, index, previous, LENS_COPY[lens]),
+          renderLens(
+            lensBundles.get(lens) as LensBundle,
+            index,
+            previous,
+            LENS_COPY[lens],
+            archiveNav(lens, [...(lensArchives.get(lens)?.keys() ?? [])].sort().reverse()),
+          ),
         ] as const,
     ),
   ]);
+
+  // Archive bundles were already being written and nothing linked to them, so
+  // every finding past the window was published and unreachable at once.
+  for (const lens of LENSES) {
+    for (const [month, records] of lensArchives.get(lens) ?? []) {
+      pages.set(
+        `${lens}-${month}.html`,
+        renderArchive(lens, month, records, index, previous, LENS_COPY[lens].heading),
+      );
+    }
+  }
 
   // One page per watched repository, including the ones with nothing recorded.
   // A repository the agent has never had anything to say about still deserves a
@@ -565,6 +585,9 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     ...LENSES.map((lens) => `/${lens}`),
     ...[...profiles.keys()].map((repo) => `/repo/${repo}`),
     ...addressable.map((event) => eventPath(event)),
+    ...LENSES.flatMap((lens) =>
+      [...(lensArchives.get(lens)?.keys() ?? [])].map((month) => archivePath(lens, month)),
+    ),
   ];
 
   pages.set('feed.xml', renderFeed(addressable, previous.lastSuccessfulRunAt ?? now.toISOString()));

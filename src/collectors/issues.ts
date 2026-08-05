@@ -18,7 +18,7 @@ import type { LiveStateRow } from '../types/state.ts';
  */
 
 /** Budget: one request each, and the daily job has to stay under a thousand. */
-export const TOP_REPOSITORIES = 80;
+const TOP_REPOSITORIES = 80;
 
 const ISSUES_PER_REPO = 10;
 

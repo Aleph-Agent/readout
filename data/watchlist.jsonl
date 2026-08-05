@@ -1,6 +1,6 @@
 {"id":"a16z/halmos","category":"crypto-web3","added":"2026-08-04","active":true}
 {"id":"a16z/helios","category":"crypto-web3","added":"2026-08-04","active":true}
-{"id":"aave/aave-v3-core","category":"crypto-web3","added":"2026-08-04","active":true}
+{"id":"aave/aave-v3-core","category":"crypto-web3","added":"2026-08-04","active":false}
 {"id":"actix/actix-web","category":"web-framework","added":"2026-08-04","active":true}
 {"id":"airbytehq/airbyte","category":"database","added":"2026-08-04","active":true}
 {"id":"ajeetdsouza/zoxide","category":"devtool","added":"2026-08-04","active":true}
@@ -109,7 +109,7 @@
 {"id":"ethereum/EIPs","category":"crypto-web3","added":"2026-08-04","active":true}
 {"id":"ethereum/execution-specs","category":"crypto-web3","added":"2026-08-04","active":true}
 {"id":"ethereum/go-ethereum","category":"crypto-web3","added":"2026-08-04","active":true}
-{"id":"ethereum/py-evm","category":"crypto-web3","added":"2026-08-04","active":true}
+{"id":"ethereum/py-evm","category":"crypto-web3","added":"2026-08-04","active":false}
 {"id":"ethereum/solidity","category":"crypto-web3","added":"2026-08-04","active":true}
 {"id":"ethereum/web3.py","category":"crypto-web3","added":"2026-08-04","active":true}
 {"id":"ethers-io/ethers.js","category":"crypto-web3","added":"2026-08-04","active":true}
@@ -120,7 +120,7 @@
 {"id":"facebook/react","category":"web-framework","added":"2026-08-04","active":true}
 {"id":"facebook/rocksdb","category":"database","added":"2026-08-04","active":true}
 {"id":"facebookresearch/detectron2","category":"ai-ml","added":"2026-08-04","active":true}
-{"id":"facebookresearch/fairseq","category":"ai-ml","added":"2026-08-04","active":true}
+{"id":"facebookresearch/fairseq","category":"ai-ml","added":"2026-08-04","active":false}
 {"id":"facebookresearch/faiss","category":"ai-ml","added":"2026-08-04","active":true}
 {"id":"facebookresearch/segment-anything","category":"ai-ml","added":"2026-08-04","active":true}
 {"id":"fastapi/fastapi","category":"web-framework","added":"2026-08-04","active":true}
@@ -129,7 +129,7 @@
 {"id":"flairNLP/flair","category":"ai-ml","added":"2026-08-04","active":true}
 {"id":"fluxcd/flux2","category":"devtool","added":"2026-08-04","active":true}
 {"id":"foundry-rs/foundry","category":"crypto-web3","added":"2026-08-04","active":true}
-{"id":"gakonst/ethers-rs","category":"crypto-web3","added":"2026-08-04","active":true}
+{"id":"gakonst/ethers-rs","category":"crypto-web3","added":"2026-08-04","active":false}
 {"id":"getsentry/sentry","category":"devtool","added":"2026-08-04","active":true}
 {"id":"ggml-org/llama.cpp","category":"ai-ml","added":"2026-08-04","active":true}
 {"id":"ggml-org/whisper.cpp","category":"ai-ml","added":"2026-08-04","active":true}
@@ -138,7 +138,7 @@
 {"id":"go-chi/chi","category":"web-framework","added":"2026-08-04","active":true}
 {"id":"go-gorm/gorm","category":"database","added":"2026-08-04","active":true}
 {"id":"gofiber/fiber","category":"web-framework","added":"2026-08-04","active":true}
-{"id":"google-research/bert","category":"ai-ml","added":"2026-08-04","active":true}
+{"id":"google-research/bert","category":"ai-ml","added":"2026-08-04","active":false}
 {"id":"google-research/google-research","category":"ai-ml","added":"2026-08-04","active":true}
 {"id":"google/leveldb","category":"database","added":"2026-08-04","active":true}
 {"id":"grafana/grafana","category":"devtool","added":"2026-08-04","active":true}
@@ -165,7 +165,7 @@
 {"id":"huggingface/datasets","category":"ai-ml","added":"2026-08-04","active":true}
 {"id":"huggingface/diffusers","category":"ai-ml","added":"2026-08-04","active":true}
 {"id":"huggingface/peft","category":"ai-ml","added":"2026-08-04","active":true}
-{"id":"huggingface/text-generation-inference","category":"ai-ml","added":"2026-08-04","active":true}
+{"id":"huggingface/text-generation-inference","category":"ai-ml","added":"2026-08-04","active":false}
 {"id":"huggingface/tokenizers","category":"ai-ml","added":"2026-08-04","active":true}
 {"id":"huggingface/transformers","category":"ai-ml","added":"2026-08-04","active":true}
 {"id":"huggingface/trl","category":"ai-ml","added":"2026-08-04","active":true}
@@ -211,7 +211,7 @@
 {"id":"matter-labs/zksync-era","category":"crypto-web3","added":"2026-08-04","active":true}
 {"id":"memcached/memcached","category":"database","added":"2026-08-04","active":true}
 {"id":"meta-llama/llama","category":"ai-ml","added":"2026-08-04","active":true}
-{"id":"meta-llama/llama3","category":"ai-ml","added":"2026-08-04","active":true}
+{"id":"meta-llama/llama3","category":"ai-ml","added":"2026-08-04","active":false}
 {"id":"MetaMask/metamask-extension","category":"crypto-web3","added":"2026-08-04","active":true}
 {"id":"MetaMask/snaps","category":"crypto-web3","added":"2026-08-04","active":true}
 {"id":"micronaut-projects/micronaut-core","category":"web-framework","added":"2026-08-04","active":true}
@@ -225,8 +225,8 @@
 {"id":"mikefarah/yq","category":"devtool","added":"2026-08-04","active":true}
 {"id":"mikro-orm/mikro-orm","category":"database","added":"2026-08-04","active":true}
 {"id":"milvus-io/milvus","category":"database","added":"2026-08-04","active":true}
-{"id":"minio/minio","category":"database","added":"2026-08-04","active":true}
-{"id":"mistralai/mistral-inference","category":"ai-ml","added":"2026-08-04","active":true}
+{"id":"minio/minio","category":"database","added":"2026-08-04","active":false}
+{"id":"mistralai/mistral-inference","category":"ai-ml","added":"2026-08-04","active":false}
 {"id":"mlflow/mlflow","category":"ai-ml","added":"2026-08-04","active":true}
 {"id":"mobxjs/mobx","category":"web-framework","added":"2026-08-04","active":true}
 {"id":"moby/moby","category":"devtool","added":"2026-08-04","active":true}
@@ -337,7 +337,7 @@
 {"id":"spring-projects/spring-framework","category":"web-framework","added":"2026-08-04","active":true}
 {"id":"sqlalchemy/sqlalchemy","category":"database","added":"2026-08-04","active":true}
 {"id":"sqlite/sqlite","category":"database","added":"2026-08-04","active":true}
-{"id":"Stability-AI/stablediffusion","category":"ai-ml","added":"2026-08-04","active":true}
+{"id":"Stability-AI/stablediffusion","category":"ai-ml","added":"2026-08-04","active":false}
 {"id":"stanfordnlp/dspy","category":"ai-ml","added":"2026-08-04","active":true}
 {"id":"starkware-libs/cairo","category":"crypto-web3","added":"2026-08-04","active":true}
 {"id":"starship/starship","category":"devtool","added":"2026-08-04","active":true}
@@ -365,7 +365,7 @@
 {"id":"trinodb/trino","category":"database","added":"2026-08-04","active":true}
 {"id":"triton-lang/triton","category":"ai-ml","added":"2026-08-04","active":true}
 {"id":"trpc/trpc","category":"web-framework","added":"2026-08-04","active":true}
-{"id":"trufflesuite/truffle","category":"crypto-web3","added":"2026-08-04","active":true}
+{"id":"trufflesuite/truffle","category":"crypto-web3","added":"2026-08-04","active":false}
 {"id":"tursodatabase/libsql","category":"database","added":"2026-08-04","active":true}
 {"id":"twbs/bootstrap","category":"web-framework","added":"2026-08-04","active":true}
 {"id":"typeorm/typeorm","category":"database","added":"2026-08-04","active":true}
@@ -389,7 +389,7 @@
 {"id":"WalletConnect/walletconnect-monorepo","category":"crypto-web3","added":"2026-08-04","active":true}
 {"id":"wandb/wandb","category":"ai-ml","added":"2026-08-04","active":true}
 {"id":"weaviate/weaviate","category":"database","added":"2026-08-04","active":true}
-{"id":"web3/web3.js","category":"crypto-web3","added":"2026-08-04","active":true}
+{"id":"web3/web3.js","category":"crypto-web3","added":"2026-08-04","active":false}
 {"id":"webpack/webpack","category":"web-framework","added":"2026-08-04","active":true}
 {"id":"wevm/viem","category":"crypto-web3","added":"2026-08-04","active":true}
 {"id":"wevm/wagmi","category":"crypto-web3","added":"2026-08-04","active":true}

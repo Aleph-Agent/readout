@@ -11,7 +11,7 @@ import type { ForkSample } from '../types/window.ts';
 const MS_PER_HOUR = 3_600_000;
 
 /** Matches `SpikeThresholds.minWindowHours`. */
-export const DEFAULT_WINDOW_HOURS = 24;
+const DEFAULT_WINDOW_HOURS = 24;
 
 /**
  * Drop everything older than the anchor — the newest sample at or before the

@@ -73,7 +73,7 @@ export function createPacer(options: PacerOptions = {}): Pacer {
 }
 
 /** Rough token estimate. Deliberately generous — overestimating costs patience. */
-export function estimateTokens(text: string): number {
+function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4) + MAX_COMPLETION_TOKENS;
 }
 

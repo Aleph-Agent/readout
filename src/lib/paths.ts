@@ -13,7 +13,7 @@ export const ROOT = fileURLToPath(new URL('../../', import.meta.url));
  * one. Unset in CI and in production.
  */
 export const DATA_DIR = process.env['SIGNAL_DATA_DIR'] ?? join(ROOT, 'data');
-export const LIVE_DIR = join(DATA_DIR, 'live');
+const LIVE_DIR = join(DATA_DIR, 'live');
 export const HISTORY_DIR = join(DATA_DIR, 'history');
 export const EVENTS_DIR = join(DATA_DIR, 'events');
 

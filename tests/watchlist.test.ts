@@ -60,8 +60,16 @@ describe('data/watchlist.jsonl', () => {
     }
   });
 
-  it('starts every entry active, dated, and ready to collect', () => {
-    expect(entries.every((e) => e.active === true)).toBe(true);
+  it('dates every entry', () => {
     expect(entries.every((e) => /^\d{4}-\d{2}-\d{2}$/.test(e.added))).toBe(true);
+  });
+
+  it('retires entries rather than deleting them', () => {
+    // Removing one would erase the record that it was ever watched, and the
+    // findings collected while it was still link to it. Archived and deleted
+    // repositories stay on the list with active: false.
+    const retired = entries.filter((e) => !e.active);
+    expect(retired.length).toBeLessThan(entries.length / 4);
+    expect(entries.filter((e) => e.active).length).toBeGreaterThan(300);
   });
 });

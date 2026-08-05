@@ -258,6 +258,22 @@ const BASELINE_HEIGHT = markHeight(1);
 export function stripSvg(marks: readonly StripMark[], releasedToday: ReadonlySet<string>): string {
   if (marks.length === 0) return '';
 
+  // Before any window has filled, every mark is the same height and the same
+  // colour: fifty kilobytes of SVG saying nothing. Say it in a sentence
+  // instead, and bring the chart back when there is something to chart.
+  const measured = marks.filter((mark) => mark.state !== 'forming');
+  if (measured.length === 0) {
+    return `<section class="strip">
+  <h2 class="label">Fork velocity</h2>
+  <div class="notice">
+    <strong>Baseline forming</strong>
+    All ${marks.length} repositories are being measured, and none has a full observation window yet.
+    The strip appears once there is deviation to draw. Until then there is nothing to show, which is
+    different from showing nothing.
+  </div>
+</section>`;
+  }
+
   const H = 100;
   const step = 100 / marks.length;
   const width = Math.max(step * 0.55, 0.12);
@@ -420,6 +436,7 @@ export function renderLens(
   index: IndexBundle,
   meta: MetaRecord,
   copy: { title: string; heading: string; noun: string; scope?: string },
+  archives = '',
 ): string {
   let body: string;
 
@@ -455,6 +472,6 @@ export function renderLens(
     current: `/${bundle.lens}`,
     index,
     meta,
-    body: `<h1 class="label" style="padding:22px 0 4px">${esc(copy.heading)} — last ${bundle.windowDays} days, ${bundle.count} recorded</h1>\n${scope}\n${withdrawn}\n${body}`,
+    body: `<h1 class="label" style="padding:22px 0 4px">${esc(copy.heading)} — last ${bundle.windowDays} days, ${bundle.count} recorded</h1>\n${scope}\n${withdrawn}\n${body}\n${archives}`,
   });
 }

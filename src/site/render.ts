@@ -165,7 +165,9 @@ const BEACON_TOKEN = process.env['CF_BEACON_TOKEN'] ?? '';
 
 function analyticsHtml(): string {
   if (BEACON_TOKEN === '') return '';
-  return `\n<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"${esc(BEACON_TOKEN)}"}'></script>`;
+  // Shape matches what Cloudflare currently hands out. A module script defers
+  // by default, so it never blocks the page it is measuring.
+  return `\n<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"${esc(BEACON_TOKEN)}"}'></script>`;
 }
 
 export interface PageOptions {

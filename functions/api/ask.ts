@@ -36,8 +36,17 @@ interface PagesContext {
   waitUntil: (promise: Promise<unknown>) => void;
 }
 
-/** Small, fast, and inside the free tier's per-minute allowance. */
-const MODEL = 'llama-3.1-8b-instant';
+/**
+ * Chosen for instruction-following, not for speed.
+ *
+ * The 8b model was tried first for its 14,400 requests a day. It ignored the
+ * format rules — asked what had released recently it answered with a markdown
+ * bullet list of twenty-one repositories, having been told plainly to write at
+ * most three sentences and to name at most five things. This one allows 1,000
+ * requests a day and 12,000 tokens a minute, which is ample for a site with
+ * cached answers and a per-IP limit, and it does what it is told.
+ */
+const MODEL = 'llama-3.3-70b-versatile';
 
 const MAX_QUESTION = 280;
 const MAX_ANSWER_TOKENS = 320;
@@ -117,6 +126,31 @@ async function chargeRequest(ip: string, used: number): Promise<void> {
 function answerCacheKey(origin: string, question: string, generatedAt: string): Request {
   const slug = encodeURIComponent(`${generatedAt}:${question.toLowerCase().replace(/\s+/g, ' ').trim()}`);
   return new Request(`${origin}/__ask/${slug}`);
+}
+
+/** Sentences a reader will actually read before deciding the box is verbose. */
+const MAX_SENTENCES = 3;
+
+/**
+ * Formatting, corrected rather than rejected.
+ *
+ * A bullet list is not a false claim. Rejecting one would throw away a true
+ * answer over its shape, so shape is fixed here and only truth is grounds for
+ * discarding anything. The prompt still asks for prose; this is what happens
+ * when it is not obeyed.
+ */
+function asProse(text: string): string {
+  const flattened = text
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/^\s*[-*•]\s+/gm, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\s*\n+\s*/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  const sentences = flattened.split(/(?<=[.?])\s+/).filter((part) => part.trim() !== '');
+  return sentences.slice(0, MAX_SENTENCES).join(' ');
 }
 
 /**
@@ -237,7 +271,7 @@ export async function onRequestPost(context: PagesContext): Promise<Response> {
     const payload = (await upstream.json()) as {
       choices?: { message?: { content?: string } }[];
     };
-    answer = (payload.choices?.[0]?.message?.content ?? '').trim();
+    answer = asProse(payload.choices?.[0]?.message?.content ?? '');
   } catch {
     return json({ error: 'The answer box timed out. The readings themselves are all above.' }, 504);
   } finally {

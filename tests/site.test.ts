@@ -286,6 +286,36 @@ describe('honesty of presentation', () => {
   });
 });
 
+describe('telling a first-time visitor what this is', () => {
+  it('states what the instrument does before showing any of it', () => {
+    // A visitor used to land on a table of repository names with nothing to
+    // say why. That is a product failure, not a matter of taste.
+    const html = renderIndex(index(), meta());
+    expect(html).toContain('An instrument pointed at');
+    expect(html).toContain('400 open-source repositories');
+    expect(html).toContain('compares each project against its own history');
+  });
+
+  it('says what each of the five readings answers', () => {
+    const html = renderIndex(index(), meta());
+    expect(html).toContain('The five readings');
+    expect(html).toContain('What released a new version?');
+    expect(html).toContain('Which models say they were built on which?');
+  });
+
+  it('explains the token without claiming anything it must not', () => {
+    const html = renderIndex(index(), meta());
+    expect(html).toContain('About the token');
+    expect(html).toContain('Holding it does not unlock anything here');
+    expect(html).toContain('It has not launched');
+
+    // Never price, never appreciation, never a wallet to connect.
+    expect(html).not.toMatch(/\bprice\b/i);
+    expect(html).not.toMatch(/\bappreciat/i);
+    expect(html).not.toMatch(/connect (your )?wallet/i);
+  });
+});
+
 describe('navigation', () => {
   it('marks lenses that are not collecting yet', () => {
     const html = renderIndex(index(), meta());

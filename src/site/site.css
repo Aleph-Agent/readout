@@ -50,20 +50,23 @@
 /* ------------------------------------------------------------------ tokens */
 
 :root {
-  /* One neutral ramp. Warm, so it reads as equipment rather than as screen. */
-  --ink-000: #131211;
-  --ink-050: #191816;
-  --ink-100: #23211d;
-  --ink-200: #302d28;
-  --ink-300: #4a4740;
-  --ink-500: #85817a;
-  --ink-700: #b6b1a8;
-  --ink-900: #e8e4db;
+  /* One neutral ramp. Warm, so it reads as equipment rather than as screen.
+     Widened at both ends: everything used to sit in the middle four steps, so
+     nothing had hierarchy and the whole page read as one grey mass. */
+  --ink-000: #0e0d0c;
+  --ink-025: #141311;
+  --ink-050: #1b1a17;
+  --ink-100: #272521;
+  --ink-200: #35322c;
+  --ink-300: #565149;
+  --ink-500: #948f85;
+  --ink-700: #cbc6bc;
+  --ink-900: #f5f2ea;
 
   /* Two signal colours. There is no third, and neither is ever the only
      carrier of meaning — every coloured state also has a glyph and a label. */
-  --alert: #c9503a;
-  --nominal: #7d9b6a;
+  --alert: #e2604a;
+  --nominal: #8fb27a;
 
   --face-label: 'Plex Condensed', ui-sans-serif, system-ui, sans-serif;
   --face-data: 'Plex Mono', ui-monospace, monospace;
@@ -80,6 +83,75 @@
   --gap: 4px;
   --pad: 16px;
   --rule: 1px solid var(--ink-100);
+}
+
+/* -------------------------------------------------------- ambient backdrop
+
+   A slow oscilloscope sweep behind the page.
+
+   The brief rules out decorative motion and the maintainer has overruled it,
+   which is theirs to do. Since it is going in regardless it is at least built
+   from the subject's own vocabulary rather than bolted on: a drifting grid and
+   a sweep line, the way a scope looks when nothing in particular is happening.
+   It sits behind everything, never moves anything a reader is trying to read,
+   and disappears entirely under reduced motion. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    linear-gradient(var(--ink-100) 1px, transparent 1px) 0 0 / 100% 46px,
+    linear-gradient(90deg, var(--ink-100) 1px, transparent 1px) 0 0 / 46px 100%;
+  opacity: 0.55;
+  animation: drift 34s linear infinite;
+}
+
+@keyframes drift {
+  to {
+    background-position: 0 46px, 46px 0;
+  }
+}
+
+.backdrop::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 26vw;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(226, 96, 74, 0.05) 55%,
+    rgba(226, 96, 74, 0.13) 85%,
+    transparent
+  );
+  animation: sweep 11s linear infinite;
+}
+
+@keyframes sweep {
+  from {
+    transform: translateX(-30vw);
+  }
+  to {
+    transform: translateX(130vw);
+  }
+}
+
+/* A floor, so text never sits directly on the moving grid. */
+.backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(130% 95% at 50% 0%, transparent, var(--ink-000) 76%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop {
+    display: none;
+  }
 }
 
 /* ------------------------------------------------------------------- base */
@@ -231,6 +303,141 @@ a:hover {
 
 .nav a[data-pending='true'] {
   color: var(--ink-300);
+}
+
+/* -------------------------------------------------------------------- hero
+
+   The site had no statement of what it was. A visitor landed on a dense table
+   of repository names with nothing to tell them why, which is a product
+   failure rather than a matter of taste. */
+
+.hero {
+  padding: 54px 0 34px;
+  border-bottom: var(--rule);
+}
+
+.hero-thesis {
+  font-family: var(--face-data);
+  font-weight: 400;
+  font-size: clamp(22px, 3.4vw, 34px);
+  line-height: 1.28;
+  color: var(--ink-900);
+  margin: 0 0 16px;
+  max-width: 22ch;
+}
+
+.hero-thesis em {
+  font-style: normal;
+  color: var(--alert);
+}
+
+.hero-sub {
+  font-family: var(--face-prose);
+  font-size: var(--t-mid);
+  line-height: 1.55;
+  color: var(--ink-700);
+  margin: 0 0 26px;
+  max-width: 58ch;
+}
+
+.hero-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 40px;
+}
+
+.figure {
+  display: grid;
+  gap: 2px;
+}
+
+.figure-value {
+  font-family: var(--face-data);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-large);
+  color: var(--ink-900);
+}
+
+/* ------------------------------------------------------------------ lenses
+
+   Five signals with no explanation anywhere. The navigation named them and
+   nothing said what any of them answers. */
+
+.lenses {
+  border-bottom: var(--rule);
+  padding: 8px 0 26px;
+}
+
+.lens-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1px;
+  background: var(--ink-100);
+  border: 1px solid var(--ink-100);
+}
+
+.lens-cell {
+  background: var(--ink-025);
+  padding: 16px 16px 18px;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  border: 0;
+}
+
+a.lens-cell:hover {
+  background: var(--ink-050);
+}
+
+.lens-name {
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-base);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-900);
+}
+
+.lens-question {
+  font-family: var(--face-prose);
+  font-size: var(--t-small);
+  line-height: 1.45;
+  color: var(--ink-500);
+}
+
+.lens-count {
+  font-family: var(--face-data);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-small);
+  color: var(--ink-700);
+}
+
+/* ------------------------------------------------------------------- token */
+
+.token {
+  border-top: var(--rule);
+  margin-top: 34px;
+  padding: 26px 0 8px;
+  display: grid;
+  gap: 12px;
+  max-width: 66ch;
+}
+
+.token p {
+  margin: 0;
+  font-family: var(--face-prose);
+  font-size: var(--t-base);
+  line-height: 1.55;
+  color: var(--ink-700);
+}
+
+.token strong {
+  font-family: var(--face-label);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: var(--t-micro);
+  color: var(--ink-900);
 }
 
 /* ---------------------------------------------------------- velocity strip */

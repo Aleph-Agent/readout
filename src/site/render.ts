@@ -224,6 +224,7 @@ export function layout(options: PageOptions): string {
 <link rel="stylesheet" href="/site.css">
 </head>
 <body>
+<div class="backdrop" aria-hidden="true"></div>
 ${mastheadHtml(options.meta, options.index.disclosure)}
 ${navHtml(options.current, options.index.lenses)}
 <main class="shell">
@@ -467,6 +468,92 @@ function watchlistReadout(marks: readonly StripMark[]): string {
 whose window has not filled yet shows no figure rather than a zero.</p>`;
 }
 
+/** What each lens answers. The navigation named them and nothing explained them. */
+const LENS_QUESTION: Record<LensName, string> = {
+  ships: 'What released a new version?',
+  forks: 'What is being copied faster than it usually is?',
+  demand: 'What are developers asking for in more than one place?',
+  stack: 'What dependencies are being added, dropped, or jumped?',
+  lineage: 'Which models say they were built on which?',
+};
+
+function heroHtml(index: IndexBundle, meta: MetaRecord): string {
+  const { watchlist, disclosure } = index;
+  const findings = Object.values(index.lenses).reduce((total, lens) => total + lens.count, 0);
+
+  return `<section class="hero">
+  <h1 class="hero-thesis">An instrument pointed at <em>${watchlist.active} open-source repositories</em>.</h1>
+  <p class="hero-sub">
+    Every ${disclosure.cadenceHours} hours it reads what those projects are doing and writes the
+    numbers down here, permanently. It compares each project against its own history rather than
+    against anything else, links every figure to the place you can check it, and says plainly when
+    it has nothing to report — which is most days, for most projects.
+  </p>
+  <div class="hero-figures">
+    <div class="figure"><span class="figure-value num">${watchlist.active}</span><span class="label">Repositories watched</span></div>
+    <div class="figure"><span class="figure-value num">5</span><span class="label">Signals read</span></div>
+    <div class="figure"><span class="figure-value num">${disclosure.cadenceHours}h</span><span class="label">Between readings</span></div>
+    <div class="figure"><span class="figure-value num">${findings}</span><span class="label">Findings on record</span></div>
+    <div class="figure">
+      <span class="figure-value num">${meta.lastSuccessfulRunAt === null ? '—' : esc(meta.lastSuccessfulRunAt.slice(11, 16))}</span>
+      <span class="label">Last reading, UTC</span>
+    </div>
+  </div>
+</section>`;
+}
+
+function lensesHtml(index: IndexBundle): string {
+  const cells = NAV.filter((item) => item.lens !== null)
+    .map((item) => {
+      const lens = item.lens as LensName;
+      const { status, count } = index.lenses[lens];
+      return `<a class="lens-cell" href="${item.href}">
+      <span class="lens-name">${esc(item.label)}</span>
+      <span class="lens-question">${esc(LENS_QUESTION[lens])}</span>
+      <span class="lens-count">${
+        status === 'pending'
+          ? 'not measured yet'
+          : `${count} recorded${count === 0 ? ' — nothing has crossed the bar' : ''}`
+      }</span>
+    </a>`;
+    })
+    .join('');
+
+  return `<section class="lenses">
+  <h2 class="label" style="padding:20px 0 10px">The five readings</h2>
+  <div class="lens-grid">${cells}</div>
+</section>`;
+}
+
+/**
+ * What the token is, stated before anyone has to ask.
+ *
+ * The rules here are strict and worth stating plainly: nothing about price,
+ * nothing about appreciation, no wallet-connect, and no claim that holding it
+ * grants anything. What it actually is, is a funding mechanism — and saying so
+ * is more defensible than implying utility that does not exist.
+ */
+function tokenHtml(): string {
+  return `<section class="token">
+  <strong>About the token</strong>
+  <p>
+    This project is funded by a token on Robinhood Chain. Trading it pays a fee, and most of that
+    fee goes to whoever launched the pool — which is what pays for this to keep running and to stay
+    free to read.
+  </p>
+  <p>
+    That is the whole of it. Holding it does not unlock anything here, there is nothing to connect a
+    wallet to, and no part of this site is behind it. Every reading, every bundle and every archive
+    is public and always will be.
+  </p>
+  <p>
+    It has not launched. The plan is to run this in the open first, see which of the five readings
+    people actually find worth sharing, and name it after the answer rather than after a guess. When
+    it does launch, the contract address will appear here and nowhere else.
+  </p>
+</section>`;
+}
+
 export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
   const releasedToday = new Set(
     index.today.filter((event) => event.kind === 'release').map((event) => event.repo),
@@ -507,11 +594,14 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     current: '/',
     index,
     meta,
-    body: `${stripSvg(index.strip, releasedToday)}
+    body: `${heroHtml(index, meta)}
+${lensesHtml(index)}
+${stripSvg(index.strip, releasedToday)}
 ${table}
 ${watchlistReadout(index.strip)}
 ${formingNotice}
-${scorecardHtml(index)}`,
+${scorecardHtml(index)}
+${tokenHtml()}`,
   });
 }
 

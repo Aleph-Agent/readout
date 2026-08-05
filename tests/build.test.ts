@@ -37,6 +37,7 @@ function entry(id: string): WatchlistEntry {
 function stateRow(id: string, forks: number): LiveStateRow {
   return {
     id,
+    fullName: id,
     active: true,
     forks,
     stars: forks * 10,

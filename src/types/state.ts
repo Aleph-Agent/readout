@@ -14,6 +14,16 @@ import type { AssertExhaustive } from './keys.ts';
 export interface LiveStateRow {
   /** Canonical `owner/repo`. Matches `WatchlistEntry.id`. */
   id: string;
+  /**
+   * The name GitHub currently uses, which is not always the id.
+   *
+   * Renames redirect silently, so a repository can be collected for months
+   * under a name nobody uses any more — verification found more than twenty of
+   * them, including `facebook/react`, now `react/react`. The id stays fixed
+   * because history, events and the sample window all key on it; this is what
+   * gets shown, so the site names things the way GitHub does.
+   */
+  fullName: string | null;
   /** Mirrors the watchlist. False after a 404; the row is kept, not deleted. */
   active: boolean;
   forks: number;
@@ -52,6 +62,7 @@ export interface LiveStateRow {
 
 export const LIVE_STATE_KEYS = [
   'id',
+  'fullName',
   'active',
   'forks',
   'stars',

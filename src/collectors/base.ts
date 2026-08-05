@@ -33,6 +33,7 @@ function rowFromPayload(
 ): LiveStateRow {
   return {
     id: entry.id,
+    fullName: payload.full_name,
     active: true,
     forks: payload.forks_count,
     stars: payload.stargazers_count,
@@ -51,6 +52,7 @@ function rowFromPayload(
 function inactiveRow(entry: WatchlistEntry, previous: LiveStateRow | undefined): LiveStateRow {
   return {
     id: entry.id,
+    fullName: previous?.fullName ?? null,
     active: false,
     forks: previous?.forks ?? 0,
     stars: previous?.stars ?? 0,

@@ -112,6 +112,7 @@ describe('clusterDemand', () => {
 describe('topByDemandSurface', () => {
   const row = (id: string, openIssues: number, active = true): LiveStateRow => ({
     id,
+    fullName: id,
     active,
     forks: 1,
     stars: 1,

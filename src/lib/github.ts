@@ -10,8 +10,22 @@
 
 const API_ROOT = 'https://api.github.com';
 
-/** Stop the run cleanly below this many remaining requests. */
+/**
+ * Stop the run cleanly below this many remaining requests, per resource.
+ *
+ * These are separate buckets and they are wildly different sizes: the core API
+ * allows 5,000 an hour while search allows 30 a minute. One floor across both
+ * meant every search response looked exhausted the moment it arrived, because
+ * 29 remaining out of 30 is below a floor built for 5,000.
+ *
+ * GitHub names the bucket in `x-ratelimit-resource`, so the floor follows it.
+ */
 const DEFAULT_FLOOR = 500;
+const FLOORS: Record<string, number> = {
+  core: 500,
+  search: 3,
+  graphql: 200,
+};
 
 /** Retries apply to 5xx only. A 4xx is an answer, not a failure. */
 const DEFAULT_MAX_ATTEMPTS = 3;
@@ -127,8 +141,15 @@ export function createGitHubClient(options: GitHubClientOptions): GitHubClient {
     const remaining = Number.parseInt(header, 10);
     if (!Number.isFinite(remaining)) return;
 
-    rateLimitRemaining = remaining;
-    if (remaining < floor) exhausted = true;
+    const resource = response.headers.get('x-ratelimit-resource') ?? 'core';
+    // The caller's floor governs the core bucket; the others have their own
+    // sizes and are not comparable to it.
+    const limit = resource === 'core' ? floor : (FLOORS[resource] ?? floor);
+
+    // Only the core budget is reported: it is the one the daily plan is built
+    // against, and a search reading would make it look catastrophic.
+    if (resource === 'core') rateLimitRemaining = remaining;
+    if (remaining < limit) exhausted = true;
   }
 
   async function getJson<T>(path: string, etag?: string | null): Promise<Fetched<T>> {

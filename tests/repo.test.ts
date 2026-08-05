@@ -31,6 +31,7 @@ function entry(id: string): WatchlistEntry {
 function state(id: string, over: Partial<LiveStateRow> = {}): LiveStateRow {
   return {
     id,
+    fullName: id,
     active: true,
     forks: 1200,
     stars: 24000,
@@ -206,6 +207,22 @@ describe('edge cases', () => {
     expect(html).toContain('Older signals not shown');
     expect(html).toContain('239 earlier signals');
     expect(html).toContain('Timeline — 240 recorded signals');
+  });
+
+  it('shows the name GitHub uses now, and the name it is watched under', () => {
+    // Renames redirect silently. Verification found more than twenty entries
+    // being collected under names nobody uses any more, facebook/react among
+    // them. The id stays fixed because history and events key on it.
+    const html = page({
+      entry: entry('facebook/react'),
+      state: state('facebook/react', { fullName: 'react/react' }),
+    });
+    expect(html).toContain('<h1 class="repo-title">react/react</h1>');
+    expect(html).toContain('Watched as facebook/react');
+  });
+
+  it('says nothing about naming when the name has not changed', () => {
+    expect(page({})).not.toContain('Watched as');
   });
 
   it('still renders a repository that has been dropped from the watchlist', () => {

@@ -204,10 +204,15 @@ export function renderRepoPage(
 
   const body = `
 <section class="repo-head">
-  <h1 class="repo-title">${esc(entry.id)}</h1>
+  <h1 class="repo-title">${esc(state?.fullName ?? entry.id)}</h1>
   <div class="repo-facts">
     <span class="label">${esc(entry.category)}</span>
     <span class="label">${data.onWatchlist ? `Watched since ${esc(entry.added)}` : 'Removed from the watchlist'}</span>
+    ${
+      state?.fullName != null && state.fullName.toLowerCase() !== entry.id.toLowerCase()
+        ? `<span class="label">Watched as ${esc(entry.id)}</span>`
+        : ''
+    }
     <a class="label" href="https://github.com/${esc(entry.id)}">View on GitHub</a>
   </div>
 </section>

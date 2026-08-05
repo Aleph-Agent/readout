@@ -115,6 +115,21 @@ export function templatedSentence(event: EventRecord): string | null {
       : `${event.repo} published ${tag}${when}, following ${previous}.`;
   }
 
+  if (event.kind === 'fork-outlier') {
+    const added = metricNumber(metrics, 'forksAdded');
+    const hours = metricNumber(metrics, 'observationHours');
+    const median = metricNumber(metrics, 'categoryMedian');
+    const peers = metricNumber(metrics, 'peers');
+    const category = metricString(metrics, 'category');
+    if (added === null || hours === null || median === null || peers === null || category === null) {
+      return null;
+    }
+
+    // Names the comparison group and its size. A multiple of a median means
+    // nothing without knowing how many things were in the sample.
+    return `${event.repo} added ${added} forks over ${hours} hours; the median of the ${peers} ${category} repositories measured was ${median}.`;
+  }
+
   if (event.kind === 'fork-spike') {
     const added = metricNumber(metrics, 'forksAdded');
     const hours = metricNumber(metrics, 'observationHours');

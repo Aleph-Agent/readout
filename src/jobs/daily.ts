@@ -10,6 +10,7 @@ import {
   readManifests,
   readMeta,
   readSnapshot,
+  readWatchlist,
   readWindow,
   writeManifests,
   writeMeta,
@@ -23,6 +24,7 @@ import {
   type DailyForkCount,
   type SpikeThresholds,
 } from '../lib/spikes.ts';
+import { classifyPeers, type PeerObservation } from '../lib/peers.ts';
 import { windowAnchor } from '../lib/window.ts';
 import type { EventRecord } from '../types/events.ts';
 import type { HistorySnapshotRow } from '../types/history.ts';
@@ -49,6 +51,12 @@ export interface DailyOptions {
    * only what the pulses already collected, so they still run.
    */
   offline?: boolean;
+}
+
+function daysBetween(from: string, to: string): number {
+  return Math.round(
+    (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000,
+  );
 }
 
 function readHistoryWindow(today: Date, days: number): Map<string, DailyForkCount[]> {
@@ -214,6 +222,68 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
     }
 
     requestsConsumed = client.stats().consumed;
+  }
+
+  // 2b. Peer-relative outliers. The self-relative detector above says nothing
+  //     for fourteen days; this one needs a single filled window, because it
+  //     compares a repository against the rest of its category on the same day
+  //     rather than against its own past. Separate claim, separate event kind.
+  const categories = new Map(readWatchlist().map((entry) => [entry.id, entry.category as string]));
+  const lastOutlier = lastDetectionByRepo(allEvents, 'fork-outlier');
+
+  const observations: PeerObservation[] = [];
+  for (const row of state) {
+    if (!row.active) continue;
+    const category = categories.get(row.id);
+    if (category === undefined) continue;
+
+    const anchor = windowAnchor(windows.get(row.id) ?? [], now.getTime());
+    if (anchor === null) {
+      observations.push({ id: row.id, category, delta: 0, windowHours: 0 });
+      continue;
+    }
+
+    observations.push({
+      id: row.id,
+      category,
+      delta: row.forks - anchor.forks,
+      windowHours: (now.getTime() - Date.parse(anchor.at)) / 3_600_000,
+    });
+  }
+
+  for (const peer of classifyPeers(observations)) {
+    if (peer.state !== 'outlier') continue;
+
+    const id = eventId('fork-outlier', peer.id, today);
+    if (seen.has(id)) continue;
+    seen.add(id);
+
+    const previous = lastOutlier.get(peer.id);
+    const age = previous === undefined ? null : daysBetween(previous, today);
+    const confirmed = age !== null && age >= 1 && age <= 2;
+
+    events.push({
+      id,
+      kind: 'fork-outlier',
+      repo: peer.id,
+      detectedAt: nowIso,
+      confidence: confirmed ? 'confirmed' : 'detected',
+      summaryState: confirmed ? 'pending' : 'skipped',
+      summary: null,
+      evidenceUrl: `https://github.com/${peer.id}`,
+      metrics: {
+        forksAdded: peer.delta,
+        observationHours: Math.round(peer.windowHours),
+        category: peer.category,
+        categoryMedian: peer.median,
+        peers: peer.peers,
+        rankInCategory: peer.rank,
+        ratioToMedian: peer.displayRatio === null ? null : roundMultiplier(peer.displayRatio),
+        ratioCapped: peer.ratioCapped ? 'yes' : 'no',
+        totalForks: state.find((r) => r.id === peer.id)?.forks ?? null,
+      },
+      supersedes: null,
+    });
   }
 
   if (events.length > 0) appendEvents(month, events);

@@ -61,7 +61,7 @@ const PULSE_CADENCE_HOURS = 4;
  */
 const LENS_KINDS: Record<LensName, readonly EventKind[]> = {
   ships: ['release'],
-  forks: ['fork-spike'],
+  forks: ['fork-spike', 'fork-outlier'],
   demand: ['demand-cluster'],
   stack: ['dependency-shift'],
   lineage: ['lineage'],

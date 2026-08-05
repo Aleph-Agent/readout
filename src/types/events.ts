@@ -27,7 +27,18 @@ export type SummaryState = 'pending' | 'summarised' | 'skipped';
 
 export type EventKind =
   | 'release'
+  /** Fork activity above this repository's own trailing baseline. */
   | 'fork-spike'
+  /**
+   * Fork activity above the rest of its category on the same day.
+   *
+   * A separate kind from `fork-spike` on purpose. "27× its own 30-day baseline"
+   * and "eight times the median project in its category today" are different
+   * claims resting on different evidence, and one of them is available after a
+   * day while the other needs a fortnight. Merging them would let the site
+   * imply history it does not have.
+   */
+  | 'fork-outlier'
   | 'demand-cluster'
   | 'dependency-shift'
   | 'lineage'

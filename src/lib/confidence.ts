@@ -8,11 +8,14 @@ import type { EventRecord } from '../types/events.ts';
  * would silently drop back to `detected` on the 1st — the confirmation would
  * reset every month boundary, on exactly the events most worth confirming.
  */
-export function lastDetectionByRepo(events: readonly EventRecord[]): Map<string, string> {
+export function lastDetectionByRepo(
+  events: readonly EventRecord[],
+  kind: EventRecord['kind'] = 'fork-spike',
+): Map<string, string> {
   const latest = new Map<string, string>();
 
   for (const event of events) {
-    if (event.kind !== 'fork-spike') continue;
+    if (event.kind !== kind) continue;
     if (event.confidence !== 'detected' && event.confidence !== 'confirmed') continue;
 
     const date = event.detectedAt.slice(0, 10);

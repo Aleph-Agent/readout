@@ -207,7 +207,14 @@ export async function onRequestPost(context: PagesContext): Promise<Response> {
       return json({ error: 'The answer box is busy. Try again in a minute.' }, 429);
     }
     if (!upstream.ok) {
-      return json({ error: 'The answer box is unavailable right now.' }, 502);
+      // The upstream status is carried out rather than swallowed. A generic
+      // "unavailable" cost an hour of guessing the first time this failed, and
+      // a status code is not a secret — the body, which can quote the request,
+      // stays behind.
+      return json(
+        { error: `The answer box is unavailable right now (upstream ${upstream.status}).` },
+        502,
+      );
     }
 
     const payload = (await upstream.json()) as {

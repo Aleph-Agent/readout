@@ -266,15 +266,14 @@ export function stripSvg(marks: readonly StripMark[], releasedToday: ReadonlySet
   // instead, and bring the chart back when there is something to chart.
   const measured = marks.filter((mark) => mark.state !== 'forming');
   if (measured.length === 0) {
-    return `<section class="strip">
-  <h2 class="label">Fork velocity</h2>
+    return `<div class="strip">
   <div class="notice">
     <strong>Baseline forming</strong>
     All ${marks.length} repositories are being measured, and none has a full observation window yet.
     The strip appears once there is deviation to draw. Until then there is nothing to show, which is
     different from showing nothing.
   </div>
-</section>`;
+</div>`;
   }
 
   const H = 100;
@@ -315,8 +314,7 @@ export function stripSvg(marks: readonly StripMark[], releasedToday: ReadonlySet
 
   const baselineY = (H - BASELINE_HEIGHT * H).toFixed(2);
 
-  return `<section class="strip" aria-labelledby="strip-h">
-  <h2 class="label" id="strip-h">Fork velocity — ${marks.length} repositories, each against its own baseline</h2>
+  return `<div class="strip">
   <svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" role="img"
        aria-label="One mark per watched repository. Height is deviation from that repository's own fork baseline. ${marks.filter((m) => m.state === 'confirmed').length} confirmed above baseline.">
     <line class="baseline-rule" x1="0" y1="${baselineY}" x2="100" y2="${baselineY}"></line>
@@ -332,7 +330,7 @@ export function stripSvg(marks: readonly StripMark[], releasedToday: ReadonlySet
     <span class="state state-detected">Detected once</span>
     <span class="state state-forming">Baseline forming</span>
   </div>
-</section>`;
+</div>`;
 }
 
 // ---------------------------------------------------------------- fragments
@@ -468,6 +466,29 @@ function watchlistReadout(marks: readonly StripMark[]): string {
 whose window has not filled yet shows no figure rather than a zero.</p>`;
 }
 
+/**
+ * A numbered band.
+ *
+ * The page was a stack of sections separated by hairlines, and nothing told a
+ * reader where one reading stopped and the next began. Numbering them and
+ * hanging the number and the name in a fixed left rail is how a panel is
+ * labelled: the eye finds the same column every time, the numbers give the
+ * page an order, and no section has to carry a heading inline.
+ */
+function band(no: string, name: string, inner: string, note?: string): string {
+  if (inner.trim() === '') return '';
+
+  return `<section class="band">
+  <div class="band-rail">
+    <span class="band-no num">${esc(no)}</span>
+    <h2 class="band-name">${esc(name)}</h2>
+  </div>
+  <div class="band-body">${note === undefined ? '' : `<p class="band-note">${esc(note)}</p>`}
+${inner}
+  </div>
+</section>`;
+}
+
 /** What each lens answers. The navigation named them and nothing explained them. */
 const LENS_QUESTION: Record<LensName, string> = {
   ships: 'What released a new version?',
@@ -519,10 +540,7 @@ function lensesHtml(index: IndexBundle): string {
     })
     .join('');
 
-  return `<section class="lenses">
-  <h2 class="label">The five readings</h2>
-  <div class="lens-grid">${cells}</div>
-</section>`;
+  return `<div class="lens-grid">${cells}</div>`;
 }
 
 /**
@@ -534,8 +552,7 @@ function lensesHtml(index: IndexBundle): string {
  * is more defensible than implying utility that does not exist.
  */
 function tokenHtml(): string {
-  return `<section class="token">
-  <strong>About the token</strong>
+  return `<div class="token">
   <p>
     This project is funded by a token on Robinhood Chain. Trading it pays a fee, and most of that
     fee goes to whoever launched the pool — which is what pays for this to keep running and to stay
@@ -551,7 +568,7 @@ function tokenHtml(): string {
     people actually find worth sharing, and name it after the answer rather than after a guess. When
     it does launch, the contract address will appear here and nowhere else.
   </p>
-</section>`;
+</div>`;
 }
 
 export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
@@ -595,13 +612,12 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     index,
     meta,
     body: `${heroHtml(index, meta)}
-${lensesHtml(index)}
-${stripSvg(index.strip, releasedToday)}
-${table}
-${watchlistReadout(index.strip)}
-${formingNotice}
-${scorecardHtml(index)}
-${tokenHtml()}`,
+${band('01', 'Readings', lensesHtml(index), 'What each of the five readings answers, and how many findings each has on record.')}
+${band('02', 'Fork velocity', stripSvg(index.strip, releasedToday), `One mark per repository, each measured against its own trailing baseline rather than against the others.`)}
+${band('03', 'Today', `${table}${formingNotice}`, 'Everything detected since midnight UTC. Empty is the ordinary state and is reported as such.')}
+${band('04', 'Watchlist', watchlistReadout(index.strip), 'Every repository being read, ordered by what it gained across the current window.')}
+${band('05', 'Our record', scorecardHtml(index), 'How often this instrument has been right, published whatever it says.')}
+${band('06', 'The token', tokenHtml(), 'What funds this, stated before anyone has to ask.')}`,
   });
 }
 

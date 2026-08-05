@@ -298,14 +298,51 @@ describe('telling a first-time visitor what this is', () => {
 
   it('says what each of the five readings answers', () => {
     const html = renderIndex(index(), meta());
-    expect(html).toContain('The five readings');
+    expect(html).toContain('five readings');
     expect(html).toContain('What released a new version?');
     expect(html).toContain('Which models say they were built on which?');
   });
 
+  it('numbers and names every band, so the page has an order', () => {
+    // The layout complaint was that nothing marked where one reading stopped
+    // and the next began. Every section carries its number and its name in the
+    // same rail, and a missing one is a section a reader cannot place.
+    const html = renderIndex(
+      index({
+        strip: [
+          {
+            id: 'a/one',
+            delta: 60,
+            multiplier: 24,
+            capped: false,
+            state: 'confirmed',
+            forks: 900,
+            stars: 5000,
+            language: 'Go',
+            name: 'a/one',
+          },
+        ],
+      }),
+      meta(),
+    );
+
+    for (const [no, name] of [
+      ['01', 'Readings'],
+      ['02', 'Fork velocity'],
+      ['03', 'Today'],
+      ['04', 'Watchlist'],
+      ['05', 'Our record'],
+      ['06', 'The token'],
+    ]) {
+      expect(html).toContain(`<span class="band-no num">${no}</span>`);
+      expect(html).toContain(`<h2 class="band-name">${name}</h2>`);
+    }
+  });
+
   it('explains the token without claiming anything it must not', () => {
     const html = renderIndex(index(), meta());
-    expect(html).toContain('About the token');
+    expect(html).toContain('The token');
+    expect(html).toContain('funded by a token on Robinhood Chain');
     expect(html).toContain('Holding it does not unlock anything here');
     expect(html).toContain('It has not launched');
 

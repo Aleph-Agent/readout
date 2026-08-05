@@ -12,6 +12,10 @@
  * Not a newspaper. There are no columns, no masthead, no kickers. Every number
  * is labelled with its unit, its comparison window, and its sample count,
  * because that is the vernacular of measurement rather than editorial.
+ *
+ * Rebuilt once, after the first version was reported as tiring to read and hard
+ * to navigate. Both complaints had causes rather than being matters of taste,
+ * and the fixes are marked where they are made.
  */
 
 /* ------------------------------------------------------------------ fonts */
@@ -47,26 +51,35 @@
   font-display: swap;
 }
 
-/* ------------------------------------------------------------------ tokens */
+/* ----------------------------------------------------------------- tokens */
 
 :root {
-  /* One neutral ramp. Warm, so it reads as equipment rather than as screen.
-     Widened at both ends: everything used to sit in the middle four steps, so
-     nothing had hierarchy and the whole page read as one grey mass. */
-  --ink-000: #0e0d0c;
-  --ink-025: #141311;
-  --ink-050: #1b1a17;
-  --ink-100: #272521;
-  --ink-200: #35322c;
-  --ink-300: #565149;
-  --ink-500: #948f85;
-  --ink-700: #cbc6bc;
-  --ink-900: #f5f2ea;
+  /* One neutral ramp, warm, so it reads as equipment rather than as screen.
+     Rebuilt at both ends after eye strain was reported.
+
+     The old ramp ran #0e0d0c to #f5f2ea. Near-white on near-black is 17:1, and
+     above roughly 12:1 on a dark ground the light strokes bloom into the dark
+     — the eye keeps refocusing on an edge that will not settle. The ground is
+     lifted off black and the top is pulled off white. The ratio lands near
+     12:1, which is still far above the 4.5:1 anyone needs. */
+  --ink-000: #141310;
+  --ink-025: #1a1815;
+  --ink-050: #211f1b;
+  --ink-100: #2b2823;
+  --ink-200: #393530;
+  --ink-300: #5c574e;
+  --ink-500: #948d82;
+  --ink-700: #c3bcb0;
+  --ink-900: #e7e1d5;
 
   /* Two signal colours. There is no third, and neither is ever the only
-     carrier of meaning — every coloured state also has a glyph and a label. */
-  --alert: #e2604a;
-  --nominal: #8fb27a;
+     carrier of meaning — every coloured state also has a glyph and a label.
+
+     Both were desaturated in the rebuild. A saturated red on a dark ground
+     fringes at the edge of every letterform, which is the other half of why
+     the page was tiring. Indicator lamps, not neon. */
+  --alert: #cf7a5e;
+  --nominal: #92a97b;
 
   --face-label: 'Plex Condensed', ui-sans-serif, system-ui, sans-serif;
   --face-data: 'Plex Mono', ui-monospace, monospace;
@@ -81,7 +94,8 @@
   --t-display: 28px;
 
   --gap: 4px;
-  --pad: 16px;
+  --pad: 20px;
+  --rail: 150px;
   --rule: 1px solid var(--ink-100);
 }
 
@@ -123,9 +137,9 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(203, 198, 188, 0.03) 45%,
-    rgba(203, 198, 188, 0.09) 80%,
-    rgba(203, 198, 188, 0.16) 96%,
+    rgba(195, 188, 176, 0.03) 45%,
+    rgba(195, 188, 176, 0.09) 80%,
+    rgba(195, 188, 176, 0.16) 96%,
     transparent
   );
   /* Slow on purpose. A fast pass behind a table of numbers reads as a loading
@@ -135,10 +149,10 @@
 
 @keyframes sweep {
   from {
-    transform: translateX(-30vw);
+    transform: translateX(-36vw);
   }
   to {
-    transform: translateX(130vw);
+    transform: translateX(132vw);
   }
 }
 
@@ -151,9 +165,9 @@
   inset: 0;
   background: radial-gradient(
     150% 110% at 50% 0%,
-    rgba(14, 13, 12, 0) 0%,
-    rgba(14, 13, 12, 0.5) 55%,
-    rgba(14, 13, 12, 0.85) 100%
+    rgba(20, 19, 16, 0) 0%,
+    rgba(20, 19, 16, 0.5) 55%,
+    rgba(20, 19, 16, 0.85) 100%
   );
 }
 
@@ -186,7 +200,7 @@ body {
   color: var(--ink-700);
   font-family: var(--face-data);
   font-size: var(--t-base);
-  line-height: 1.45;
+  line-height: 1.5;
   /* Every number in the product. Never assumed — stated. */
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
@@ -228,7 +242,7 @@ a:hover {
 .prose {
   font-family: var(--face-prose);
   font-size: var(--t-mid);
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--ink-900);
   max-width: 62ch;
 }
@@ -243,7 +257,7 @@ a:hover {
 
 .masthead {
   border-bottom: var(--rule);
-  padding: 14px 0 12px;
+  padding: 16px 0 14px;
   display: flex;
   flex-wrap: wrap;
   gap: 12px var(--pad);
@@ -255,7 +269,7 @@ a:hover {
   font-family: var(--face-label);
   font-weight: 600;
   font-size: var(--t-mid);
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-900);
   border: 0;
@@ -294,7 +308,7 @@ a:hover {
 
 .nav a {
   display: block;
-  padding: 9px 14px 8px;
+  padding: 10px 15px 9px;
   border: 0;
   border-bottom: 2px solid transparent;
   font-family: var(--face-label);
@@ -325,18 +339,20 @@ a:hover {
    failure rather than a matter of taste. */
 
 .hero {
-  padding: 54px 0 34px;
-  border-bottom: var(--rule);
+  padding: 64px 0 40px;
 }
 
 .hero-thesis {
-  font-family: var(--face-data);
-  font-weight: 400;
-  font-size: clamp(22px, 3.4vw, 34px);
-  line-height: 1.28;
+  /* The label face at size. Condensed 600 at forty points is equipment
+     signage, which is the one voice this product is allowed to raise. */
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: clamp(28px, 4.6vw, 46px);
+  letter-spacing: -0.005em;
+  line-height: 1.1;
   color: var(--ink-900);
-  margin: 0 0 16px;
-  max-width: 22ch;
+  margin: 0 0 20px;
+  max-width: 19ch;
 }
 
 .hero-thesis em {
@@ -347,28 +363,106 @@ a:hover {
 .hero-sub {
   font-family: var(--face-prose);
   font-size: var(--t-mid);
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--ink-700);
-  margin: 0 0 26px;
-  max-width: 58ch;
+  margin: 0 0 34px;
+  max-width: 60ch;
 }
 
+/* The opening readout: the five standing facts about the instrument itself,
+   set as a panel rather than as a sentence, because they are constants and a
+   reader should be able to find them in the same place every time. */
 .hero-figures {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 1px;
+  background: var(--ink-100);
+  border: 1px solid var(--ink-100);
 }
 
 .figure {
   display: grid;
-  gap: 2px;
+  gap: 4px;
+  background: var(--ink-025);
+  padding: 14px 16px 15px;
 }
 
 .figure-value {
   font-family: var(--face-data);
   font-variant-numeric: tabular-nums;
   font-size: var(--t-large);
+  line-height: 1.1;
   color: var(--ink-900);
+}
+
+/* ------------------------------------------------------------------- bands
+
+   The page was a stack of sections separated by hairlines, and nothing told a
+   reader where one reading stopped and the next began — the complaint was that
+   the layout was messy, and this is the cause of it.
+
+   Each section is now a numbered band with its name in a fixed left rail. The
+   eye finds the same column every time, the number gives the page an order,
+   and no section has to carry its own heading inline. It is how a panel is
+   labelled, which is the right reference for this product. */
+
+.band {
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
+  gap: 0 34px;
+  border-top: var(--rule);
+  padding: 32px 0 36px;
+}
+
+.band-rail {
+  position: sticky;
+  top: 14px;
+  align-self: start;
+  display: grid;
+  gap: 7px;
+  align-content: start;
+}
+
+.band-no {
+  font-size: var(--t-micro);
+  letter-spacing: 0.16em;
+  color: var(--ink-300);
+}
+
+.band-name {
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-small);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-700);
+}
+
+.band-note {
+  font-family: var(--face-prose);
+  font-size: var(--t-small);
+  line-height: 1.5;
+  color: var(--ink-500);
+  margin: 0 0 18px;
+  max-width: 58ch;
+}
+
+.band-body > :first-child {
+  margin-top: 0;
+}
+
+@media (max-width: 860px) {
+  .band {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .band-rail {
+    position: static;
+    grid-auto-flow: column;
+    justify-content: start;
+    align-items: baseline;
+    gap: 12px;
+  }
 }
 
 /* ------------------------------------------------------------------ lenses
@@ -376,18 +470,9 @@ a:hover {
    Five signals with no explanation anywhere. The navigation named them and
    nothing said what any of them answers. */
 
-.lenses {
-  border-bottom: var(--rule);
-  padding: 8px 0 26px;
-}
-
-.lenses > .label {
-  padding: 20px 0 10px;
-}
-
 .lens-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
   gap: 1px;
   background: var(--ink-100);
   border: 1px solid var(--ink-100);
@@ -397,7 +482,7 @@ a:hover {
   background: var(--ink-025);
   padding: 16px 16px 18px;
   display: grid;
-  gap: 6px;
+  gap: 8px;
   align-content: start;
   border: 0;
 }
@@ -418,33 +503,31 @@ a.lens-cell:hover {
 .lens-question {
   font-family: var(--face-prose);
   font-size: var(--t-small);
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--ink-500);
 }
 
 .lens-count {
   font-family: var(--face-data);
   font-variant-numeric: tabular-nums;
-  font-size: var(--t-small);
+  font-size: var(--t-micro);
   color: var(--ink-700);
+  align-self: end;
 }
 
 /* ------------------------------------------------------------------- token */
 
 .token {
-  border-top: var(--rule);
-  margin-top: 34px;
-  padding: 26px 0 8px;
   display: grid;
-  gap: 12px;
-  max-width: 66ch;
+  gap: 14px;
+  max-width: 64ch;
 }
 
 .token p {
   margin: 0;
   font-family: var(--face-prose);
   font-size: var(--t-base);
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--ink-700);
 }
 
@@ -459,28 +542,24 @@ a.lens-cell:hover {
 
 /* ---------------------------------------------------------- velocity strip */
 
-.strip {
-  padding: 20px 0 10px;
-  border-bottom: var(--rule);
-}
-
 .strip svg {
   display: block;
   width: 100%;
-  height: 96px;
+  height: 104px;
 }
 
 .strip-scale {
   display: flex;
   justify-content: space-between;
-  padding-top: 6px;
+  gap: 12px;
+  padding-top: 8px;
 }
 
 .strip-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  padding-top: 10px;
+  gap: 18px;
+  padding-top: 12px;
 }
 
 .mark-quiet {
@@ -519,7 +598,7 @@ a.lens-cell:hover {
 
 .readout caption {
   text-align: left;
-  padding: 18px 0 8px;
+  padding: 0 0 10px;
 }
 
 .readout th {
@@ -530,13 +609,13 @@ a.lens-cell:hover {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-500);
-  padding: 6px 12px 6px 0;
-  border-bottom: var(--rule);
+  padding: 7px 14px 7px 0;
+  border-bottom: 1px solid var(--ink-200);
   white-space: nowrap;
 }
 
 .readout td {
-  padding: 5px 12px 5px 0;
+  padding: 7px 14px 7px 0;
   border-bottom: 1px solid var(--ink-050);
   vertical-align: baseline;
 }
@@ -547,7 +626,7 @@ a.lens-cell:hover {
 
 .readout .n {
   text-align: right;
-  padding-right: 18px;
+  padding-right: 20px;
 }
 
 .readout .dim {
@@ -601,11 +680,12 @@ a.lens-cell:hover {
    is a reading of it. Both are sentences. Only the marker separates them. */
 
 .basis {
-  margin: 0;
+  margin: 10px 0 0;
   color: var(--ink-500);
   text-transform: none;
   letter-spacing: 0.02em;
   font-size: var(--t-small);
+  max-width: 68ch;
 }
 
 .explains {
@@ -630,11 +710,13 @@ a.lens-cell:hover {
 
 .notice {
   border-left: 2px solid var(--ink-200);
-  padding: 12px 0 12px 14px;
-  margin: 20px 0;
+  background: var(--ink-025);
+  padding: 14px 16px 15px;
+  margin: 18px 0;
   color: var(--ink-500);
   font-size: var(--t-small);
-  max-width: 68ch;
+  line-height: 1.55;
+  max-width: 70ch;
 }
 
 .notice strong {
@@ -645,7 +727,7 @@ a.lens-cell:hover {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-700);
-  margin-bottom: 5px;
+  margin-bottom: 6px;
 }
 
 .notice-alert {
@@ -656,16 +738,16 @@ a.lens-cell:hover {
    attached. Everything else is a row. */
 .finding {
   border-top: var(--rule);
-  padding: 18px 0;
+  padding: 20px 0;
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 /* A detection is one observation. It gets a card, because it is a finding, but
    not the same weight as one that survived a second daily snapshot — a reader
    skimming should be able to see the difference without reading the badge. */
 .finding-detected {
-  padding: 12px 0;
+  padding: 13px 0;
   opacity: 0.82;
 }
 
@@ -692,12 +774,12 @@ a.lens-cell:hover {
 .finding-metrics {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 24px;
+  gap: 6px 26px;
 }
 
 .metric {
   display: grid;
-  gap: 1px;
+  gap: 2px;
 }
 
 .metric-value {
@@ -708,7 +790,7 @@ a.lens-cell:hover {
 /* ------------------------------------------------------------- repo page */
 
 .repo-head {
-  padding: 26px 0 14px;
+  padding: 34px 0 18px;
   border-bottom: var(--rule);
 }
 
@@ -717,18 +799,18 @@ a.lens-cell:hover {
   font-weight: 400;
   font-size: var(--t-display);
   color: var(--ink-900);
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   overflow-wrap: anywhere;
 }
 
 .repo-facts {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 20px;
+  gap: 6px 22px;
 }
 
 .chart {
-  margin: 24px 0 0;
+  margin: 26px 0 0;
 }
 
 .chart svg {
@@ -775,7 +857,7 @@ a.lens-cell:hover {
   display: grid;
   grid-template-columns: 132px minmax(0, 1fr);
   gap: 4px 18px;
-  padding: 14px 0 16px 18px;
+  padding: 15px 0 17px 18px;
   position: relative;
 }
 
@@ -783,7 +865,7 @@ a.lens-cell:hover {
   content: '';
   position: absolute;
   left: -3px;
-  top: 20px;
+  top: 21px;
   width: 5px;
   height: 5px;
   background: var(--ink-500);
@@ -808,35 +890,33 @@ a.lens-cell:hover {
   display: inline;
 }
 
+.colophon {
+  border-top: var(--rule);
+  margin-top: 40px;
+  padding: 22px 0 48px;
+  color: var(--ink-500);
+  font-size: var(--t-micro);
+  line-height: 1.6;
+  display: grid;
+  gap: 9px;
+  max-width: 78ch;
+}
+
 @media (max-width: 640px) {
+  :root {
+    --pad: 14px;
+  }
+  .strip svg {
+    height: 68px;
+  }
+  .readout {
+    font-size: var(--t-micro);
+  }
   .tl-entry {
     grid-template-columns: minmax(0, 1fr);
   }
   .repo-title {
     font-size: var(--t-large);
-  }
-}
-
-.colophon {
-  border-top: var(--rule);
-  margin-top: 36px;
-  padding: 20px 0 44px;
-  color: var(--ink-500);
-  font-size: var(--t-micro);
-  display: grid;
-  gap: 8px;
-  max-width: 76ch;
-}
-
-@media (max-width: 640px) {
-  :root {
-    --pad: 12px;
-  }
-  .strip svg {
-    height: 64px;
-  }
-  .readout {
-    font-size: var(--t-micro);
   }
 }
 
@@ -852,8 +932,8 @@ a.lens-cell:hover {
    quiet watchlist has nothing beating at all.
 
    That is also why the page is often still: stillness here means nothing has
-   crossed the threshold, which is information. Decoration that moved anyway
-   would be saying something untrue. */
+   crossed the threshold, which is information. The ambient backdrop above is
+   the one exception, and it is the maintainer's call rather than the brief's. */
 
 .mark-confirmed {
   transform-box: fill-box;

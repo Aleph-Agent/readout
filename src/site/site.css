@@ -103,9 +103,8 @@
   pointer-events: none;
   overflow: hidden;
   background:
-    linear-gradient(var(--ink-100) 1px, transparent 1px) 0 0 / 100% 46px,
-    linear-gradient(90deg, var(--ink-100) 1px, transparent 1px) 0 0 / 46px 100%;
-  opacity: 0.55;
+    linear-gradient(var(--ink-200) 1px, transparent 1px) 0 0 / 100% 46px,
+    linear-gradient(90deg, var(--ink-200) 1px, transparent 1px) 0 0 / 46px 100%;
   animation: drift 34s linear infinite;
 }
 
@@ -120,12 +119,13 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 26vw;
+  width: 34vw;
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(226, 96, 74, 0.05) 55%,
-    rgba(226, 96, 74, 0.13) 85%,
+    rgba(203, 198, 188, 0.03) 45%,
+    rgba(203, 198, 188, 0.09) 80%,
+    rgba(203, 198, 188, 0.16) 96%,
     transparent
   );
   /* Slow on purpose. A fast pass behind a table of numbers reads as a loading
@@ -142,12 +142,19 @@
   }
 }
 
-/* A floor, so text never sits directly on the moving grid. */
+/* A floor, so text never sits directly on the moving grid. Partial, not solid:
+   at full opacity it painted the ground colour back over everything and there
+   was nothing left to see. */
 .backdrop::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(130% 95% at 50% 0%, transparent, var(--ink-000) 76%);
+  background: radial-gradient(
+    150% 110% at 50% 0%,
+    rgba(14, 13, 12, 0) 0%,
+    rgba(14, 13, 12, 0.5) 55%,
+    rgba(14, 13, 12, 0.85) 100%
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -171,7 +178,11 @@ html {
 
 body {
   margin: 0;
-  background: var(--ink-000);
+  /* Deliberately transparent. The backdrop is a child of body sitting at
+     z-index -1, which paints behind body's own background but in front of the
+     root's. An opaque background here hid the whole thing completely. The
+     ground colour lives on `html` instead. */
+  background: transparent;
   color: var(--ink-700);
   font-family: var(--face-data);
   font-size: var(--t-base);

@@ -25,6 +25,25 @@ import type { SummaryRecord } from '../types/summaries.ts';
  * inside a day.
  */
 
+/**
+ * Signals where interpretation has something to do.
+ *
+ * Releases are excluded, and on evidence rather than budget. Run against real
+ * releases the model produced "grafana/loki published v3.7.5, following
+ * v3.7.4" — the templated sentence minus the date. A release is a repository,
+ * a tag, a previous tag and a day; there is no pattern in it to read, so a
+ * sentence can add nothing the record does not already say.
+ *
+ * A spike has a shape. That is where prose earns its place.
+ */
+const INTERPRETABLE: ReadonlySet<string> = new Set([
+  'fork-spike',
+  'fork-outlier',
+  'demand-cluster',
+  'dependency-shift',
+  'lineage',
+]);
+
 export interface SummariseOptions {
   apiKey?: string;
   /** Pre-built client, for tests that never reach the network. */
@@ -53,7 +72,10 @@ export async function runSummarise(options: SummariseOptions = {}): Promise<Summ
 
   const done = readSummarised();
   const queue: EventRecord[] = readAllEvents().filter(
-    (event) => event.summaryState === 'pending' && !done.has(event.id),
+    (event) =>
+      event.summaryState === 'pending' &&
+      INTERPRETABLE.has(event.kind) &&
+      !done.has(event.id),
   );
 
   const pending = options.limit === undefined ? queue : queue.slice(0, options.limit);

@@ -140,7 +140,11 @@ describe('pulse dry run', () => {
     const event = events[0];
     expect(event?.kind).toBe('release');
     expect(event?.confidence).toBe('confirmed');
-    expect(event?.summaryState).toBe('pending');
+    // Releases never queue for prose: the templated sentence already states the
+    // repository, the tag, the previous tag and the day, which is all a release
+    // is. Run against real data the model returned that same sentence minus the
+    // date.
+    expect(event?.summaryState).toBe('skipped');
     expect(event?.summary).toBeNull();
     expect(event?.evidenceUrl).toContain('/releases/tag/v1.1.0');
     expect(event?.metrics['previousTag']).toBe('v1.0.0');

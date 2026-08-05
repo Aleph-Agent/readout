@@ -98,9 +98,12 @@ export async function collectReleases(
         repo: row.id,
         detectedAt: options.now,
         confidence: 'confirmed',
-        // A prerelease is a real event but rarely worth prose. Marking it
-        // skipped keeps the LLM budget for releases people actually adopt.
-        summaryState: release.prerelease ? 'skipped' : 'pending',
+        // No release gets prose. A release is a repository, a tag, a previous
+        // tag and a day, and the templated sentence already says all four. Run
+        // against real data the model returned that same sentence without the
+        // date. The template is used for the page, the link preview, and the
+        // feed; the model is kept for signals that have a shape to describe.
+        summaryState: 'skipped',
         summary: null,
         evidenceUrl: release.html_url,
         // The whole evidence base a summary is allowed to explain. Deliberately

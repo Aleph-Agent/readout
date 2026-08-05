@@ -341,6 +341,43 @@ function buildLens(
   };
 }
 
+/**
+ * Fail the build on a link that goes nowhere.
+ *
+ * This exists because 141 of them shipped. Repository timelines linked every
+ * entry to its own page, including retractions, which have none. Nothing
+ * checked, so nothing complained, and the only reason it was found at all was
+ * somebody looking.
+ *
+ * Cheap to run and it turns a class of silent breakage into a failed build.
+ */
+function assertNoDeadInternalLinks(pages: ReadonlyMap<string, string>): void {
+  const served = new Set<string>(['/']);
+  for (const name of pages.keys()) {
+    served.add(`/${name.replace(/\.html$/, '')}`);
+    served.add(`/${name}`);
+  }
+
+  const dead = new Set<string>();
+
+  for (const [name, html] of pages) {
+    if (!name.endsWith('.html')) continue;
+    for (const match of html.matchAll(/href="(\/[^"#?]*)"/g)) {
+      const target = (match[1] as string).replace(/\/$/, '') || '/';
+      // Assets are written outside the page map; only pages are checked here.
+      if (/\.(css|json|xml|txt|woff2?|png|svg)$/.test(target)) continue;
+      if (!served.has(target)) dead.add(target);
+    }
+  }
+
+  if (dead.size > 0) {
+    const sample = [...dead].slice(0, 5).join(', ');
+    throw new Error(
+      `build: ${dead.size} internal link${dead.size === 1 ? '' : 's'} point at pages that are not generated (${sample}${dead.size > 5 ? ', …' : ''})`,
+    );
+  }
+}
+
 export function runBuild(options: BuildOptions = {}): BuildResult {
   const now = options.now ?? new Date();
   const windowDays = options.windowDays ?? DEFAULT_WINDOW_DAYS;
@@ -352,6 +389,15 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   const byId = new Map(all.map((event) => [event.id, event]));
 
   const events = withSummaries(applyCorrections(all));
+
+  // Retractions are filtered once, here, and every consumer works from the
+  // result. Filtering them per-view is how the same bug appeared three times:
+  // dead links from repository timelines, from the index table, and from
+  // finding pages that had no repository page to point at.
+  const addressable = events.filter(
+    (event) => !(event.kind === 'correction' && event.metrics['withdrawn'] === 'yes'),
+  );
+
   const grouped = groupByLens(events, byId);
 
   const emitted = new Map<string, string>();
@@ -385,7 +431,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   const index: IndexBundle = {
     strip: buildStrip(now, lastDetectionByRepo(all), history),
     scorecard: scoreFindings(all, now),
-    today: events.filter((event) => event.detectedAt.slice(0, 10) === today),
+    today: addressable.filter((event) => event.detectedAt.slice(0, 10) === today),
     watchlist: {
       total: watchlist.length,
       active: readActiveWatchlist().length,
@@ -415,13 +461,33 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   // page that says so honestly, rather than a 404 that reads as a broken link.
   const stateById = new Map(readLiveState().map((row) => [row.id, row]));
   const eventsByRepo = new Map<string, EventRecord[]>();
-  for (const event of events) {
+  for (const event of addressable) {
     const list = eventsByRepo.get(event.repo);
     if (list) list.push(event);
     else eventsByRepo.set(event.repo, [event]);
   }
 
-  for (const entry of watchlist) {
+  // Every watched repository, plus any repository that has events but has since
+  // been removed. Its findings are permanent and they link here; dropping the
+  // page would turn each of them into a dead link.
+  const watched = new Map(watchlist.map((entry) => [entry.id, entry]));
+  const profiles = new Map(watched);
+
+  for (const [repo, repoEvents] of eventsByRepo) {
+    if (profiles.has(repo)) continue;
+    const earliest = repoEvents.reduce(
+      (oldest, event) => (event.detectedAt < oldest ? event.detectedAt : oldest),
+      repoEvents[0]?.detectedAt ?? now.toISOString(),
+    );
+    profiles.set(repo, {
+      id: repo,
+      category: 'devtool',
+      added: earliest.slice(0, 10),
+      active: false,
+    });
+  }
+
+  for (const entry of profiles.values()) {
     const series = toSeries(history.get(entry.id) ?? []);
     const baseline = baselineFromHistory(history.get(entry.id) ?? [], today);
 
@@ -436,6 +502,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
       renderRepoPage(
         {
           entry,
+          onWatchlist: watched.has(entry.id),
           state: stateById.get(entry.id) ?? null,
           series,
           baselinePerDay: baseline.perDay,
@@ -483,12 +550,6 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
 
   // One page per finding. What anybody shares is a single reading, and until
   // there is an address for one there is no way to send it to somebody.
-  // Retractions are excluded: a page per withdrawal is noise, and the count is
-  // already disclosed on the lens.
-  const addressable = events.filter(
-    (event) => !(event.kind === 'correction' && event.metrics['withdrawn'] === 'yes'),
-  );
-
   const slugs = new Set<string>();
   for (const event of addressable) {
     const slug = eventSlug(event.id);
@@ -502,7 +563,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   const sitemapPaths = [
     '/',
     ...LENSES.map((lens) => `/${lens}`),
-    ...watchlist.map((entry) => `/repo/${entry.id}`),
+    ...[...profiles.keys()].map((repo) => `/repo/${repo}`),
     ...addressable.map((event) => eventPath(event)),
   ];
 
@@ -514,6 +575,8 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   // stale asset the site keeps serving.
   rmSync(DIST_DIR, { recursive: true, force: true });
   mkdirSync(DIST_DATA_DIR, { recursive: true });
+
+  assertNoDeadInternalLinks(pages);
 
   const files: BuildResult['files'] = [];
   let totalBytes = 0;

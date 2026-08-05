@@ -58,6 +58,7 @@ function series(days: number, perDay: number): RepoSeriesPoint[] {
 function page(over: Partial<RepoPageData>): string {
   const data: RepoPageData = {
     entry: entry('a/one'),
+    onWatchlist: true,
     state: state('a/one'),
     series: [],
     baselinePerDay: null,
@@ -205,6 +206,14 @@ describe('edge cases', () => {
     expect(html).toContain('Older signals not shown');
     expect(html).toContain('239 earlier signals');
     expect(html).toContain('Timeline — 240 recorded signals');
+  });
+
+  it('still renders a repository that has been dropped from the watchlist', () => {
+    // Its findings are permanent and they link here. Dropping the page would
+    // turn every one of them into a dead link.
+    const html = page({ onWatchlist: false });
+    expect(html).toContain('No longer watched');
+    expect(html).toContain('Removed from the watchlist');
   });
 
   it('escapes a repository name, which is chosen by someone else', () => {

@@ -275,6 +275,24 @@ describe('output hygiene', () => {
     expect(names).not.toContain('e/release-c-three-v9-0-0.html');
   });
 
+  it('refuses to ship a link that goes nowhere', () => {
+    // 141 of these shipped. Repository timelines linked every entry to its own
+    // page, retractions included, and retractions have none.
+    const built = runBuild({ now: NOW });
+    const served = new Set(
+      built.files.map((f) => `/${f.name.replace(/\.html$/, '')}`).concat('/'),
+    );
+
+    for (const file of built.files.filter((f) => f.name.endsWith('.html'))) {
+      const html = readFileSync(join(distDir, file.name), 'utf8');
+      for (const match of html.matchAll(/href="(\/[^"#?]*)"/g)) {
+        const target = (match[1] as string).replace(/\/$/, '') || '/';
+        if (/\.(css|json|xml|txt|woff2?)$/.test(target)) continue;
+        expect(served.has(target), `${file.name} links to ${target}`).toBe(true);
+      }
+    }
+  });
+
   it('emits a feed, a sitemap, and robots so the site can be found and followed', () => {
     const names = runBuild({ now: NOW }).files.map((f) => f.name);
     expect(names).toContain('feed.xml');

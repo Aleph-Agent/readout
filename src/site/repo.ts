@@ -25,6 +25,14 @@ export interface RepoSeriesPoint {
 
 export interface RepoPageData {
   entry: WatchlistEntry;
+  /**
+   * False when the repository has recorded events but is no longer watched.
+   *
+   * Its page is still generated. The events happened and are permanent, they
+   * link here, and a link that goes nowhere is worse than a page that explains
+   * itself.
+   */
+  onWatchlist: boolean;
   state: LiveStateRow | null;
   /** Oldest first. */
   series: RepoSeriesPoint[];
@@ -160,6 +168,12 @@ export function renderRepoPage(
         ${reading('Baseline', data.baselinePerDay === null ? 'forming' : `${data.baselinePerDay.toFixed(1)}/day`, `${data.baselineDays} days of history`)}
       </div>`;
 
+  const unwatched = data.onWatchlist
+    ? ''
+    : `<div class="notice"><strong>No longer watched</strong>
+      This repository has been removed from the watchlist. Its recorded signals stay published
+      because they were true when they were taken, but nothing new is being collected for it.</div>`;
+
   const inactive = state !== null && !state.active
     ? `<div class="notice notice-alert"><strong>No longer reachable</strong>
       The last check returned 404 — the repository was deleted, renamed, or made private. The
@@ -193,10 +207,11 @@ export function renderRepoPage(
   <h1 class="repo-title">${esc(entry.id)}</h1>
   <div class="repo-facts">
     <span class="label">${esc(entry.category)}</span>
-    <span class="label">Watched since ${esc(entry.added)}</span>
+    <span class="label">${data.onWatchlist ? `Watched since ${esc(entry.added)}` : 'Removed from the watchlist'}</span>
     <a class="label" href="https://github.com/${esc(entry.id)}">View on GitHub</a>
   </div>
 </section>
+${unwatched}
 ${inactive}
 ${readings}
 ${sparkline(data.series, data.baselinePerDay)}

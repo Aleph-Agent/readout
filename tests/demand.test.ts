@@ -9,20 +9,29 @@ import {
 import { topByDemandSurface } from '../src/collectors/issues.ts';
 import type { LiveStateRow } from '../src/types/state.ts';
 
-function issue(repo: string, title: string, reactions = 10, comments = 5): IssueSignal {
+function issue(repo: string, title: string, reactions = 20, comments = 10): IssueSignal {
   return { repo, title, reactions, comments, number: 1, url: `https://github.com/${repo}/issues/1` };
 }
 
+/** A background of unrelated chatter, so spread can be measured against it. */
+function background(repos: number): IssueSignal[] {
+  return Array.from({ length: repos }, (_, i) =>
+    issue(`bg${i}/repo`, `something unrelated happening here ${i}`, 1, 1),
+  );
+}
+
 describe('term extraction', () => {
-  it('keeps bigrams, which carry the meaning a single word loses', () => {
-    expect(termsOf('Add streaming support for responses')).toContain('streaming support');
+  it('produces word pairs, never single words', () => {
+    // A single word is vocabulary. "support" is not a request; "streaming
+    // support" is. Single words also accumulate engagement from every context
+    // they appear in, so they outrank every specific phrase.
+    const terms = termsOf('Add streaming support for responses');
+    expect(terms).toContain('streaming support');
+    expect(terms.every((t) => t.split(' ').length === 2)).toBe(true);
   });
 
-  it('drops tracker furniture that would cluster everything into one bucket', () => {
-    const terms = termsOf('Bug: feature request for the thing');
-    expect(terms).not.toContain('bug');
-    expect(terms).not.toContain('feature');
-    expect(terms).not.toContain('request');
+  it('drops tracker furniture before pairing', () => {
+    expect(termsOf('Bug: feature request for the thing')).toEqual([]);
   });
 });
 
@@ -31,57 +40,71 @@ describe('clusterDemand', () => {
     // One project's backlog is not demand, and single-repository concentration
     // is the shape issue brigading takes.
     const issues = [
+      ...background(40),
       issue('a/one', 'streaming support missing'),
       issue('a/one', 'streaming support broken'),
       issue('a/one', 'streaming support needed'),
     ];
-    expect(clusterDemand(issues)).toEqual([]);
+    expect(clusterDemand(issues).map((c) => c.term)).not.toContain('streaming support');
   });
 
-  it('reports a term that spans repositories with real engagement', () => {
+  it('reports a phrase that spans a few repositories with real engagement', () => {
     const issues = [
+      ...background(40),
       issue('a/one', 'streaming support missing'),
       issue('b/two', 'streaming support needed'),
       issue('c/three', 'streaming support please'),
     ];
-    const clusters = clusterDemand(issues);
-    const streaming = clusters.find((c) => c.term === 'streaming support');
+    const streaming = clusterDemand(issues).find((c) => c.term === 'streaming support');
 
     expect(streaming?.repos).toEqual(['a/one', 'b/two', 'c/three']);
     expect(streaming?.issues).toBe(3);
-    expect(streaming?.engagement).toBe(45);
+    expect(streaming?.engagement).toBe(90);
   });
 
-  it('refuses a term nobody actually engaged with', () => {
-    const quiet = [
-      issue('a/one', 'streaming support', 0, 0),
-      issue('b/two', 'streaming support', 0, 1),
-      issue('c/three', 'streaming support', 1, 0),
-    ];
-    expect(clusterDemand(quiet)).toEqual([]);
+  it('rejects a phrase that turns up nearly everywhere', () => {
+    // The failure the first live run actually produced: "support" appeared in
+    // 29 of 80 repositories, carried the highest engagement of anything
+    // measured, and was ranked first. Being everywhere is evidence a phrase is
+    // common English, not evidence anyone is asking for it.
+    const everywhere = Array.from({ length: 25 }, (_, i) =>
+      issue(`w${i}/repo`, 'please add support', 20, 20),
+    );
+    const clusters = clusterDemand([...background(40), ...everywhere]);
+    expect(clusters.map((c) => c.term)).not.toContain('add support');
   });
 
-  it('keeps the specific phrase rather than repeating its parts', () => {
+  it('never reports a single word', () => {
     const issues = [
+      ...background(40),
       issue('a/one', 'streaming support missing'),
       issue('b/two', 'streaming support needed'),
       issue('c/three', 'streaming support please'),
     ];
-    const terms = clusterDemand(issues).map((c) => c.term);
-    expect(terms).toContain('streaming support');
-    expect(terms).not.toContain('streaming');
+    expect(clusterDemand(issues).every((c) => c.term.split(' ').length === 2)).toBe(true);
   });
 
-  it('publishes only the term and links, never the issue title', () => {
-    // Issue titles are third-party writing. A word or two is the short
-    // identifying phrase attribution allows; the title itself is not.
+  it('refuses a phrase nobody actually engaged with', () => {
+    const quiet = [
+      ...background(40),
+      issue('a/one', 'streaming support here', 0, 0),
+      issue('b/two', 'streaming support there', 0, 1),
+      issue('c/three', 'streaming support now', 1, 0),
+    ];
+    expect(clusterDemand(quiet).map((c) => c.term)).not.toContain('streaming support');
+  });
+
+  it('publishes only the phrase and links, never the issue title', () => {
+    // Issue titles are third-party writing. Two words is the short identifying
+    // phrase attribution allows; the title itself is not.
     const issues = [
+      ...background(40),
       issue('a/one', 'streaming support missing in the new adapter'),
       issue('b/two', 'streaming support needed for long responses'),
-      issue('c/three', 'streaming support please, it blocks us'),
+      issue('c/three', 'streaming support please it blocks us'),
     ];
-    const cluster = clusterDemand(issues)[0];
-    expect(cluster?.term.split(' ').length).toBeLessThanOrEqual(2);
+    const cluster = clusterDemand(issues).find((c) => c.term === 'streaming support');
+    expect(cluster?.term.split(' ')).toHaveLength(2);
     expect(cluster?.topUrl).toContain('github.com');
   });
 });

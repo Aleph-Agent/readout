@@ -40,14 +40,26 @@ export interface DemandThresholds {
    * demand signal — and it is the shape issue brigading takes.
    */
   minRepos: number;
+  /**
+   * Share of sampled repositories a term may appear in before it is treated as
+   * background vocabulary rather than a signal.
+   *
+   * This is the guard the first live run was missing. "support" turned up in 29
+   * of 80 repositories with the highest engagement of anything measured, and
+   * the detector ranked it first. Being everywhere is evidence a word is common
+   * English, not evidence developers are asking for it. Frequency and demand
+   * point in opposite directions past a certain spread.
+   */
+  maxRepoShare: number;
   minIssues: number;
   minEngagement: number;
 }
 
 export const DEFAULT_DEMAND_THRESHOLDS: DemandThresholds = {
   minRepos: 2,
+  maxRepoShare: 0.15,
   minIssues: 3,
-  minEngagement: 20,
+  minEngagement: 60,
 };
 
 /**
@@ -69,6 +81,30 @@ const STOPWORDS = new Set([
   'bug', 'error', 'feature', 'issue', 'please', 'problem', 'question', 'request',
 ]);
 
+/**
+ * Words that carry no subject on their own.
+ *
+ * Pairing was not enough by itself: "add support" survived the first pass and
+ * says exactly as little as "support" did. A phrase needs at least one word
+ * that names something. These are rejected only when *both* halves are in this
+ * set, so "cluster autoscaling" and "streaming support" still stand while
+ * "cluster failed" and "add support" do not.
+ */
+const GENERIC = new Set([
+  'add', 'added', 'allow', 'break', 'broken', 'build', 'builds', 'change', 'changed', 'changes',
+  'check', 'cluster', 'code', 'config', 'crash', 'default', 'disable', 'enable', 'error', 'errors',
+  'fail', 'failed', 'failing', 'fails', 'file', 'files', 'fix', 'handle', 'improve', 'incorrect',
+  'install', 'installation', 'invalid', 'load', 'management', 'method', 'methods', 'missing',
+  'mode', 'new', 'option', 'options', 'output', 'public', 'remove', 'return', 'set', 'setting',
+  'settings', 'setup', 'slow', 'support', 'test', 'tests', 'type', 'types', 'update', 'updates',
+  'upgrade', 'value', 'values', 'version', 'wrong',
+]);
+
+function isGenericPair(term: string): boolean {
+  const words = term.split(' ');
+  return words.length === 2 && words.every((word) => GENERIC.has(word));
+}
+
 function tokenise(title: string): string[] {
   return title
     .toLowerCase()
@@ -78,10 +114,21 @@ function tokenise(title: string): string[] {
     .filter((word) => word.length >= 3 && word.length <= 24 && !STOPWORDS.has(word));
 }
 
-/** Unigrams and adjacent bigrams. Bigrams carry most of the real meaning. */
+/**
+ * Adjacent word pairs only.
+ *
+ * Single words were tried and were a mistake. "streaming support" is a request;
+ * "support" is vocabulary, and because a single word accumulates engagement
+ * from every context it appears in, it outranks every specific phrase. The
+ * first live run produced 141 clusters against a budget of ten, and the top
+ * twelve were `failed`, `cluster`, `support`, `allow`, `add`, `test` — none of
+ * which is a thing anybody asked for.
+ *
+ * A pair is the smallest unit that can carry a subject and a verb.
+ */
 export function termsOf(title: string): string[] {
   const words = tokenise(title);
-  const terms = new Set(words);
+  const terms = new Set<string>();
   for (let i = 1; i < words.length; i += 1) {
     terms.add(`${words[i - 1] as string} ${words[i] as string}`);
   }
@@ -92,6 +139,11 @@ export function clusterDemand(
   issues: readonly IssueSignal[],
   thresholds: DemandThresholds = DEFAULT_DEMAND_THRESHOLDS,
 ): DemandCluster[] {
+  // Denominator for the spread test: how many repositories were looked at, not
+  // how many happened to mention a given term.
+  const sampled = new Set(issues.map((issue) => issue.repo)).size;
+  const spreadCeiling = Math.max(thresholds.minRepos, Math.floor(sampled * thresholds.maxRepoShare));
+
   const byTerm = new Map<string, IssueSignal[]>();
 
   for (const issue of issues) {
@@ -105,8 +157,12 @@ export function clusterDemand(
   const clusters: DemandCluster[] = [];
 
   for (const [term, matched] of byTerm) {
+    if (isGenericPair(term)) continue;
+
     const repos = [...new Set(matched.map((issue) => issue.repo))].sort();
     if (repos.length < thresholds.minRepos) continue;
+    // Too narrow is a backlog. Too broad is a dictionary.
+    if (repos.length > spreadCeiling) continue;
     if (matched.length < thresholds.minIssues) continue;
 
     const engagement = matched.reduce((sum, issue) => sum + issue.reactions + issue.comments, 0);

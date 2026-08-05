@@ -354,11 +354,22 @@ export function renderLens(
       ? ''
       : `<div class="notice"><strong>What this covers</strong>${esc(copy.scope)}</div>`;
 
+  // Retractions are disclosed by count. Hiding them would be dishonest;
+  // rendering one card each would bury the surviving findings under the
+  // mistake. Both records stay in the published event ledger either way.
+  const withdrawn =
+    bundle.withdrawn === 0
+      ? ''
+      : `<div class="notice notice-alert"><strong>Withdrawn</strong>
+        ${bundle.withdrawn} earlier ${bundle.withdrawn === 1 ? 'finding has' : 'findings have'} been
+        retracted and are not shown. Both the original and the retraction remain in the
+        <a href="/data/${esc(bundle.lens)}.json">published ledger</a>.</div>`;
+
   return layout({
     title: copy.title,
     current: `/${bundle.lens}`,
     index,
     meta,
-    body: `<h1 class="label" style="padding:22px 0 4px">${esc(copy.heading)} — last ${bundle.windowDays} days, ${bundle.count} recorded</h1>\n${scope}\n${body}`,
+    body: `<h1 class="label" style="padding:22px 0 4px">${esc(copy.heading)} — last ${bundle.windowDays} days, ${bundle.count} recorded</h1>\n${scope}\n${withdrawn}\n${body}`,
   });
 }

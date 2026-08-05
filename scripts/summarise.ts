@@ -20,25 +20,17 @@ function numericFlag(name: string): number | undefined {
   return value;
 }
 
-const apiKey = process.env['GROQ_API_KEY'] ?? '';
-if (apiKey === '') {
-  console.error('GROQ_API_KEY is not set.');
-  process.exit(1);
-}
-
-const limit = numericFlag('limit');
-
-let result;
-try {
-  result = await runSummarise(limit === undefined ? { apiKey } : { apiKey, limit });
-} catch (error) {
-  // The workflow runs this step with continue-on-error, because losing
-  // interpretation must never stop measurement from publishing. That makes a
-  // hard failure here invisible: green job, no alert, nothing in the ledger.
-  //
-  // So record it where the site will show it. The partial-run notice is the
-  // only thing that will tell anyone the prose stopped arriving.
-  const message = error instanceof Error ? error.message : String(error);
+/**
+ * The workflow runs this step with continue-on-error, because losing
+ * interpretation must never stop measurement from publishing. That makes every
+ * failure here invisible by default: green job, no alert, nothing in the ledger.
+ *
+ * So every exit path records first. An earlier version only wrapped the call
+ * itself and returned early on a missing key — which is exactly what happened
+ * in production. GROQ_API_KEY was empty, thirteen events sat waiting for prose
+ * that never came, and meta.json reported partial: false with no errors.
+ */
+function recordFailure(message: string): never {
   const previous = readMeta();
   writeMeta({
     ...previous,
@@ -49,6 +41,18 @@ try {
   console.error(`summarise failed: ${message}`);
   console.error('Recorded in meta.json. Readings still publish, without prose.');
   process.exit(1);
+}
+
+const apiKey = process.env['GROQ_API_KEY'] ?? '';
+if (apiKey === '') recordFailure('GROQ_API_KEY is not set');
+
+const limit = numericFlag('limit');
+
+let result;
+try {
+  result = await runSummarise(limit === undefined ? { apiKey } : { apiKey, limit });
+} catch (error) {
+  recordFailure(error instanceof Error ? error.message : String(error));
 }
 
 console.log(

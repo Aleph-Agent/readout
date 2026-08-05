@@ -47,7 +47,16 @@ function event(over: Partial<EventRecord> = {}): EventRecord {
 }
 
 function lens(over: Partial<LensBundle> = {}): LensBundle {
-  return { lens: 'forks', status: 'active', records: [], windowDays: 90, archives: [], count: 0, ...over };
+  return {
+    lens: 'forks',
+    status: 'active',
+    records: [],
+    windowDays: 90,
+    archives: [],
+    count: 0,
+    withdrawn: 0,
+    ...over,
+  };
 }
 
 const COPY = { title: 'Forks', heading: 'Fork activity', noun: 'fork spike' };
@@ -125,6 +134,19 @@ describe('the velocity strip', () => {
 
   it('renders nothing at all rather than an empty frame', () => {
     expect(stripSvg([], new Set())).toBe('');
+  });
+});
+
+describe('retractions', () => {
+  it('discloses withdrawn findings by count rather than hiding them', () => {
+    const html = renderLens(lens({ withdrawn: 140 }), index(), meta(), COPY);
+    expect(html).toContain('Withdrawn');
+    expect(html).toContain('140 earlier findings have been');
+    expect(html).toContain('remain in the');
+  });
+
+  it('says nothing when nothing was withdrawn', () => {
+    expect(renderLens(lens(), index(), meta(), COPY)).not.toContain('Withdrawn');
   });
 });
 

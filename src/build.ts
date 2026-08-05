@@ -299,8 +299,16 @@ function buildLens(
   const cutoff = now.getTime() - windowDays * 86_400_000;
   const recent: EventRecord[] = [];
   const archives = new Map<string, EventRecord[]>();
+  let withdrawn = 0;
 
   for (const event of mine) {
+    // A retraction has nothing to display in place of what it removed. Count
+    // it, disclose the count, and keep both records in the ledger.
+    if (event.kind === 'correction' && event.metrics['withdrawn'] === 'yes') {
+      withdrawn += 1;
+      continue;
+    }
+
     if (Date.parse(event.detectedAt) >= cutoff) {
       recent.push(event);
       continue;
@@ -319,6 +327,7 @@ function buildLens(
       windowDays,
       archives: [...archives.keys()].sort().reverse().map((month) => `${lens}-${month}.json`),
       count: recent.length,
+      withdrawn,
     },
     archives,
   };

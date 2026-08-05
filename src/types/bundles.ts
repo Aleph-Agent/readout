@@ -34,6 +34,17 @@ export interface LensBundle {
   archives: string[];
   /** Records in this file. Archived records are not counted. */
   count: number;
+  /**
+   * Findings withdrawn rather than restated.
+   *
+   * A correction that replaces a claim is shown in place of it. A correction
+   * that simply retracts one has nothing to show, and rendering a card per
+   * retraction would bury the surviving findings under the mistake. The count
+   * is published instead, which discloses the retraction without letting it
+   * take over the page. Both the original and the retraction stay in the
+   * ledger.
+   */
+  withdrawn: number;
 }
 
 /**

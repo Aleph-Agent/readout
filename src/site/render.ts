@@ -520,7 +520,7 @@ function lensesHtml(index: IndexBundle): string {
     .join('');
 
   return `<section class="lenses">
-  <h2 class="label" style="padding:20px 0 10px">The five readings</h2>
+  <h2 class="label">The five readings</h2>
   <div class="lens-grid">${cells}</div>
 </section>`;
 }

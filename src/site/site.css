@@ -368,6 +368,10 @@ a:hover {
   padding: 8px 0 26px;
 }
 
+.lenses > .label {
+  padding: 20px 0 10px;
+}
+
 .lens-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));

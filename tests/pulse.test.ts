@@ -192,3 +192,33 @@ describe('pulse dry run', () => {
     expect(meta.partial).toBe(false);
   });
 });
+
+describe('retiring a repository', () => {
+  it('stops reading it without erasing that it was read', async () => {
+    // Retirement was reaching the watchlist and stopping there. The state row
+    // was carried forward untouched, so eleven repositories nobody was still
+    // reading kept their last fork count, kept a mark on the strip, kept
+    // sampling into the window and kept landing in the daily snapshot — all on
+    // a number frozen the day they were retired.
+    const retired = 'owner01/repo';
+    ledger.writeWatchlist(
+      ledger.readWatchlist().map((entry) =>
+        entry.id === retired ? { ...entry, active: false } : entry,
+      ),
+    );
+
+    await pulse('2026-08-05T08:17:00Z');
+    const row = ledger.readLiveState().find((state) => state.id === retired);
+
+    expect(row).toBeDefined();
+    expect(row?.active).toBe(false);
+    // The readings it did produce are still there. Retired is not deleted.
+    expect(row?.forks).toBe(10);
+  });
+
+  it('leaves every repository still on the watchlist active', async () => {
+    const rows = ledger.readLiveState().filter((row) => row.active);
+    const active = new Set(ledger.readActiveWatchlist().map((entry) => entry.id));
+    expect(rows.every((row) => active.has(row.id))).toBe(true);
+  });
+});

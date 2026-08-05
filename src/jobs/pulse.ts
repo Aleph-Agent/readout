@@ -84,11 +84,22 @@ export async function runPulse(options: PulseOptions = {}): Promise<MetaRecord> 
   // that they were once watched.
   const known = new Set(readWatchlist().map((entry) => entry.id));
 
+  // Full active list, not `entries` — under --limit the slice says nothing
+  // about whether the repositories outside it are still watched.
+  const watched = new Set(watchlist.map((entry) => entry.id));
+
   const rows: LiveStateRow[] = base.rows
     .filter((row) => known.has(row.id))
     .map((row) => {
       const update = releases.updates.get(row.id);
-      return update ? { ...row, ...update } : row;
+      const next = update ? { ...row, ...update } : row;
+
+      // Retiring a repository on the watchlist has to reach its state row.
+      // Otherwise the last reading is carried forward with `active` still true
+      // and the repository goes on being drawn on the strip, sampled into the
+      // fork window, snapshotted daily and counted in the peer median — on a
+      // number that stopped moving the day it was retired.
+      return next.active && !watched.has(row.id) ? { ...next, active: false } : next;
     });
 
   writeLiveState(rows);

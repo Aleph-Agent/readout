@@ -1,16 +1,16 @@
 {
-  "lastRunAt": "2026-08-05T17:05:28.343Z",
-  "lastSuccessfulRunAt": "2026-08-05T17:05:28.343Z",
+  "lastRunAt": "2026-08-05T17:53:30.549Z",
+  "lastSuccessfulRunAt": "2026-08-05T17:53:30.549Z",
   "job": "pulse",
   "partial": false,
-  "requestsConsumed": 285,
-  "rateLimitRemaining": 4619,
+  "requestsConsumed": 358,
+  "rateLimitRemaining": 4832,
   "reposChecked": 400,
-  "requestsUnchanged": 514,
+  "requestsUnchanged": 441,
   "eventsDetected": 1,
   "collectorsErrored": [],
   "summariesGenerated": 0,
   "insufficientRate": null,
-  "bundleHash": "6910f081c76edc640ea2ab568c42873b0540cb8f32cad02b6392405a0f910f08",
+  "bundleHash": "bbceb7096cf67391ce8ac277797e9b5b4a082fd72355cb133e3efdabead608f7",
   "deploySkipped": false
 }

@@ -1,18 +1,16 @@
 {
-  "lastRunAt": "2026-08-06T01:46:07.006Z",
-  "lastSuccessfulRunAt": "2026-08-06T01:35:31.178Z",
-  "job": "daily",
-  "partial": true,
+  "lastRunAt": "2026-08-06T01:49:09.854Z",
+  "lastSuccessfulRunAt": "2026-08-06T01:49:09.854Z",
+  "job": "weekly",
+  "partial": false,
   "requestsConsumed": 106,
   "rateLimitRemaining": 4801,
-  "reposChecked": 388,
+  "reposChecked": 12,
   "requestsUnchanged": 370,
   "eventsDetected": 0,
-  "collectorsErrored": [
-    "snapshot: writeSnapshot: 2026-08-06 already exists. History is immutable; pass { overwrite: true } only to repair a run that wrote garbage."
-  ],
+  "collectorsErrored": [],
   "summariesGenerated": 4,
   "insufficientRate": 0,
-  "bundleHash": "abe2900a6db1c3c44a5a497ee1950aeab019338f57b2ab337e357d0dd82172cc",
+  "bundleHash": "ba9a7ee7eb470cdc271373d7100a6db531e627ca5ec8beee9239514f6083d2d2",
   "deploySkipped": false
 }

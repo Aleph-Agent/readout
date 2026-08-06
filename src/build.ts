@@ -20,7 +20,7 @@ import { buildCoverage } from './lib/coverage.ts';
 import { summariseWindow, type CalibrationSummary } from './lib/calibration.ts';
 
 /** Detectors whose reachability is published. Order is display order. */
-const CALIBRATED_COLLECTORS = ['fork-spike', 'fork-outlier'] as const;
+const CALIBRATED_COLLECTORS = ['fork-spike', 'fork-outlier', 'demand', 'lineage'] as const;
 
 /** Matches the baseline window, so both answer questions about the same span. */
 const CALIBRATION_WINDOW_DAYS = 30;

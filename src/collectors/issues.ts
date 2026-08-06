@@ -3,7 +3,12 @@ import {
   SecondaryRateLimitError,
   type GitHubClient,
 } from '../lib/github.ts';
-import { clusterDemand, type DemandCluster, type IssueSignal } from '../lib/demand.ts';
+import {
+  clusterDemand,
+  demandEngagements,
+  type DemandCluster,
+  type IssueSignal,
+} from '../lib/demand.ts';
 import { eventId } from '../lib/ledger.ts';
 import type { EventRecord } from '../types/events.ts';
 import type { LiveStateRow } from '../types/state.ts';
@@ -24,6 +29,14 @@ const ISSUES_PER_REPO = 10;
 
 export interface IssuesCollectionResult {
   clusters: DemandCluster[];
+  /**
+   * Engagement of every term that reached the engagement bar, crossing or not.
+   *
+   * Kept so the threshold can be measured against the population it judges. A
+   * day whose busiest candidate scored 12 against a bar of 60 is a day this
+   * detector could not have fired whatever developers were asking for.
+   */
+  engagements: number[];
   events: EventRecord[];
   errors: string[];
   stoppedEarly: boolean;
@@ -106,6 +119,7 @@ export async function collectIssues(
   }
 
   const clusters = clusterDemand(signals);
+  const engagements = demandEngagements(signals);
   const events: EventRecord[] = [];
 
   for (const cluster of clusters) {
@@ -137,5 +151,5 @@ export async function collectIssues(
     });
   }
 
-  return { clusters, events, errors, stoppedEarly, requestedRepos };
+  return { clusters, engagements, events, errors, stoppedEarly, requestedRepos };
 }

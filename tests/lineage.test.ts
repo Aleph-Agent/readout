@@ -169,6 +169,25 @@ describe('a reported week', () => {
   });
 });
 
+describe('calibration', () => {
+  it('reports what each root gained, whether or not it crossed the bar', async () => {
+    // A quarter where no root ever gained more than two models is a fact about
+    // minNew, not about model lineage — and only knowable if the quiet weeks
+    // were recorded at the time.
+    const client = stub({ 'meta-llama/Llama-3.1-8B': models(4, 4) });
+    const result = await collectLineage(client, [root()], OPTIONS);
+
+    expect(result.events).toHaveLength(0);
+    expect(result.observations).toEqual([4]);
+  });
+
+  it('excludes a first read, which gains nothing by definition', async () => {
+    const client = stub({ 'meta-llama/Llama-3.1-8B': models(50, 20) });
+    const result = await collectLineage(client, [root({ seenThrough: null })], OPTIONS);
+    expect(result.observations).toEqual([]);
+  });
+});
+
 describe('thresholds', () => {
   it('is set where a week has to be broad as well as busy', () => {
     expect(DEFAULT_LINEAGE_THRESHOLDS.minNew).toBeGreaterThan(1);

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { clusterDemand, termsOf, type IssueSignal } from '../src/lib/demand.ts';
+import {
+  clusterDemand,
+  demandEngagements,
+  termsOf,
+  type IssueSignal,
+} from '../src/lib/demand.ts';
 import {
   diffDependencies,
   manifestPathFor,
@@ -32,6 +37,37 @@ describe('term extraction', () => {
 
   it('drops tracker furniture before pairing', () => {
     expect(termsOf('Bug: feature request for the thing')).toEqual([]);
+  });
+});
+
+describe('what the engagement bar is judging', () => {
+  it('reports candidates the bar rejected, not only the ones it passed', () => {
+    // The bar is 60. Without the rejected candidates there is no way to tell a
+    // week where nothing was asked for from a week where the bar is above
+    // anything developers ever produce — both publish nothing.
+    const issues: IssueSignal[] = [
+      ...background(40),
+      issue('a/one', 'streaming support broken', 2, 1),
+      issue('b/two', 'streaming support missing', 1, 1),
+      issue('c/three', 'streaming support please', 0, 2),
+    ];
+
+    expect(clusterDemand(issues).map((c) => c.term)).not.toContain('streaming support');
+    expect(demandEngagements(issues)).toContain(7);
+  });
+
+  it('measures the same population the bar is applied to', () => {
+    // A candidate rejected for being everywhere, or for being one repository's
+    // backlog, was never a demand signal — counting it would make the bar look
+    // further away than it is.
+    const backlog: IssueSignal[] = [
+      ...background(40),
+      ...Array.from({ length: 5 }, () => issue('a/one', 'streaming support wanted', 50, 50)),
+    ];
+
+    // Five hundred engagement, all in one repository. That is a backlog, and
+    // it never reaches the engagement bar's gate.
+    expect(demandEngagements(backlog)).not.toContain(500);
   });
 });
 

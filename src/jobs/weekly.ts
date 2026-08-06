@@ -1,6 +1,8 @@
-import { collectLineage } from '../collectors/lineage.ts';
+import { collectLineage, DEFAULT_LINEAGE_THRESHOLDS } from '../collectors/lineage.ts';
 import { createHuggingFaceClient, type HuggingFaceClient } from '../lib/huggingface.ts';
+import { summariseCalibration } from '../lib/calibration.ts';
 import {
+  appendCalibration,
   appendEvents,
   readAllEvents,
   readLineageRoots,
@@ -44,6 +46,26 @@ export async function runWeekly(options: WeeklyOptions = {}): Promise<MetaRecord
 
   writeLineageRoots(result.roots);
   if (result.events.length > 0) appendEvents(month, result.events);
+
+  // What every root gained this week, crossing the bar or not. A quarter where
+  // nothing ever gained more than two models is a fact about `minNew`, not
+  // about model lineage, and it is only knowable if the weeks were recorded.
+  try {
+    appendCalibration([
+      summariseCalibration(
+        today,
+        'lineage',
+        'new descendants this week',
+        DEFAULT_LINEAGE_THRESHOLDS.minNew,
+        result.observations,
+      ),
+    ]);
+  } catch (error) {
+    // Never fatal: losing a diagnostic must not lose the run that produced it.
+    result.errors.push(
+      `calibration: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 
   const previous = readMeta();
   const meta: MetaRecord = {

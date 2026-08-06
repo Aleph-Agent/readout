@@ -135,10 +135,19 @@ export function termsOf(title: string): string[] {
   return [...terms];
 }
 
-export function clusterDemand(
+/**
+ * Terms that survived every structural filter, before the engagement bar.
+ *
+ * Split out so the engagement threshold can be measured against the population
+ * it actually judges. `clusterDemand` reports what crossed; this is what was
+ * there to cross, and the difference is the only evidence that the bar is
+ * reachable — see `lib/calibration.ts`. Shared rather than duplicated, so the
+ * two can never drift into measuring different things.
+ */
+function candidatesOf(
   issues: readonly IssueSignal[],
-  thresholds: DemandThresholds = DEFAULT_DEMAND_THRESHOLDS,
-): DemandCluster[] {
+  thresholds: DemandThresholds,
+): { term: string; repos: string[]; matched: IssueSignal[]; engagement: number }[] {
   // Denominator for the spread test: how many repositories were looked at, not
   // how many happened to mention a given term.
   const sampled = new Set(issues.map((issue) => issue.repo)).size;
@@ -154,7 +163,8 @@ export function clusterDemand(
     }
   }
 
-  const clusters: DemandCluster[] = [];
+  const candidates: { term: string; repos: string[]; matched: IssueSignal[]; engagement: number }[] =
+    [];
 
   for (const [term, matched] of byTerm) {
     if (isGenericPair(term)) continue;
@@ -165,7 +175,39 @@ export function clusterDemand(
     if (repos.length > spreadCeiling) continue;
     if (matched.length < thresholds.minIssues) continue;
 
-    const engagement = matched.reduce((sum, issue) => sum + issue.reactions + issue.comments, 0);
+    candidates.push({
+      term,
+      repos,
+      matched,
+      engagement: matched.reduce((sum, issue) => sum + issue.reactions + issue.comments, 0),
+    });
+  }
+
+  return candidates;
+}
+
+/**
+ * Engagement of every term that reached the engagement bar's gate.
+ *
+ * The distribution `minEngagement` is judged against. A day where the busiest
+ * candidate scored 12 against a bar of 60 is a day this detector could not have
+ * fired whatever developers were asking for, and that is worth knowing before
+ * thirty of them have passed.
+ */
+export function demandEngagements(
+  issues: readonly IssueSignal[],
+  thresholds: DemandThresholds = DEFAULT_DEMAND_THRESHOLDS,
+): number[] {
+  return candidatesOf(issues, thresholds).map((candidate) => candidate.engagement);
+}
+
+export function clusterDemand(
+  issues: readonly IssueSignal[],
+  thresholds: DemandThresholds = DEFAULT_DEMAND_THRESHOLDS,
+): DemandCluster[] {
+  const clusters: DemandCluster[] = [];
+
+  for (const { term, repos, matched, engagement } of candidatesOf(issues, thresholds)) {
     if (engagement < thresholds.minEngagement) continue;
 
     const top = matched.reduce((best, issue) =>

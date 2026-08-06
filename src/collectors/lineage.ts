@@ -38,6 +38,16 @@ export interface LineageCollectionResult {
   roots: LineageRoot[];
   events: EventRecord[];
   errors: string[];
+  /**
+   * New descendants per root this week, crossing the bar or not.
+   *
+   * Kept so `minNew` can be measured against what actually arrives. A quarter
+   * where no root ever gained more than two models is a quarter this detector
+   * could not have fired, and that is a fact about the threshold rather than
+   * about model lineage. First reads are excluded: they set a watermark and
+   * gain nothing by definition.
+   */
+  observations: number[];
 }
 
 export interface LineageCollectionOptions {
@@ -61,6 +71,7 @@ export async function collectLineage(
   const updated: LineageRoot[] = [];
   const events: EventRecord[] = [];
   const errors: string[] = [];
+  const observations: number[] = [];
 
   for (const root of roots) {
     if (!root.active) {
@@ -101,6 +112,11 @@ export async function collectLineage(
     // First read establishes the mark. Reporting here would announce every
     // model ever built on this root as though it happened this week.
     if (firstRead) continue;
+
+    // Recorded before the bar, because the readings that do not become events
+    // are the only evidence about where the bar should be.
+    observations.push(descendants.length);
+
     if (descendants.length < thresholds.minNew) continue;
 
     const accounts = new Set(descendants.map((d) => accountOf(d.id)));
@@ -136,5 +152,5 @@ export async function collectLineage(
     });
   }
 
-  return { roots: updated, events, errors };
+  return { roots: updated, events, errors, observations };
 }

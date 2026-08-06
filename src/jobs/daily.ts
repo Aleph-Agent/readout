@@ -34,6 +34,7 @@ import {
   type PeerObservation,
 } from '../lib/peers.ts';
 import { summariseCalibration } from '../lib/calibration.ts';
+import { DEFAULT_DEMAND_THRESHOLDS } from '../lib/demand.ts';
 import { windowAnchor } from '../lib/window.ts';
 import type { EventRecord } from '../types/events.ts';
 import type { HistorySnapshotRow } from '../types/history.ts';
@@ -230,6 +231,12 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
   //    per active repository, well inside the thousand the daily job allows.
   let requestsConsumed = 0;
 
+  // Every term that reached the engagement bar, crossing or not. The first live
+  // run of this detector published 141 clusters and every one was wrong; the
+  // second thing it needed, after tighter filters, was a record of what it is
+  // judging so the bar can be checked rather than guessed at again.
+  const demandEngagements: number[] = [];
+
   if (options.offline !== true) {
     const client =
       options.client ??
@@ -254,6 +261,7 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
         events.push(event);
         seen.add(event.id);
       }
+      demandEngagements.push(...demand.engagements);
       errors.push(...demand.errors);
     } catch (error) {
       errors.push(`issues: ${error instanceof Error ? error.message : String(error)}`);
@@ -365,6 +373,13 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
         'ratio to category median',
         DEFAULT_PEER_THRESHOLDS.minRatio,
         peerRatios,
+      ),
+      summariseCalibration(
+        today,
+        'demand',
+        'engagement across repositories',
+        DEFAULT_DEMAND_THRESHOLDS.minEngagement,
+        demandEngagements,
       ),
     ]);
   } catch (error) {

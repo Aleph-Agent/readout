@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-08-06T03:27:59.440Z",
+  "lastRunAt": "2026-08-06T03:31:03.353Z",
   "lastSuccessfulRunAt": "2026-08-06T01:50:26.313Z",
   "job": "daily",
   "partial": true,
@@ -9,10 +9,11 @@
   "requestsUnchanged": 479,
   "eventsDetected": 0,
   "collectorsErrored": [
-    "snapshot: writeSnapshot: 2026-08-06 already exists. History is immutable; pass { overwrite: true } only to repair a run that wrote garbage."
+    "snapshot: writeSnapshot: 2026-08-06 already exists. History is immutable; pass { overwrite: true } only to repair a run that wrote garbage.",
+    "adoption pypi: refused 38 of 63 reads, last known counts carried forward"
   ],
   "summariesGenerated": 4,
   "insufficientRate": 0,
-  "bundleHash": "7571ec1af0ec6024bf71f36b581cfd6fc2bbfc977fe32334abb42e2ac72ad9fe",
+  "bundleHash": "2be44e99f49515a71b532889472bf8a859ab8c8a1e3e64b69abcf8221c083e40",
   "deploySkipped": false
 }

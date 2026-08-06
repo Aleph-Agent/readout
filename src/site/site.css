@@ -699,6 +699,91 @@ a:hover {
   font-size: var(--t-base);
 }
 
+/* ----------------------------------------------------------------- compare
+
+   The one page here that is a tool. It still has to look like the instrument,
+   so: the same table, the same type, and bars that obey the same rule as
+   everywhere else — length is the measurement, and nothing is scaled across
+   two things that share no unit. */
+
+.cmp-pickers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+  max-width: 720px;
+}
+
+.cmp-picker {
+  display: grid;
+  gap: 6px;
+}
+
+.cmp-picker select {
+  background: var(--ink-025);
+  border: 1px solid var(--ink-100);
+  color: var(--ink-900);
+  font-family: var(--face-data);
+  font-size: var(--t-base);
+  padding: 11px 12px;
+  width: 100%;
+}
+
+.cmp-picker select:focus {
+  outline: none;
+  border-color: var(--ink-300);
+  background: var(--ink-050);
+}
+
+.cmp-table th[scope='row'] {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-700);
+  border-bottom: 1px solid var(--ink-050);
+  padding: 12px 14px 12px 0;
+  white-space: normal;
+}
+
+.cmp-note {
+  font-family: var(--face-prose);
+  font-size: var(--t-micro);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-500);
+}
+
+.cmp-table td {
+  padding: 12px 14px 12px 0;
+  width: 34%;
+}
+
+/* Two sides, two steps of the same ramp. Not two hues: the columns are two
+   readings of one measure, not two categories, and giving them different
+   colours would say they are different kinds of thing. */
+.cmp-bar {
+  display: block;
+  height: 6px;
+  width: var(--share);
+  margin-top: 7px;
+  margin-left: auto;
+  border-radius: 3px 0 0 3px;
+  transform-origin: right center;
+  animation: grow 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cmp-a {
+  background: var(--mag-5);
+}
+.cmp-b {
+  background: var(--mag-2);
+}
+
 /* ------------------------------------------------------------------ lenses
 
    Five signals with no explanation anywhere. The navigation named them and

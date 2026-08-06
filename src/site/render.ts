@@ -1,5 +1,6 @@
 import { COMPARISON, isCapped, readingsOf, SIGNAL_LABEL } from './vocabulary.ts';
 import { REACHABLE_SHARE } from '../lib/calibration.ts';
+import { COMPARE_SCRIPT } from './compare.ts';
 import type { Disclosure, IndexBundle, LensBundle, LensName, StripMark } from '../types/bundles.ts';
 import type { EventRecord } from '../types/events.ts';
 import type { MetaRecord } from '../types/meta.ts';
@@ -40,6 +41,7 @@ const NAV: { href: string; label: string; lens: LensName | null }[] = [
   // How it works, what it cannot do, and who is paying. It was all in the
   // commit log, which is a credibility argument aimed at an audience that does
   // not read strangers' commit logs.
+  { href: '/compare', label: 'Compare', lens: null },
   { href: '/method', label: 'Method', lens: null },
 ];
 
@@ -416,7 +418,8 @@ ${options.body}
 ${colophonHtml(options.index, options.meta)}
 <script>${AGE_SCRIPT}
 ${COUNT_SCRIPT}
-${ASK_SCRIPT}</script>${analyticsHtml()}
+${ASK_SCRIPT}
+${COMPARE_SCRIPT}</script>${analyticsHtml()}
 </body>
 </html>
 `;
@@ -1188,6 +1191,66 @@ ${band(
     restricted to. No key, no rate limit, no account.
   </p>
 </div>`,
+)}`,
+  });
+}
+
+/**
+ * Two projects held against each other.
+ *
+ * The first thing here that is a tool rather than a reading, and the first
+ * place the multi-axis data pays for itself: "more stars" is available from
+ * GitHub, while "three times the installs, a lower scorecard and four times the
+ * advisories" is not available anywhere, because nobody else joins these
+ * sources.
+ *
+ * It compares and does not rank. Neither column is ever the winner, nothing is
+ * totalled across axes — downloads and a score out of ten share no scale — and
+ * a missing figure says so rather than being treated as a low one.
+ */
+export function renderCompare(index: IndexBundle, meta: MetaRecord): string {
+  return layout({
+    title: 'Compare — Readout',
+    description:
+      'Hold two open-source projects against each other across downloads, security scorecard, advisories and repository activity.',
+    current: '/compare',
+    path: '/compare',
+    index,
+    meta,
+    body: `<section class="hero">
+  <h1 class="hero-thesis">Two projects, every axis at once.</h1>
+  <p class="hero-sub">
+    Downloads from npm and PyPI, the OpenSSF scorecard, advisories filed against what they publish,
+    and what their repositories are doing — held side by side. Choosing between two libraries
+    normally means opening five tabs and comparing numbers that were never measured the same way.
+  </p>
+</section>
+
+${band(
+  'Compare',
+  `<p class="notice" id="cmp-loading">Loading ${index.watchlist.active} repositories…</p>
+<div id="cmp" hidden>
+  <div class="cmp-pickers">
+    <label class="cmp-picker"><span class="label">First</span><select id="cmp-a"></select></label>
+    <label class="cmp-picker"><span class="label">Second</span><select id="cmp-b"></select></label>
+  </div>
+  <div class="wrap"><table class="readout cmp-table">
+    <thead><tr>
+      <th scope="col">Measure</th>
+      <th scope="col" class="n" id="cmp-head-a">—</th>
+      <th scope="col" class="n" id="cmp-head-b">—</th>
+    </tr></thead>
+    <tbody id="cmp-body"></tbody>
+  </table></div>
+  <p class="basis label" id="cmp-note" hidden>Bars are drawn within each row against the larger of
+  the two, never across rows: downloads and a score out of ten share no scale, and drawing them
+  against one another would invent a comparison. Nothing here is totalled and neither column is a
+  winner — a project with more downloads and more advisories is a project with more downloads and
+  more advisories. Where a figure is missing the row says so; absence is not a low score.</p>
+</div>
+<noscript><p class="notice">This needs scripting. The same figures are in
+<a href="/data/compare.json">the bundle it reads</a>.</p></noscript>`,
+  'Pick two. The link updates as you choose, so a comparison is something you can send someone.',
 )}`,
   });
 }

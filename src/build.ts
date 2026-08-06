@@ -32,7 +32,13 @@ import { templatedSentence } from './lib/validate.ts';
 import { scoreFindings } from './lib/scorecard.ts';
 import { assertSafeRepoId, DIST_DATA_DIR, DIST_DIR, ROOT, utcDate } from './lib/paths.ts';
 import { buildAskContext, MAX_CONTEXT_BYTES } from './site/ask-context.ts';
-import { eventSlug, renderIndex, renderLens, renderMethod } from './site/render.ts';
+import {
+  eventSlug,
+  renderCompare,
+  renderIndex,
+  renderLens,
+  renderMethod,
+} from './site/render.ts';
 import {
   eventPath,
   renderEventPage,
@@ -520,6 +526,38 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
 
   emitted.set('ask-context.json', askContext);
 
+  // One row per watched repository, flattened across every axis this project
+  // reads. Fetched only by /compare, never by the index — 388 rows is small,
+  // but it is not small enough to put on a page that does not use it.
+  const adoptionByRepo = new Map<string, number>();
+  for (const row of readAdoption()) {
+    if (row.count === null || (row.registry !== 'npm' && row.registry !== 'pypi')) continue;
+    adoptionByRepo.set(row.id, Math.max(adoptionByRepo.get(row.id) ?? 0, row.count));
+  }
+  const healthByRepo = new Map(readHealth().map((row) => [row.id, row]));
+  const findingsByRepo = new Map<string, number>();
+  for (const event of addressable) {
+    findingsByRepo.set(event.repo, (findingsByRepo.get(event.repo) ?? 0) + 1);
+  }
+
+  emitted.set(
+    'compare.json',
+    stableJson(
+      strip.map((mark) => ({
+        id: mark.id,
+        name: mark.name,
+        category: mark.category,
+        language: mark.language,
+        forks: mark.forks,
+        stars: mark.stars,
+        installs: adoptionByRepo.get(mark.id) ?? null,
+        scorecard: healthByRepo.get(mark.id)?.scorecard ?? null,
+        advisories: healthByRepo.get(mark.id)?.advisories ?? null,
+        findings: findingsByRepo.get(mark.id) ?? 0,
+      })),
+    ),
+  );
+
   const previous = readMeta();
 
   const pages = new Map<string, string>([
@@ -658,10 +696,12 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   }
 
   pages.set('method.html', renderMethod(index, previous));
+  pages.set('compare.html', renderCompare(index, previous));
 
   const sitemapPaths = [
     '/',
     '/method',
+    '/compare',
     ...LENSES.map((lens) => `/${lens}`),
     ...[...profiles.keys()].map((repo) => `/repo/${repo}`),
     ...addressable.map((event) => eventPath(event)),

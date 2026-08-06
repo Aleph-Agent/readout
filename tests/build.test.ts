@@ -84,6 +84,9 @@ describe('bundle emission', () => {
       // What the answer endpoint is allowed to answer from. Published rather
       // than held server-side, so the grounding is checkable by the reader.
       'ask-context.json',
+      // Every repository flattened across every axis, for /compare. Fetched
+      // only by that page, never by the index.
+      'compare.json',
       'demand.json',
       'forks.json',
       'index.json',
@@ -246,6 +249,8 @@ describe('output hygiene', () => {
       )
       .map((f) => f.name);
     expect(pages.sort()).toEqual([
+      // The one page here that is a tool rather than a reading.
+      'compare.html',
       'demand.html',
       'forks.html',
       'index.html',

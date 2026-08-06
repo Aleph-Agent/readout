@@ -290,8 +290,22 @@ export async function onRequestPost(context: { request: Request }): Promise<Resp
     }
 
     if (toolName === 'check_package') {
+      // Says which of the two it was. "name is required" for a name that was
+      // supplied but is 5,000 characters long tells an agent to retry with the
+      // same argument, and it will.
       const name = asString(args['name']);
-      if (name === null) return toolResult(id, { error: 'name is required.' }, true);
+      if (name === null) {
+        return toolResult(
+          id,
+          {
+            error:
+              typeof args['name'] === 'string'
+                ? `name must be between 1 and ${MAX_NAME} characters.`
+                : 'name is required and must be a string.',
+          },
+          true,
+        );
+      }
 
       const entry = index.packages[`${registry}:${name}`];
       return toolResult(id, {

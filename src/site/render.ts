@@ -1192,8 +1192,16 @@ ${band(
   <p>
     If you would rather work with the data directly, every bundle behind every page is a static
     file: <a href="/data/index.json">/data/index.json</a> for the current state,
-    <a href="/data/ask-context.json">/data/ask-context.json</a> for the record the answer box is
-    restricted to. No key, no rate limit, no account.
+    <a href="/data/stack-index.json">/data/stack-index.json</a> keyed by package,
+    <a href="/data/compare.json">/data/compare.json</a> one row per repository. No key, no rate
+    limit, no account.
+  </p>
+  <p>
+    <strong>For coding agents.</strong> The same readings are served over the Model Context
+    Protocol at <code>/api/mcp</code>, with four read-only tools. An agent asked whether a
+    dependency is healthy otherwise answers from training data a year old; this lets it answer from
+    a reading taken today. Every result carries these limits with it, because a scorecard quoted
+    into a code review without them is a claim this project does not make.
   </p>
 </div>`,
 )}`,

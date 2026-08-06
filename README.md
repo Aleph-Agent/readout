@@ -1,6 +1,22 @@
 # Readout
 
-**[readout-7pt.pages.dev](https://readout-7pt.pages.dev)** · [how the readings are taken](https://readout-7pt.pages.dev/method) · [feed](https://readout-7pt.pages.dev/feed.xml)
+**[readout-7pt.pages.dev](https://readout-7pt.pages.dev)** · [your stack](https://readout-7pt.pages.dev/stack) · [compare](https://readout-7pt.pages.dev/compare) · [method](https://readout-7pt.pages.dev/method) · [feed](https://readout-7pt.pages.dev/feed.xml)
+
+## For coding agents
+
+An MCP server over the same readings, so an agent can answer "is this
+dependency healthy" from a measurement taken today rather than from training
+data a year old.
+
+```json
+{ "mcpServers": { "readout": { "url": "https://readout-7pt.pages.dev/api/mcp" } } }
+```
+
+Four tools: `check_package`, `check_stack`, `compare_repositories`,
+`search_repositories`. Read-only, no key, no account. Every result carries the
+limits of what it can support, because an agent will paste these figures into a
+code review and a scorecard quoted without "measures declared practices, not
+whether the project is safe" is a claim this project does not make.
 
 One agent watches ~400 open-source repositories and reports five signals about
 them. It runs every four hours on GitHub Actions, commits what it reads to this

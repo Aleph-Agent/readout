@@ -64,8 +64,34 @@ export type EventKind =
   | 'model-price'
   /** A model stopped being offered. Nobody else records this at all. */
   | 'model-withdrawn'
+  /**
+   * A runtime or database stops receiving security fixes soon.
+   *
+   * Announced years in advance and watched by almost nobody. A team learns
+   * Python 3.9 went unsupported when an auditor tells them.
+   */
+  | 'eol-approaching'
   /** Supersedes an earlier event that turned out to be wrong. Never a delete. */
   | 'correction';
+
+/**
+ * Kinds whose subject is not a repository.
+ *
+ * `repo` carries the subject for every kind, and for these it holds a model id
+ * or a `product/cycle` pair. Both look exactly like `owner/name` and neither is
+ * on GitHub, so anything that treats the field as a repository — a profile
+ * page, a "view on GitHub" link, a fork baseline — states something false about
+ * them. There is no shape to test for; it has to be asked by kind.
+ */
+const NON_REPOSITORY_KINDS = new Set<EventKind>([
+  'model-price',
+  'model-withdrawn',
+  'eol-approaching',
+]);
+
+export function isRepositorySubject(kind: EventKind): boolean {
+  return !NON_REPOSITORY_KINDS.has(kind);
+}
 
 /**
  * The structured record a summary is allowed to explain, and nothing else.

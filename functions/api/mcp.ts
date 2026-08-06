@@ -63,6 +63,18 @@ interface CompareRow {
   findings: number;
 }
 
+interface EolBundle {
+  generatedAt: string;
+  products: {
+    product: string;
+    cycle: string;
+    eol: string | null;
+    ended: boolean;
+    latest: string | null;
+    lts: boolean;
+  }[];
+}
+
 interface StackIndex {
   benchmark: { repositories: number; medianScorecard: number | null; scored: number };
   packages: Record<string, StackEntry>;
@@ -184,6 +196,26 @@ const TOOLS = [
     },
   },
   {
+    name: 'check_eol',
+    description:
+      'Check whether a runtime, database or framework release is still receiving security fixes, and what to move to. Covers about two dozen products read daily from endoflife.date. Use it before recommending or accepting a version pin: end-of-life dates are published years ahead, so a date held in training data is usually the one thing that has since passed.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        product: {
+          type: 'string',
+          description: 'Product as endoflife.date spells it, e.g. python, nodejs, postgresql.',
+        },
+        cycle: {
+          type: 'string',
+          description: 'Release line, e.g. 3.9 or 20. Omit for every cycle of the product.',
+        },
+      },
+      required: ['product'],
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'search_repositories',
     description:
       'Find watched repositories whose name contains a string, with their current readings. Use it to discover what is covered before calling the other tools.',
@@ -229,6 +261,12 @@ function ageDays(iso: string | null): number | null {
   if (iso === null) return null;
   const at = Date.parse(iso);
   return Number.isFinite(at) ? Math.round((Date.now() - at) / 86_400_000) : null;
+}
+
+function eolDays(date: string, today: string): number {
+  return Math.round(
+    (Date.parse(`${date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000,
+  );
 }
 
 const SOURCE_AVAILABLE = /BUSL|SSPL|Elastic|RSAL|Commons-Clause|PolyForm/i;
@@ -458,6 +496,73 @@ export async function onRequestPost(context: { request: Request }): Promise<Resp
         'Prices are read daily from one catalogue and are what that catalogue reports, not what a provider bills you — quotas, batch tiers and negotiated rates are not visible here.',
         'Free tiers are excluded. Zero is a different offer rather than a lower price.',
         'A context window is what the catalogue advertises. It is not a statement about how well a model uses it.',
+      ],
+    });
+  }
+
+  if (toolName === 'check_eol') {
+    const product = asString(args['product'], 60)?.toLowerCase() ?? null;
+    if (product === null) {
+      return toolResult(id, { error: 'product is required, e.g. python.' }, true);
+    }
+
+    const bundle = await loadJson<EolBundle>(origin, '/data/eol.json');
+    if (bundle === null) {
+      return toolResult(id, { error: 'The dates could not be loaded.' }, true);
+    }
+
+    const all = bundle.products.filter((row) => row.product === product);
+    if (all.length === 0) {
+      return toolResult(id, {
+        product,
+        covered: false,
+        note: 'Not tracked here. This says nothing about the product; the list is curated.',
+        tracked: [...new Set(bundle.products.map((row) => row.product))].sort(),
+      });
+    }
+
+    const cycle = asString(args['cycle'], 40);
+    const asked = cycle === null ? all : all.filter((row) => row.cycle === cycle);
+
+    if (cycle !== null && asked.length === 0) {
+      return toolResult(
+        id,
+        {
+          product,
+          cycle,
+          covered: false,
+          error: 'That release line is not on record.',
+          cycles: all.map((row) => row.cycle),
+        },
+        true,
+      );
+    }
+
+    // Sorted by how soon each one matters. An ended cycle first, then the
+    // nearest date, then the ones with no announced end.
+    const today = new Date().toISOString().slice(0, 10);
+    const releases = asked
+      .map((row) => ({
+        cycle: row.cycle,
+        supported: !row.ended,
+        eol: row.eol,
+        daysRemaining: row.eol === null ? null : eolDays(row.eol, today),
+        latest: row.latest,
+        lts: row.lts,
+      }))
+      .sort((a, b) => (a.daysRemaining ?? Infinity) - (b.daysRemaining ?? Infinity));
+
+    return toolResult(id, {
+      product,
+      covered: true,
+      asOf: bundle.generatedAt,
+      supportedCycles: releases.filter((row) => row.supported).map((row) => row.cycle),
+      releases,
+      source: `https://endoflife.date/${product}`,
+      limits: [
+        'Dates are published by endoflife.date and republished here unchanged. Nothing is inferred.',
+        'A release with no announced end date is reported as having none, which is not the same as being supported indefinitely.',
+        'The product list is curated — about two dozen runtimes, databases and frameworks, not the whole catalogue.',
       ],
     });
   }

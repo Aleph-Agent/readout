@@ -4,7 +4,7 @@ import { MIN_INSTALLS } from '../lib/divergence.ts';
 import { COMPARE_SCRIPT } from './compare.ts';
 import { STACK_SCRIPT } from './stack.ts';
 import type { Disclosure, IndexBundle, LensBundle, LensName, StripMark } from '../types/bundles.ts';
-import type { EventRecord } from '../types/events.ts';
+import { isRepositorySubject, type EventRecord } from '../types/events.ts';
 import type { MetaRecord } from '../types/meta.ts';
 
 /**
@@ -1079,7 +1079,14 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     .map(
       (event) => `<tr>
       <td class="dim">${timeOf(event.detectedAt)}</td>
-      <td>${repoLink(event.repo)}</td>
+      <td>${
+        // A model id and a `product/cycle` pair sit in this column too, and
+        // neither has a repository page. Sent to the finding instead of to a
+        // profile that would describe them as an unwatched repository.
+        isRepositorySubject(event.kind)
+          ? repoLink(event.repo)
+          : `<a href="/e/${esc(eventSlug(event.id))}">${esc(event.repo)}</a>`
+      }</td>
       <td><span class="label">${esc(event.kind)}</span></td>
       <td>${stateBadge(event.confidence)}</td>
       <td>${esc(String(event.metrics['tag'] ?? event.metrics['multiplier'] ?? '—'))}</td>
@@ -1283,10 +1290,11 @@ ${band(
   </p>
   <pre class="method-code">{ "mcpServers": { "readout": { "url": "${SITE_ORIGIN}/api/mcp" } } }</pre>
   <p>
-    Four read-only tools: <code>check_package</code>, <code>check_stack</code>,
-    <code>compare_repositories</code>, <code>search_repositories</code>. No key, no account, no
-    quota. Every result carries the limits above with it, because a scorecard pasted into a code
-    review without them is a claim this project does not make.
+    Six read-only tools: <code>check_package</code>, <code>check_stack</code>,
+    <code>check_eol</code>, <code>compare_repositories</code>, <code>search_repositories</code>,
+    <code>find_model</code>. No key, no account, no quota. Every result carries the limits above
+    with it, because a scorecard pasted into a code review without them is a claim this project
+    does not make.
   </p>
 </div>`,
 )}
@@ -1423,8 +1431,72 @@ ${band(
   <noscript><p class="notice">This runs entirely in the browser, so it needs scripting. The index it
   reads is at <a href="/data/stack-index.json">/data/stack-index.json</a>.</p></noscript>`,
   'Advisories are checked for every dependency. Scorecard and licence only for the ones tracked here.',
-)}`,
+)}
+
+${lifecycleHtml(index)}`,
   });
+}
+
+/**
+ * The end-of-life clock.
+ *
+ * The dates are published years ahead and watched by almost nobody, which is
+ * why a team learns Python 3.9 went unsupported when an auditor tells them. It
+ * sits on this page because it is the same question the manifest box asks —
+ * what am I running, and is it still getting fixes — one level below the
+ * libraries.
+ */
+function lifecycleHtml(index: IndexBundle): string {
+  const { lifecycle } = index;
+  if (lifecycle.products === 0) return '';
+
+  const soon =
+    lifecycle.soon.length === 0
+      ? `<p class="notice">Nothing tracked here loses support in the next year.</p>`
+      : `<div class="wrap"><table class="readout">
+  <caption class="label">Support ends within a year, soonest first</caption>
+  <thead><tr>
+    <th scope="col">Runtime</th>
+    <th scope="col">Release</th>
+    <th scope="col" class="n">Ends</th>
+    <th scope="col" class="n">Days left</th>
+    <th scope="col">Latest</th>
+  </tr></thead>
+  <tbody>${lifecycle.soon
+    .map(
+      (row) => `<tr>
+      <td><a href="https://endoflife.date/${esc(row.product)}">${esc(row.product)}</a></td>
+      <td class="num">${esc(row.cycle)}${row.lts ? ' <span class="label">LTS</span>' : ''}</td>
+      <td class="n num">${esc(row.eol)}</td>
+      <td class="n"><span class="big num">${row.days}</span></td>
+      <td class="num">${row.latest === null ? '<span class="dim">—</span>' : esc(row.latest)}</td>
+    </tr>`,
+    )
+    .join('')}</tbody>
+</table></div>`;
+
+  // What to move to. Without this the table is a warning with no next step,
+  // and the next step is the only part anybody acts on.
+  const supported = lifecycle.supported
+    .map(
+      (row) => `<div class="metric">
+      <span class="label">${esc(row.product)}</span>
+      <span class="metric-value num">${esc(row.cycles.slice(0, 4).join(', '))}</span>
+    </div>`,
+    )
+    .join('');
+
+  return band(
+    'End of life',
+    `<div class="hero-figures">
+    <div class="figure"><span class="figure-value num">${lifecycle.products}</span><span class="label">Runtimes tracked</span></div>
+    <div class="figure"><span class="figure-value num">${lifecycle.approaching}</span><span class="label">Ending within a year</span></div>
+    <div class="figure"><span class="figure-value num">${lifecycle.ended}</span><span class="label">Already unsupported</span></div>
+  </div>
+${soon}
+  <div class="finding-metrics" style="padding-top:18px">${supported}</div>`,
+    'Dates are published by endoflife.date and cited, never inferred. A release with no announced end date is not listed as ending.',
+  );
 }
 
 /**

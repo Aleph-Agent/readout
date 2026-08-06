@@ -47,6 +47,7 @@ data/
 ├── live/window.jsonl         Timestamped fork samples. Rolling 24h delta.
 ├── live/manifests.jsonl      Last-seen dependency set. Diffed daily.
 ├── live/adoption.jsonl       Downloads per package. 35-day trend inline.
+├── live/lifecycle.jsonl      End-of-life dates per product cycle. Read daily.
 ├── history/YYYY-MM-DD.jsonl  Appended once daily. Immutable.
 ├── events/YYYY-MM.jsonl      Append-only. Never rewritten.
 ├── calibration.jsonl         Append-only. How close everything got to each bar.

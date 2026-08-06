@@ -24,8 +24,10 @@ import {
   ADOPTION_PATH,
   HEALTH_PATH,
   MODELS_PATH,
+  LIFECYCLE_PATH,
 } from './paths.ts';
 import { MODEL_KEYS, type ModelRow } from '../types/models.ts';
+import { LIFECYCLE_KEYS, type LifecycleRow } from '../types/lifecycle.ts';
 import { HEALTH_KEYS, type HealthRow } from '../types/health.ts';
 import { CALIBRATION_KEYS, type CalibrationRow } from './calibration.ts';
 import { ADOPTION_KEYS, type AdoptionRow } from '../types/adoption.ts';
@@ -152,6 +154,19 @@ export function readModels(): ModelRow[] {
 export function writeModels(rows: readonly ModelRow[]): void {
   writeJsonl(MODELS_PATH, rows, MODEL_KEYS, {
     sortBy: (row) => row.id.toLowerCase(),
+    rejectDuplicates: true,
+  });
+}
+
+// ------------------------------------------------------------------ lifecycle
+
+export function readLifecycle(): LifecycleRow[] {
+  return readJsonl(LIFECYCLE_PATH).map((row) => conform<LifecycleRow>(row, LIFECYCLE_KEYS));
+}
+
+export function writeLifecycle(rows: readonly LifecycleRow[]): void {
+  writeJsonl(LIFECYCLE_PATH, rows, LIFECYCLE_KEYS, {
+    sortBy: (row) => [row.product, row.cycle].join(' '),
     rejectDuplicates: true,
   });
 }

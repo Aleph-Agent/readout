@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { collectAdoption } from '../collectors/adoption.ts';
 import { collectHealth } from '../collectors/health.ts';
 import { collectIssues } from '../collectors/issues.ts';
+import { collectLifecycle } from '../collectors/lifecycle.ts';
 import { collectModels } from '../collectors/models.ts';
 import { collectManifests } from '../collectors/manifests.ts';
 import { lastDetectionByRepo } from '../lib/confidence.ts';
@@ -15,6 +16,7 @@ import {
   readAdoption,
   readEvents,
   readModels,
+  readLifecycle,
   readAllEvents,
   readLiveState,
   readManifests,
@@ -25,6 +27,7 @@ import {
   writeAdoption,
   writeHealth,
   writeModels,
+  writeLifecycle,
   writeManifests,
   writeMeta,
   writeSnapshot,
@@ -337,6 +340,28 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       errors.push(...models.errors);
     } catch (error) {
       errors.push(`models: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    // End-of-life dates. Twenty-four curated products, one free request each,
+    // and the dates are published years ahead and watched by almost nobody.
+    try {
+      const known = readLifecycle();
+      const lifecycle = await collectLifecycle(known, {
+        now: nowIso,
+        today,
+        seen: new Set(readEvents(month).map((event) => event.id)),
+      });
+      // A ledger is never emptied by a bad read. A failed fetch is carried
+      // forward inside the collector, but a product that answers 404 is
+      // dropped — correct for a rename, catastrophic if the whole API moves and
+      // every product answers 404 at once. Stale dates are wrong by days; an
+      // empty file is wrong about everything and takes the page with it.
+      writeLifecycle(lifecycle.rows.length === 0 ? known : lifecycle.rows);
+      if (lifecycle.events.length > 0) appendEvents(month, lifecycle.events);
+      for (const event of lifecycle.events) events.push(event);
+      errors.push(...lifecycle.errors);
+    } catch (error) {
+      errors.push(`lifecycle: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     requestsConsumed = client.stats().consumed;

@@ -53,6 +53,13 @@ export const HEALTH_PATH = join(LIVE_DIR, 'health.jsonl');
  * keeps its row, because that row is the only evidence it was ever offered.
  */
 export const MODELS_PATH = join(LIVE_DIR, 'models.jsonl');
+
+/**
+ * End-of-life dates per product and release line. Overwritten daily: these are
+ * announced dates rather than observations, and the useful history is a date
+ * moving, not the fact that it did not move today.
+ */
+export const LIFECYCLE_PATH = join(LIVE_DIR, 'lifecycle.jsonl');
 export const META_PATH = join(DATA_DIR, 'meta.json');
 
 /**

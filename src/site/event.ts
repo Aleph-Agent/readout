@@ -2,7 +2,7 @@ import { basisHtml, esc, eventSlug, layout, proseHtml, SITE_ORIGIN, stateBadge }
 import { readingsOf } from './vocabulary.ts';
 import { templatedSentence } from '../lib/validate.ts';
 import type { IndexBundle } from '../types/bundles.ts';
-import type { EventRecord } from '../types/events.ts';
+import { isRepositorySubject, type EventRecord } from '../types/events.ts';
 import type { MetaRecord } from '../types/meta.ts';
 
 /**
@@ -29,11 +29,36 @@ const KIND_LABEL: Record<EventRecord['kind'], string> = {
   archived: 'Archived',
   'model-price': 'Model price change',
   'model-withdrawn': 'Model withdrawn',
+  'eol-approaching': 'End of life',
   correction: 'Correction',
 };
 
 export function eventPath(event: EventRecord): string {
   return `/e/${eventSlug(event.id)}`;
+}
+
+/**
+ * The published file each kind's figures live in.
+ *
+ * Not every kind is a lens. Model prices and end-of-life dates have bundles of
+ * their own, and pointing a reader at `forks.json` for a date they read on a
+ * page about Python is an invitation to conclude the site made it up.
+ */
+function bundleOf(kind: EventRecord['kind']): string {
+  if (kind === 'release') return 'ships';
+  if (kind === 'demand-cluster') return 'demand';
+  if (kind === 'dependency-shift') return 'stack';
+  if (kind === 'model-price' || kind === 'model-withdrawn') return 'models';
+  if (kind === 'eol-approaching') return 'eol';
+  return 'forks';
+}
+
+/** Where a reader goes to check, named by where it actually goes. */
+function verifyLabel(url: string): string {
+  const host = /^https?:\/\/([^/]+)/.exec(url)?.[1]?.replace(/^www\./, '');
+  if (host === undefined) return 'Verify at the source';
+  if (host === 'github.com') return 'Verify on GitHub';
+  return `Verify at ${host}`;
 }
 
 /** One sentence, safe to quote anywhere. Falls back to bare measurements. */
@@ -77,8 +102,12 @@ export function renderEventPage(
   </div>
   <h1 class="repo-title">${esc(event.repo)}</h1>
   <div class="repo-facts">
-    <a class="label" href="/repo/${esc(event.repo)}">All signals for this repository</a>
-    <a class="label" href="${esc(event.evidenceUrl)}">Verify on GitHub</a>
+    ${
+      isRepositorySubject(event.kind)
+        ? `<a class="label" href="/repo/${esc(event.repo)}">All signals for this repository</a>`
+        : ''
+    }
+    <a class="label" href="${esc(event.evidenceUrl)}">${esc(verifyLabel(event.evidenceUrl))}</a>
   </div>
   ${basisHtml(event)}
 </section>
@@ -90,7 +119,7 @@ ${proseHtml(event)}
   <strong>How to read this</strong>
   ${esc(description)}
   Every figure above is published as JSON at
-  <a href="/data/${event.kind === 'release' ? 'ships' : event.kind === 'demand-cluster' ? 'demand' : event.kind === 'dependency-shift' ? 'stack' : 'forks'}.json">the lens bundle</a>,
+  <a href="/data/${bundleOf(event.kind)}.json">the bundle it came from</a>,
   and the reading it came from can be checked at the source link.
 </div>`;
 

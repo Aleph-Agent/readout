@@ -21,6 +21,7 @@ export const SIGNAL_LABEL: Record<EventKind, string> = {
   archived: 'Archived',
   'model-price': 'Model price',
   'model-withdrawn': 'Model withdrawn',
+  'eol-approaching': 'End of life',
   correction: 'Correction',
 };
 
@@ -39,6 +40,7 @@ export const COMPARISON: Partial<Record<EventKind, string>> = {
   'demand-cluster': 'measured across the open issues of the repositories watched here',
   'dependency-shift': 'read from this repository’s dependency manifest',
   lineage: 'counted from base-model relations, which uploaders declare themselves',
+  'eol-approaching': 'read from the end-of-life date its own maintainers published',
 };
 
 interface MetricLabel {
@@ -77,6 +79,11 @@ const METRICS: Record<string, MetricLabel> = {
   uploaders: { label: 'From accounts', unit: '' },
   totalSinceWatching: { label: 'Since watching began', unit: '' },
   mostDownloaded: { label: 'Most downloaded', unit: '' },
+
+  product: { label: 'Runtime', unit: '' },
+  cycle: { label: 'Release line', unit: '' },
+  eol: { label: 'Support ends', unit: '' },
+  daysRemaining: { label: 'Days left', unit: '' },
 
   manifest: { label: 'Manifest', unit: '' },
   added: { label: 'Dependencies added', unit: '' },

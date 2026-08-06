@@ -147,6 +147,19 @@ export function templatedSentence(event: EventRecord): string | null {
     return `${event.repo} is no longer offered. Last seen ${last}.`;
   }
 
+  if (event.kind === 'eol-approaching') {
+    const product = metricString(metrics, 'product');
+    const cycle = metricString(metrics, 'cycle');
+    const eol = metricString(metrics, 'eol');
+    const days = metricNumber(metrics, 'daysRemaining');
+    if (product === null || cycle === null || eol === null || days === null) return null;
+
+    // The publisher is named in the sentence. This is somebody else's announced
+    // date restated, not a prediction made here, and a sentence that reads as a
+    // prediction is a claim this project cannot support.
+    return `${product} ${cycle} stops receiving fixes on ${eol}, in ${days} days, according to endoflife.date.`;
+  }
+
   if (event.kind === 'lineage') {
     const base = metricString(metrics, 'baseModel');
     const added = metricNumber(metrics, 'newDescendants');

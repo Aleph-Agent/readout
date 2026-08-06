@@ -9,6 +9,7 @@ import {
   readAllEvents,
   latestCalibration,
   readHealth,
+  readLifecycle,
   readModels,
   readManifests,
   readLiveState,
@@ -24,6 +25,7 @@ import { buildCoverage } from './lib/coverage.ts';
 import { summariseAdoption } from './lib/adoption-summary.ts';
 import { summariseHealth } from './lib/health-summary.ts';
 import { summariseDivergence } from './lib/divergence.ts';
+import { summariseLifecycle } from './lib/lifecycle-summary.ts';
 import { summariseModels } from './lib/models-summary.ts';
 import { renderBadge } from './site/badge.ts';
 import { summariseWindow, type CalibrationSummary } from './lib/calibration.ts';
@@ -72,7 +74,11 @@ import {
   type LensName,
   type StripMark,
 } from './types/bundles.ts';
-import type { EventKind, EventRecord } from './types/events.ts';
+import {
+  isRepositorySubject,
+  type EventKind,
+  type EventRecord,
+} from './types/events.ts';
 import type { MetaRecord } from './types/meta.ts';
 
 /**
@@ -513,6 +519,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     adoption: summariseAdoption(readAdoption()),
     health: summariseHealth(readHealth()),
     models: summariseModels(readModels()),
+    lifecycle: summariseLifecycle(readLifecycle(), today),
     divergence: summariseDivergence(
       strip.map((mark) => ({
         id: mark.id,
@@ -606,6 +613,25 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
       };
     }
   }
+
+  // Every tracked runtime and its cycles, flat. An agent asked "is Python 3.9
+  // still supported" answers it from training data with a date in it, which is
+  // the one kind of question where stale training data is confidently wrong.
+  emitted.set(
+    'eol.json',
+    stableJson({
+      generatedAt: previous.lastSuccessfulRunAt ?? now.toISOString(),
+      source: 'https://endoflife.date',
+      products: readLifecycle().map((row) => ({
+        product: row.product,
+        cycle: row.cycle,
+        eol: row.eol,
+        ended: row.ended,
+        latest: row.latest,
+        lts: row.lts,
+      })),
+    }),
+  );
 
   // Every model, flat, for the endpoint that answers "cheapest with 200k
   // context". An agent asks that several times a session and currently answers
@@ -732,6 +758,12 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
 
   for (const [repo, repoEvents] of eventsByRepo) {
     if (profiles.has(repo)) continue;
+    // A model id and a `product/cycle` pair both fit `owner/name`. Given a
+    // profile page they were described as repositories removed from the
+    // watchlist, with a fork baseline and a link to GitHub — four false
+    // statements about a thing that was never a repository. Their findings
+    // address at `/e/…` instead.
+    if (!repoEvents.some((event) => isRepositorySubject(event.kind))) continue;
     const earliest = repoEvents.reduce(
       (oldest, event) => (event.detectedAt < oldest ? event.detectedAt : oldest),
       repoEvents[0]?.detectedAt ?? now.toISOString(),
@@ -777,38 +809,6 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
       ),
     );
   }
-
-  // The gate hashes everything served — bundles, pages, and the stylesheet — so
-  // a change to any of them deploys. Hashing only the JSON would have meant a
-  // CSS or template edit never reaching the site.
-  //
-  // Two exceptions. meta.json is excluded because it carries the hash and
-  // cannot hash itself. And lastSuccessfulRunAt is folded in deliberately,
-  // despite being run telemetry.
-  //
-  // That second one reverses the decision made in Prompt 4. Excluding it meant
-  // a quiet day deployed nothing and the published timestamp stayed put, which
-  // was defensible while the output was only JSON. But the page derives a
-  // staleness warning from that timestamp, and skipping the deploy would make a
-  // healthy agent that found nothing indistinguishable from a dead one — the
-  // exact failure the staleness warning exists to expose. Freshness wins. The
-  // cost is roughly 210 deployments a month against a ceiling of 500.
-  const hash = createHash('sha256');
-  const hashed = new Map([...emitted, ...pages]);
-  for (const name of [...hashed.keys()].sort()) {
-    hash.update(`${name} ${hashed.get(name) as string}`);
-  }
-  hash.update(readFileSync(SITE_CSS, 'utf8'));
-  hash.update(previous.lastSuccessfulRunAt ?? 'never');
-  const bundleHash = hash.digest('hex');
-
-  // `meta.bundleHash` is the hash of what was last *successfully deployed*, not
-  // the last thing built. Recording it here would mean a failed deployment
-  // still marks the bundle as shipped, and the next run would skip deploying
-  // something that never went out. `recordDeploy` writes it after the fact.
-  const deploy = previous.bundleHash !== bundleHash;
-
-  emitted.set('meta.json', stableJson({ ...previous, bundleHash, deploySkipped: !deploy }));
 
   // One page per finding. What anybody shares is a single reading, and until
   // there is an address for one there is no way to send it to somebody.
@@ -863,6 +863,46 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   pages.set('sitemap.xml', renderSitemap(sitemapPaths));
   pages.set('robots.txt', renderRobots());
 
+  // The gate hashes everything served — bundles, pages, and the stylesheet — so
+  // a change to any of them deploys. Hashing only the JSON would have meant a
+  // CSS or template edit never reaching the site.
+  //
+  // Computed here rather than where `pages` was first assembled, which is where
+  // it used to sit: at that point the map held the index and the five lenses and
+  // nothing else. Every page added afterwards — method, compare, stack, models,
+  // every finding page, every badge, the feed, the sitemap, `site.js` — was
+  // outside the hash, so an edit touching only those produced an unchanged hash
+  // and a skipped deploy. The gate silently refused to ship the change, and the
+  // docstring above it claimed the opposite.
+  //
+  // Two exceptions. meta.json is excluded because it carries the hash and
+  // cannot hash itself. And lastSuccessfulRunAt is folded in deliberately,
+  // despite being run telemetry.
+  //
+  // That second one reverses the decision made in Prompt 4. Excluding it meant
+  // a quiet day deployed nothing and the published timestamp stayed put, which
+  // was defensible while the output was only JSON. But the page derives a
+  // staleness warning from that timestamp, and skipping the deploy would make a
+  // healthy agent that found nothing indistinguishable from a dead one — the
+  // exact failure the staleness warning exists to expose. Freshness wins. The
+  // cost is roughly 210 deployments a month against a ceiling of 500.
+  const hash = createHash('sha256');
+  const hashed = new Map([...emitted, ...pages]);
+  for (const name of [...hashed.keys()].sort()) {
+    hash.update(`${name} ${hashed.get(name) as string}`);
+  }
+  hash.update(readFileSync(SITE_CSS, 'utf8'));
+  hash.update(previous.lastSuccessfulRunAt ?? 'never');
+  const bundleHash = hash.digest('hex');
+
+  // `meta.bundleHash` is the hash of what was last *successfully deployed*, not
+  // the last thing built. Recording it here would mean a failed deployment
+  // still marks the bundle as shipped, and the next run would skip deploying
+  // something that never went out. `recordDeploy` writes it after the fact.
+  const deploy = previous.bundleHash !== bundleHash;
+
+  emitted.set('meta.json', stableJson({ ...previous, bundleHash, deploySkipped: !deploy }));
+
   // Rebuild from scratch so a file deleted from the source cannot survive as a
   // stale asset the site keeps serving.
   rmSync(DIST_DIR, { recursive: true, force: true });
@@ -913,6 +953,19 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     writeFileSync(join(DIST_DATA_DIR, name), contents, 'utf8');
     files.push({ name, bytes });
     totalBytes += bytes;
+  }
+
+  // The gate's own invariant, asserted rather than trusted. It went wrong once
+  // by construction — the hash was computed halfway through assembling `pages`,
+  // so two thirds of the site sat outside it — and the failure was silent: a
+  // correct build, a matching hash, and a deploy that never happened. A build
+  // that serves a file it did not hash should stop here instead.
+  for (const file of files) {
+    if (file.name === 'meta.json') continue;
+    if (hashed.has(file.name)) continue;
+    throw new Error(
+      `build: ${file.name} is served but was not hashed, so a change to it would not deploy`,
+    );
   }
 
   return { files, totalBytes, bundleHash, deploy };

@@ -90,6 +90,10 @@ describe('bundle emission', () => {
       // only by that page, never by the index.
       'compare.json',
       'demand.json',
+      // When each tracked runtime stops getting security fixes. The one class
+      // of question where a model answering from training data is confidently
+      // wrong, because the answer is a date that has since passed.
+      'eol.json',
       'forks.json',
       'index.json',
       'lineage.json',

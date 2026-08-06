@@ -37,8 +37,8 @@ data a year old.
 { "mcpServers": { "readout": { "url": "https://readout-7pt.pages.dev/api/mcp" } } }
 ```
 
-Four tools: `check_package`, `check_stack`, `compare_repositories`,
-`search_repositories`. Read-only, no key, no account. Every result carries the
+Six tools: `check_package`, `check_stack`, `check_eol`, `compare_repositories`,
+`search_repositories`, `find_model`. Read-only, no key, no account. Every result carries the
 limits of what it can support, because an agent will paste these figures into a
 code review and a scorecard quoted without "measures declared practices, not
 whether the project is safe" is a claim this project does not make.

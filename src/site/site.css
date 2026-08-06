@@ -58,34 +58,35 @@
 /* ----------------------------------------------------------------- tokens */
 
 :root {
-  /* One neutral ramp, cool.
+  /* One neutral ramp, near-black with a faint olive cast.
 
-     Warm graphite was tried through three revisions and rejected each time.
-     The earthy direction the brief asks for kept reading as brown rather than
-     as equipment, and desaturating the signal colours to match left them
-     sitting at almost the same value as the ground — present, but never
-     announcing anything. Cool slate separates the ramp from the signals
-     instead of blending them.
+     The cast is a few degrees of hue, not a colour: enough that #ccff00 sits on
+     it as though it belongs there rather than being pasted over a grey, and not
+     enough to read as green. A loud accent on a ground that shares none of its
+     hue always looks stuck on. */
+  --ink-000: #0c0f08;
+  --ink-025: #12160c;
+  --ink-050: #171c10;
+  --ink-100: #212717;
+  --ink-200: #2c331f;
+  --ink-300: #4a5338;
+  --ink-500: #8e9683;
+  --ink-700: #c2c8b6;
+  --ink-900: #e6ebda;
 
-     Chosen by the maintainer from four directions shown side by side. */
-  --ink-000: #0d1117;
-  --ink-025: #12171e;
-  --ink-050: #161b22;
-  --ink-100: #1f252e;
-  --ink-200: #262c36;
-  --ink-300: #3d444d;
-  --ink-500: #8b949e;
-  --ink-700: #b9c1cc;
-  --ink-900: #f0f3f6;
+  /* Two status colours. Neither is lime, deliberately.
 
-  /* Two signal colours, and this time they are legible as signals.
+     #ccff00 is the loudest thing available on a dark ground, so it is spent on
+     magnitude — the ramp below, and the headline figure — where being loud is
+     the job. If a threshold crossing were lime too, the page would have one
+     colour meaning two different things, which is worse than having no colour.
 
-     The muted pair before them was the other half of the problem: terracotta
-     and sage sat close enough to the warm ground that a confirmed spike looked
-     much like a quiet row. These are meant to be seen. Neither is ever the only
-     carrier of meaning — every coloured state still has a glyph and a label. */
+     Validated as a set against the ramp's brightest step: worst pair is
+     #f0883e against #ccff00 at ΔE 19.8 for deuteranopia and 30.6 for normal
+     vision, both well clear. Neither is ever the only carrier of meaning —
+     every coloured state still has a glyph and a label. */
   --alert: #f0883e;
-  --nominal: #3fb950;
+  --nominal: #38bdf8;
 
   /* One sequential ramp, for magnitude.
 
@@ -98,12 +99,16 @@
 
      Magnitude can carry colour safely, because a sequential ramp is one hue
      ordered by lightness and has no confusion pairs by construction. Steps run
-     dim to bright: on a dark ground, brighter reads as more. */
-  --mag-1: #1c5cab;
-  --mag-2: #2a78d6;
-  --mag-3: #3987e5;
-  --mag-4: #5598e7;
-  --mag-5: #86b6ef;
+     dim to bright: on a dark ground, brighter reads as more.
+
+     The hue is the one the maintainer asked for. Every step clears 3:1 against
+     the ground — the first attempt started at #3a4a06, which measured 2.0:1 and
+     would have been a bar nobody could see. */
+  --mag-1: #5c7a00;
+  --mag-2: #7a9f00;
+  --mag-3: #96c400;
+  --mag-4: #b3e400;
+  --mag-5: #ccff00;
 
   --face-label: 'Plex Condensed', ui-sans-serif, system-ui, sans-serif;
   --face-data: 'Plex Mono', ui-monospace, monospace;
@@ -161,9 +166,9 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(185, 193, 204, 0.03) 45%,
-    rgba(185, 193, 204, 0.09) 80%,
-    rgba(185, 193, 204, 0.16) 96%,
+    rgba(204, 255, 0, 0.02) 45%,
+    rgba(204, 255, 0, 0.06) 80%,
+    rgba(204, 255, 0, 0.11) 96%,
     transparent
   );
   /* Slow on purpose. A fast pass behind a table of numbers reads as a loading
@@ -189,9 +194,9 @@
   inset: 0;
   background: radial-gradient(
     150% 110% at 50% 0%,
-    rgba(13, 17, 23, 0) 0%,
-    rgba(13, 17, 23, 0.5) 55%,
-    rgba(13, 17, 23, 0.85) 100%
+    rgba(12, 15, 8, 0) 0%,
+    rgba(12, 15, 8, 0.5) 55%,
+    rgba(12, 15, 8, 0.85) 100%
   );
 }
 
@@ -441,7 +446,10 @@ a:hover {
   font-size: clamp(30px, 5.4vw, 54px);
   line-height: 1;
   letter-spacing: -0.02em;
-  color: var(--nominal);
+  /* The top of the magnitude ramp, because that is what this figure is: the
+     largest reading on the page. Not a status, and never the alert colour —
+     one colour meaning two things is worse than no colour. */
+  color: var(--mag-5);
 }
 
 .hero-headline-label {

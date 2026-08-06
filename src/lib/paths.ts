@@ -39,6 +39,15 @@ export const SUMMARIES_PATH = join(DATA_DIR, 'summaries.jsonl');
 export const ANNOUNCEMENTS_PATH = join(DATA_DIR, 'announcements.jsonl');
 
 /**
+ * How close everything got to each threshold, once a day.
+ *
+ * Append-only like the events, and for the same reason: it is the record of
+ * whether this instrument was ever able to see what it claims to look for, and
+ * a record that can be rewritten proves nothing.
+ */
+export const CALIBRATION_PATH = join(DATA_DIR, 'calibration.jsonl');
+
+/**
  * Static output root. Everything the site serves is written here and nowhere
  * else. Never committed — it is rebuilt from the ledger on every run.
  */

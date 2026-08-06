@@ -1,4 +1,5 @@
 import { COMPARISON, isCapped, readingsOf, SIGNAL_LABEL } from './vocabulary.ts';
+import { REACHABLE_SHARE } from '../lib/calibration.ts';
 import type { Disclosure, IndexBundle, LensBundle, LensName, StripMark } from '../types/bundles.ts';
 import type { EventRecord } from '../types/events.ts';
 import type { MetaRecord } from '../types/meta.ts';
@@ -201,6 +202,78 @@ function scorecardHtml(index: IndexBundle): string {
     ${pending === 0 ? '' : `${pending} more are still inside the window.`}
     This measures co-occurrence, not cause, and it is published whatever it says.
   </div>`;
+}
+
+/**
+ * Whether the bar can be reached at all.
+ *
+ * The scorecard above says how often confirmed findings held up. It cannot say
+ * anything about the findings that were never made, and a detector set too high
+ * produces a perfect scorecard by producing nothing. This is the other half:
+ * how close everything got, whether or not it crossed.
+ */
+function calibrationHtml(index: IndexBundle): string {
+  if (index.calibration.length === 0) {
+    return `<div class="notice">
+      <strong>Calibration not yet recorded</strong>
+      Nothing has been measured against a threshold yet, so there is no evidence either way about
+      whether these detectors are set within reach. The first daily run that measures anything
+      starts this record, and it is published from then on whatever it says.
+    </div>`;
+  }
+
+  const rows = index.calibration
+    .map((row) => {
+      const share =
+        row.peakShare === null
+          ? '<span class="dim">—</span>'
+          : `${(row.peakShare * 100).toFixed(0)}%`;
+
+      // A detector nothing has come close to is not quiet, it is a detector
+      // nobody has evidence for. Saying so is the entire purpose of the table.
+      const reading =
+        row.measured === 0
+          ? '<span class="state state-forming">Nothing measured</span>'
+          : row.crossed > 0
+            ? '<span class="state state-confirmed">Reached</span>'
+            : row.peakShare !== null && row.peakShare < REACHABLE_SHARE
+              ? '<span class="state state-forming">Never approached</span>'
+              : '<span class="state state-detected">Approached</span>';
+
+      return `<tr>
+      <td>${esc(row.collector)}</td>
+      <td class="dim">${esc(row.metric)}</td>
+      <td class="n num">${row.threshold}</td>
+      <td class="n num">${row.peak === null ? '<span class="dim">—</span>' : row.peak}</td>
+      <td class="n num">${share}</td>
+      <td class="n num">${row.measured.toLocaleString('en')}</td>
+      <td class="n num">${row.crossed}</td>
+      <td>${reading}</td>
+    </tr>`;
+    })
+    .join('');
+
+  const days = Math.max(...index.calibration.map((row) => row.days));
+
+  return `<div class="wrap"><table class="readout">
+  <caption class="label">Calibration — ${index.calibration.length} detectors, ${days} ${days === 1 ? 'day' : 'days'} on record</caption>
+  <thead><tr>
+    <th scope="col">Detector</th>
+    <th scope="col">Compares</th>
+    <th scope="col" class="n">Bar</th>
+    <th scope="col" class="n">Highest seen</th>
+    <th scope="col" class="n">Of bar</th>
+    <th scope="col" class="n">Measured</th>
+    <th scope="col" class="n">Crossed</th>
+    <th scope="col">Reading</th>
+  </tr></thead>
+  <tbody>${rows}</tbody>
+</table></div>
+<p class="basis label">Every observation is compared against its threshold whether or not it crosses,
+and the result is written down the same day. Without this, a detector set above anything that
+happens in the real world would look exactly like a quiet month, for as long as it took anyone to
+notice. Never approached means nothing has exceeded half the bar across the whole window — that is
+a statement about this instrument, not about the repositories.</p>`;
 }
 
 function colophonHtml(index: IndexBundle, meta: MetaRecord): string {
@@ -545,20 +618,23 @@ whose window has not filled yet shows no figure rather than a zero.</p>`;
 }
 
 /**
- * A numbered band.
+ * A named band.
  *
  * The page was a stack of sections separated by hairlines, and nothing told a
- * reader where one reading stopped and the next began. Numbering them and
- * hanging the number and the name in a fixed left rail is how a panel is
- * labelled: the eye finds the same column every time, the numbers give the
- * page an order, and no section has to carry a heading inline.
+ * reader where one reading stopped and the next began. Hanging the name in a
+ * fixed left rail is how a panel is labelled: the eye finds the same column
+ * every time and no section carries a heading inline.
+ *
+ * The names were numbered 01–08 for a day. The brief bans sequential numbering
+ * on things that are not a sequence, and the sections are ordered but not
+ * enumerable — nobody refers to "reading 04". The rail does the work the
+ * numbers were added for.
  */
-function band(no: string, name: string, inner: string, note?: string): string {
+function band(name: string, inner: string, note?: string): string {
   if (inner.trim() === '') return '';
 
   return `<section class="band">
   <div class="band-rail">
-    <span class="band-no num">${esc(no)}</span>
     <h2 class="band-name">${esc(name)}</h2>
   </div>
   <div class="band-body">${note === undefined ? '' : `<p class="band-note">${esc(note)}</p>`}
@@ -747,14 +823,20 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     index,
     meta,
     body: `${heroHtml(index, meta)}
-${band('01', 'Ask', askHtml(), 'Answered from the readings below and from nothing else. Any figure not in the record is discarded rather than smoothed over.')}
-${band('02', 'Readings', lensesHtml(index), 'What each of the five readings answers, and how many findings each has on record.')}
-${band('03', 'Coverage', coverageHtml(index), 'What the watchlist is pointed at. A category is the reason a repository is watched, chosen by hand — it is not a fact about the repository and not a survey of that field.')}
-${band('04', 'Fork velocity', stripSvg(index.strip, releasedToday), `One mark per repository, each measured against its own trailing baseline rather than against the others.`)}
-${band('05', 'Today', `${table}${formingNotice}`, 'Everything detected since midnight UTC. Empty is the ordinary state and is reported as such.')}
-${band('06', 'Watchlist', watchlistReadout(index.strip), 'Every repository being read, ordered by what it gained across the current window.')}
-${band('07', 'Our record', scorecardHtml(index), 'How often this instrument has been right, published whatever it says.')}
-${band('08', 'The token', tokenHtml(), 'What funds this, stated before anyone has to ask.')}`,
+${band('Ask', askHtml(), 'Answered from the readings below and from nothing else. Any figure not in the record is discarded rather than smoothed over.')}
+${band('Readings', lensesHtml(index), 'What each of the five readings answers, and how many findings each has on record.')}
+${band('Today', `${table}${formingNotice}`, 'Everything detected since midnight UTC. Empty is the ordinary state and is reported as such.')}
+${band(
+  'Watchlist',
+  `${stripSvg(index.strip, releasedToday)}${coverageHtml(index)}${watchlistReadout(index.strip)}`,
+  'What is being read, and what it is being compared against. A category is the reason a repository was added, chosen by hand — it is not a fact about the repository and not a survey of that field.',
+)}
+${band(
+  'Our record',
+  `${scorecardHtml(index)}${calibrationHtml(index)}`,
+  'How often this instrument has been right, and whether its thresholds are within reach of anything at all. Both published whatever they say.',
+)}
+${band('The token', tokenHtml(), 'What funds this, stated before anyone has to ask.')}`,
   });
 }
 

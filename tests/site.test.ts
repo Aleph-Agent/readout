@@ -34,6 +34,7 @@ function index(over: Partial<IndexBundle> = {}): IndexBundle {
     coverage: [
       { category: 'devtool', repositories: 400, measured: 0, forksAdded: null, findings: 0, busiest: null },
     ],
+    calibration: [],
     lenses: {
       ships: { status: 'active', count: 0 },
       forks: { status: 'active', count: 0 },
@@ -307,27 +308,22 @@ describe('telling a first-time visitor what this is', () => {
     expect(html).toContain('Which models say they were built on which?');
   });
 
-  it('numbers and names every band, so the page has an order', () => {
+  it('names every band in the same rail, so the page has an order', () => {
     // The layout complaint was that nothing marked where one reading stopped
-    // and the next began. Every section carries its number and its name in the
-    // same rail, and a missing one is a section a reader cannot place.
+    // and the next began. Every section carries its name in the same rail, and
+    // a missing one is a section a reader cannot place.
     const html = renderIndex(
       index({ strip: [mark({ delta: 60, multiplier: 24, state: 'confirmed' })] }),
       meta(),
     );
 
-    for (const [no, name] of [
-      ['01', 'Ask'],
-      ['02', 'Readings'],
-      ['03', 'Fork velocity'],
-      ['04', 'Today'],
-      ['05', 'Watchlist'],
-      ['06', 'Our record'],
-      ['07', 'The token'],
-    ]) {
-      expect(html).toContain(`<span class="band-no num">${no}</span>`);
+    for (const name of ['Ask', 'Readings', 'Today', 'Watchlist', 'Our record', 'The token']) {
       expect(html).toContain(`<h2 class="band-name">${name}</h2>`);
     }
+
+    // Numbered 01–08 for a day. The brief bans sequential numbering on things
+    // that are not a sequence, and nobody refers to "reading 04".
+    expect(html).not.toContain('class="band-no ');
   });
 
   it('explains the token without claiming anything it must not', () => {

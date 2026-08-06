@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
   readActiveWatchlist,
   readAllEvents,
+  readCalibration,
   readLiveState,
   readMeta,
   readSnapshot,
@@ -16,6 +17,13 @@ import {
 } from './lib/ledger.ts';
 import { lastDetectionByRepo } from './lib/confidence.ts';
 import { buildCoverage } from './lib/coverage.ts';
+import { summariseWindow, type CalibrationSummary } from './lib/calibration.ts';
+
+/** Detectors whose reachability is published. Order is display order. */
+const CALIBRATED_COLLECTORS = ['fork-spike', 'fork-outlier'] as const;
+
+/** Matches the baseline window, so both answer questions about the same span. */
+const CALIBRATION_WINDOW_DAYS = 30;
 import { templatedSentence } from './lib/validate.ts';
 import { scoreFindings } from './lib/scorecard.ts';
 import { assertSafeRepoId, DIST_DATA_DIR, DIST_DIR, ROOT, utcDate } from './lib/paths.ts';
@@ -456,6 +464,13 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   };
 
   const history = readHistorySeries(now, DEFAULT_THRESHOLDS.baselineWindowDays);
+
+  // Thirty days, matching the baseline window. A shorter window would let one
+  // quiet fortnight read as a broken detector; a longer one would keep saying a
+  // threshold is fine long after the data moved away from it.
+  const calibrationFloor = utcDate(new Date(now.getTime() - CALIBRATION_WINDOW_DAYS * 86_400_000));
+  const calibrationWindow = readCalibration().filter((row) => row.date >= calibrationFloor);
+
   const categoryOf = new Map(watchlist.map((entry) => [entry.id, entry.category as string]));
   const strip = buildStrip(now, lastDetectionByRepo(all), history, categoryOf);
 
@@ -469,6 +484,9 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
       byCategory,
     },
     coverage: buildCoverage(watchlist, strip, addressable),
+    calibration: CALIBRATED_COLLECTORS.map((collector) =>
+      summariseWindow(calibrationWindow, collector),
+    ).filter((summary): summary is CalibrationSummary => summary !== null),
     lenses: lensSummary,
     disclosure,
   };

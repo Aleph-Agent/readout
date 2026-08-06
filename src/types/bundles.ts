@@ -1,12 +1,13 @@
+import type { CalibrationSummary } from '../lib/calibration.ts';
 import type { ConfidenceState, EventRecord } from './events.ts';
 
 /**
  * The static contract between the agent and the site.
  *
- * Visitors read these files and nothing else — no database, no API, no LLM on
- * the request path. That is what makes traffic growth free instead of
- * expensive, and it means the shapes here are the whole interface. Anything the
- * site needs to render honestly has to be present in the JSON.
+ * Every page is rendered from these files. The one dynamic route, `/api/ask`,
+ * reads a bundle built from them and no page depends on it — so the shapes here
+ * remain the whole interface, and anything the site needs to render honestly
+ * has to be present in the JSON.
  */
 
 export type LensName = 'ships' | 'forks' | 'demand' | 'stack' | 'lineage';
@@ -133,6 +134,14 @@ export interface IndexBundle {
   watchlist: WatchlistSummary;
   /** What the watchlist is pointed at, one row per category. */
   coverage: CoverageRow[];
+  /**
+   * Whether each detector's threshold has been reachable at all.
+   *
+   * Published because the alternative is a page that cannot distinguish a
+   * quiet month from a broken detector, and asks the reader to assume the
+   * former.
+   */
+  calibration: CalibrationSummary[];
   lenses: Record<LensName, { status: CollectorStatus; count: number }>;
   disclosure: Disclosure;
 }

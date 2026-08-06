@@ -401,10 +401,13 @@ a:hover {
    reader where one reading stopped and the next began — the complaint was that
    the layout was messy, and this is the cause of it.
 
-   Each section is now a numbered band with its name in a fixed left rail. The
-   eye finds the same column every time, the number gives the page an order,
-   and no section has to carry its own heading inline. It is how a panel is
-   labelled, which is the right reference for this product. */
+   Each section is a band with its name in a fixed left rail. The eye finds the
+   same column every time and no section carries its own heading inline. It is
+   how a panel is labelled, which is the right reference for this product.
+
+   The names were numbered 01–08 for a day. The brief bans sequential numbering
+   on things that are not a sequence: the sections are ordered but nobody
+   refers to "reading 04", and the rail already does the work. */
 
 .band {
   display: grid;
@@ -423,12 +426,6 @@ a:hover {
   align-content: start;
 }
 
-.band-no {
-  font-size: var(--t-micro);
-  letter-spacing: 0.16em;
-  color: var(--ink-300);
-}
-
 .band-name {
   font-family: var(--face-label);
   font-weight: 600;
@@ -436,6 +433,7 @@ a:hover {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-700);
+  margin: 0;
 }
 
 .band-note {

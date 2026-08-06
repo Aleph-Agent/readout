@@ -6,6 +6,7 @@ import { collectManifests } from '../collectors/manifests.ts';
 import { lastDetectionByRepo } from '../lib/confidence.ts';
 import { createGitHubClient, type GitHubClient } from '../lib/github.ts';
 import {
+  appendCalibration,
   appendEvents,
   eventId,
   readAllEvents,
@@ -27,7 +28,12 @@ import {
   type DailyForkCount,
   type SpikeThresholds,
 } from '../lib/spikes.ts';
-import { classifyPeers, type PeerObservation } from '../lib/peers.ts';
+import {
+  classifyPeers,
+  DEFAULT_PEER_THRESHOLDS,
+  type PeerObservation,
+} from '../lib/peers.ts';
+import { summariseCalibration } from '../lib/calibration.ts';
 import { windowAnchor } from '../lib/window.ts';
 import type { EventRecord } from '../types/events.ts';
 import type { HistorySnapshotRow } from '../types/history.ts';
@@ -153,6 +159,12 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
   const seen = new Set(allEvents.map((event) => event.id));
   const events: EventRecord[] = [];
 
+  // Every multiplier this run computes, crossing or not. Kept so the project
+  // can tell "nothing happened" from "our bar is above the world" — see
+  // `lib/calibration.ts`. Without it a quiet month is indistinguishable from a
+  // broken detector, and the evidence to tell them apart is gone by then.
+  const spikeMultipliers: number[] = [];
+
   for (const row of state) {
     if (!row.active) continue;
 
@@ -171,6 +183,10 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       },
       thresholds,
     );
+
+    // Recorded before the state check, because the whole point is the readings
+    // that do not become events.
+    if (verdict.multiplier !== null) spikeMultipliers.push(verdict.multiplier);
 
     // `forming` and `quiet` are correct outcomes, not events. A quiet
     // instrument reporting nothing detected is working; manufacturing an event
@@ -290,7 +306,12 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
     });
   }
 
-  for (const peer of classifyPeers(observations)) {
+  const peerVerdicts = classifyPeers(observations);
+  const peerRatios = peerVerdicts
+    .map((peer) => peer.ratio)
+    .filter((ratio): ratio is number => ratio !== null);
+
+  for (const peer of peerVerdicts) {
     if (peer.state !== 'outlier') continue;
 
     const id = eventId('fork-outlier', peer.id, today);
@@ -324,6 +345,32 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       },
       supersedes: null,
     });
+  }
+
+  // 3b. Calibration. What every threshold was measured against today, whether
+  //     or not anything crossed it. This is the only record that can ever say
+  //     a detector is set too high, and it can only be written on the day.
+  try {
+    appendCalibration([
+      summariseCalibration(
+        today,
+        'fork-spike',
+        'multiplier against own baseline',
+        thresholds.minMultiplier,
+        spikeMultipliers,
+      ),
+      summariseCalibration(
+        today,
+        'fork-outlier',
+        'ratio to category median',
+        DEFAULT_PEER_THRESHOLDS.minRatio,
+        peerRatios,
+      ),
+    ]);
+  } catch (error) {
+    // Never fatal. Losing a day of calibration is a gap in a diagnostic; losing
+    // the run is a gap in the record itself.
+    errors.push(`calibration: ${error instanceof Error ? error.message : String(error)}`);
   }
 
   // 4. Prune. Snapshots older than 90 days collapse to one per week.

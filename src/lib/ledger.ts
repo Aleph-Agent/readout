@@ -20,7 +20,9 @@ import {
   SUMMARIES_PATH,
   WATCHLIST_PATH,
   WINDOW_PATH,
+  CALIBRATION_PATH,
 } from './paths.ts';
+import { CALIBRATION_KEYS, type CalibrationRow } from './calibration.ts';
 import { SUMMARY_KEYS, type SummaryRecord } from '../types/summaries.ts';
 import { WINDOW_KEYS, type WindowRow } from '../types/window.ts';
 import { MANIFEST_KEYS, type ManifestRow } from '../types/manifests.ts';
@@ -162,6 +164,33 @@ export function writeSnapshot(
     sortBy: repoSortKey,
     rejectDuplicates: true,
   });
+}
+
+// -------------------------------------------------------------- calibration
+
+export function readCalibration(): CalibrationRow[] {
+  return readJsonl(CALIBRATION_PATH).map((row) =>
+    conform<CalibrationRow>(row, CALIBRATION_KEYS),
+  );
+}
+
+/**
+ * Append one day's calibration rows.
+ *
+ * Idempotent per day and per collector, so a re-run repairs nothing and
+ * duplicates nothing. Appending rather than rewriting is the point: this file
+ * is the evidence that the thresholds were or were not reachable on a given
+ * day, and evidence that can be edited afterwards is not evidence.
+ */
+export function appendCalibration(rows: readonly CalibrationRow[]): void {
+  if (rows.length === 0) return;
+
+  const existing = readCalibration();
+  const seen = new Set(existing.map((row) => `${row.date}:${row.collector}:${row.metric}`));
+  const fresh = rows.filter((row) => !seen.has(`${row.date}:${row.collector}:${row.metric}`));
+  if (fresh.length === 0) return;
+
+  appendJsonl(CALIBRATION_PATH, fresh, CALIBRATION_KEYS);
 }
 
 // ------------------------------------------------------------------- events

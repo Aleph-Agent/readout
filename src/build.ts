@@ -40,6 +40,7 @@ import {
   renderLens,
   renderMethod,
   renderStack,
+  SITE_SCRIPT,
 } from './site/render.ts';
 import {
   eventPath,
@@ -768,6 +769,10 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
       [...(lensArchives.get(lens)?.keys() ?? [])].map((month) => archivePath(lens, month)),
     ),
   ];
+
+  // One script for the whole site rather than 12.6KB inlined into all 653
+  // pages, most of which use none of it.
+  pages.set('site.js', SITE_SCRIPT);
 
   pages.set('feed.xml', renderFeed(addressable, previous.lastSuccessfulRunAt ?? now.toISOString()));
   pages.set('sitemap.xml', renderSitemap(sitemapPaths));

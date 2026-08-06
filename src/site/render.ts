@@ -387,6 +387,23 @@ export function eventSlug(id: string): string {
     .slice(0, 120);
 }
 
+/**
+ * Every behaviour on the site, in one cached file.
+ *
+ * These were inlined into each page, which cost 12.6KB on all 653 of them —
+ * 8.25MB of identical script, most of it on repository pages that use none of
+ * it. One external file is fetched once and cached for every page after,
+ * and each block no-ops when the element it looks for is absent.
+ *
+ * Deferred rather than inline, so nothing here blocks rendering. Every feature
+ * built on it degrades to the static HTML underneath: the ages are already
+ * absolute UTC, the headline figure is already its final value, and the two
+ * tools say plainly that they need scripting.
+ */
+export const SITE_SCRIPT = [AGE_SCRIPT, COUNT_SCRIPT, ASK_SCRIPT, COMPARE_SCRIPT, STACK_SCRIPT].join(
+  '\n\n',
+);
+
 export function layout(options: PageOptions): string {
   const description =
     options.description ??
@@ -420,11 +437,7 @@ ${navHtml(options.current, options.index.lenses)}
 ${options.body}
 </main>
 ${colophonHtml(options.index, options.meta)}
-<script>${AGE_SCRIPT}
-${COUNT_SCRIPT}
-${ASK_SCRIPT}
-${COMPARE_SCRIPT}
-${STACK_SCRIPT}</script>${analyticsHtml()}
+<script src="/site.js" defer></script>${analyticsHtml()}
 </body>
 </html>
 `;
@@ -983,7 +996,12 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     index.today.filter((event) => event.kind === 'release').map((event) => event.repo),
   );
 
+  // Bounded, with the truncation stated. A single day retracting 207 findings
+  // put 225 rows and 76KB into this table, and an unbounded table is a page
+  // that gets slower the worse a day goes.
+  const SHOWN_TODAY = 40;
   const rows = index.today
+    .slice(0, SHOWN_TODAY)
     .map(
       (event) => `<tr>
       <td class="dim">${timeOf(event.detectedAt)}</td>
@@ -1000,7 +1018,7 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     index.today.length === 0
       ? quietNotice(index.watchlist.active, meta.lastSuccessfulRunAt, 'signal')
       : `<div class="wrap"><table class="readout">
-      <caption class="label">Today — ${index.today.length} signals</caption>
+      <caption class="label">Today — ${index.today.length} signals${index.today.length > SHOWN_TODAY ? `, newest ${SHOWN_TODAY} shown` : ''}</caption>
       <thead><tr><th scope="col">UTC</th><th scope="col">Repository</th><th scope="col">Signal</th><th scope="col">Confidence</th><th scope="col">Reading</th><th scope="col">Link</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;

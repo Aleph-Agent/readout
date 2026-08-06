@@ -59,6 +59,26 @@ describe('relicensing', () => {
     expect(collectLicences([row()], before(), OPTIONS)).toHaveLength(0);
   });
 
+  it('says nothing when the previous row predates the field', () => {
+    // The failure this actually produced. `license` was added to the schema
+    // after 400 state rows existed, `conform` fills a missing key with
+    // undefined, and comparing against that published 207 licence changes in
+    // one run — every repository appearing to relicense from "unidentified" to
+    // whatever it had always been. All 207 were retracted.
+    //
+    // undefined is never-recorded and not comparable. null is recorded, and
+    // means GitHub could not identify one.
+    const legacy = new Map([['a/one', { ...row(), license: undefined as unknown as null }]]);
+    expect(collectLicences([row({ license: 'Apache-2.0' })], legacy, OPTIONS)).toHaveLength(0);
+  });
+
+  it('still reports a move away from an unidentified licence once recorded', () => {
+    // null is a real reading and a move off it is a real transition.
+    const events = collectLicences([row({ license: 'MIT' })], before({ license: null }), OPTIONS);
+    expect(events).toHaveLength(1);
+    expect(events[0]?.metrics['from']).toBe('unidentified');
+  });
+
   it('says nothing on a first reading', () => {
     // Otherwise every licence on the watchlist is announced as news on the day
     // the field was added.

@@ -95,6 +95,7 @@ describe('bundle emission', () => {
       'lineage.json',
       'meta.json',
       'ships.json',
+      'stack-index.json',
       'stack.json',
     ]);
   });

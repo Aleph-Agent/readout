@@ -39,6 +39,7 @@ import {
   renderIndex,
   renderLens,
   renderMethod,
+  renderStack,
 } from './site/render.ts';
 import {
   eventPath,
@@ -541,6 +542,47 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     findingsByRepo.set(event.repo, (findingsByRepo.get(event.repo) ?? 0) + 1);
   }
 
+  // Keyed by package rather than by repository, because a visitor's manifest
+  // names packages and has no idea which repository publishes them. This is
+  // what lets the instrument be pointed at somebody else's stack instead of at
+  // a list they did not choose.
+  const liveById = new Map(readLiveState().map((row) => [row.id, row]));
+  const stackIndex: Record<string, unknown> = {};
+  for (const entry of watchlist) {
+    if (!entry.active) continue;
+    const health = healthByRepo.get(entry.id);
+    for (const packageId of entry.packages ?? []) {
+      const separator = packageId.indexOf(':');
+      const registry = packageId.slice(0, separator);
+      const name = packageId.slice(separator + 1);
+      if (registry === 'brew' || name === '') continue;
+
+      stackIndex[`${registry}:${name}`] = {
+        repo: entry.id,
+        installs: adoptionByRepo.get(entry.id) ?? null,
+        scorecard: health?.scorecard ?? null,
+        advisories: health?.advisories ?? null,
+        license: liveById.get(entry.id)?.license ?? null,
+        archived: liveById.get(entry.id)?.archived ?? false,
+        pushedAt: liveById.get(entry.id)?.pushedAt ?? null,
+      };
+    }
+  }
+
+  emitted.set(
+    'stack-index.json',
+    stableJson({
+      // The corpus is what makes a visitor's number mean anything: "5.2" is
+      // not a reading until it sits beside what 388 tracked projects median.
+      benchmark: {
+        repositories: index.watchlist.active,
+        medianScorecard: index.health.median,
+        scored: index.health.scored,
+      },
+      packages: stackIndex,
+    }),
+  );
+
   emitted.set(
     'compare.json',
     stableJson(
@@ -698,6 +740,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
 
   pages.set('method.html', renderMethod(index, previous));
   pages.set('compare.html', renderCompare(index, previous));
+  pages.set('stack.html', renderStack(index, previous));
 
   // One badge per watched repository. A maintainer who embeds one puts a
   // permanent link back in a README that may be read more in a week than this
@@ -717,6 +760,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     '/',
     '/method',
     '/compare',
+    '/stack',
     ...LENSES.map((lens) => `/${lens}`),
     ...[...profiles.keys()].map((repo) => `/repo/${repo}`),
     ...addressable.map((event) => eventPath(event)),

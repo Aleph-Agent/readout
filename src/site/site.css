@@ -699,6 +699,85 @@ a:hover {
   font-size: var(--t-base);
 }
 
+/* ------------------------------------------------------------------- stack
+
+   The page that points the instrument at the reader's own project. It is the
+   only place here that asks for input of any size, and the field is sized so a
+   pasted manifest is visible rather than scrolled — someone checking what they
+   pasted should be able to see it. */
+
+.stack-form {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  max-width: 720px;
+  margin-bottom: 26px;
+}
+
+.stack-form textarea {
+  width: 100%;
+  background: var(--ink-025);
+  border: 1px solid var(--ink-100);
+  color: var(--ink-900);
+  font-family: var(--face-data);
+  font-size: var(--t-small);
+  line-height: 1.6;
+  padding: 14px;
+  resize: vertical;
+}
+
+.stack-form textarea::placeholder {
+  color: var(--ink-300);
+}
+
+.stack-form textarea:focus {
+  outline: none;
+  border-color: var(--ink-300);
+  background: var(--ink-050);
+}
+
+.stack-form button {
+  background: var(--ink-050);
+  border: 1px solid var(--ink-100);
+  color: var(--ink-900);
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 11px 24px;
+  cursor: pointer;
+}
+
+.stack-form button:hover {
+  background: var(--ink-100);
+}
+
+/* Findings about the reader's own stack. Marked with the alert colour because
+   these are the lines they came for, and listed rather than scored: a count of
+   archived dependencies is a fact, a grade out of ten would be a judgement. */
+.stack-flags {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-width: 64ch;
+}
+
+.stack-flags li {
+  border-left: 2px solid var(--alert);
+  padding: 6px 0 6px 14px;
+  font-family: var(--face-prose);
+  font-size: var(--t-small);
+  color: var(--ink-700);
+}
+
+.stack-flags b {
+  color: var(--ink-900);
+  font-weight: 400;
+}
+
 /* ----------------------------------------------------------------- compare
 
    The one page here that is a tool. It still has to look like the instrument,

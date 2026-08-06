@@ -1,6 +1,7 @@
 import { COMPARISON, isCapped, readingsOf, SIGNAL_LABEL } from './vocabulary.ts';
 import { REACHABLE_SHARE } from '../lib/calibration.ts';
 import { COMPARE_SCRIPT } from './compare.ts';
+import { STACK_SCRIPT } from './stack.ts';
 import type { Disclosure, IndexBundle, LensBundle, LensName, StripMark } from '../types/bundles.ts';
 import type { EventRecord } from '../types/events.ts';
 import type { MetaRecord } from '../types/meta.ts';
@@ -41,6 +42,9 @@ const NAV: { href: string; label: string; lens: LensName | null }[] = [
   // How it works, what it cannot do, and who is paying. It was all in the
   // commit log, which is a credibility argument aimed at an audience that does
   // not read strangers' commit logs.
+  // The tools sit after the readings: a visitor who does not know what this
+  // measures has no use for a tool that measures it.
+  { href: '/stack', label: 'Your stack', lens: null },
   { href: '/compare', label: 'Compare', lens: null },
   { href: '/method', label: 'Method', lens: null },
 ];
@@ -419,7 +423,8 @@ ${colophonHtml(options.index, options.meta)}
 <script>${AGE_SCRIPT}
 ${COUNT_SCRIPT}
 ${ASK_SCRIPT}
-${COMPARE_SCRIPT}</script>${analyticsHtml()}
+${COMPARE_SCRIPT}
+${STACK_SCRIPT}</script>${analyticsHtml()}
 </body>
 </html>
 `;
@@ -1251,6 +1256,57 @@ ${band(
 <noscript><p class="notice">This needs scripting. The same figures are in
 <a href="/data/compare.json">the bundle it reads</a>.</p></noscript>`,
   'Pick two. The link updates as you choose, so a comparison is something you can send someone.',
+)}`,
+  });
+}
+
+/**
+ * The instrument, pointed at the visitor's own project.
+ *
+ * Everything else here observes a list of 388 repositories chosen by a
+ * stranger, and nobody wakes up wanting to know the fork velocity of somebody
+ * else's watchlist. Every developer does have two hundred dependencies they
+ * have never checked, because checking them by hand is tedious enough that
+ * nobody does it.
+ *
+ * The watchlist stops being the product here and becomes the benchmark: "your
+ * median is 5.2" is not a reading until it sits beside what the corpus medians.
+ */
+export function renderStack(index: IndexBundle, meta: MetaRecord): string {
+  return layout({
+    title: 'Your stack — Readout',
+    description:
+      'Paste a manifest and get a readout of your own dependencies: what is archived, what relicensed, what carries advisories, and how the stack sits against a tracked corpus.',
+    current: '/stack',
+    path: '/stack',
+    index,
+    meta,
+    body: `<section class="hero">
+  <h1 class="hero-thesis">Point it at your own project.</h1>
+  <p class="hero-sub">
+    Paste a <code>package.json</code>, <code>requirements.txt</code> or <code>Cargo.toml</code>.
+    You get back what is archived, what has relicensed, what carries advisories, what has not been
+    pushed to in a year, and how the whole stack sits against
+    ${index.watchlist.active} tracked projects. Checking that by hand is tedious enough that nobody
+    does it, which is the only reason it is worth automating.
+  </p>
+  <p class="hero-follow">
+    <strong>Your manifest never leaves the browser.</strong> Parsing and lookup happen on this page
+    against <a href="/data/stack-index.json">a static file</a> — there is nothing to send it to.
+  </p>
+</section>
+
+${band(
+  'Your stack',
+  `<form id="stack-form" class="stack-form">
+    <textarea id="stack-input" rows="9" spellcheck="false"
+      placeholder='{\n  "dependencies": {\n    "react": "^19.0.0",\n    "vite": "^6.0.0"\n  }\n}'></textarea>
+    <button type="submit">Read it</button>
+  </form>
+  <div id="stack-out" hidden></div>
+  <noscript><p class="notice">This runs entirely in the browser, so it needs scripting. The index it
+  reads is at <a href="/data/stack-index.json">/data/stack-index.json</a>.</p></noscript>`,
+  'Only dependencies on this watchlist can be read. A dependency that is not covered is not being judged — it is simply not one of the projects tracked here, and the readout says so rather than scoring it.',
 )}`,
   });
 }

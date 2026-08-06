@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { collectAdoption } from '../collectors/adoption.ts';
 import { collectIssues } from '../collectors/issues.ts';
 import { collectManifests } from '../collectors/manifests.ts';
 import { lastDetectionByRepo } from '../lib/confidence.ts';
@@ -9,6 +10,7 @@ import {
   appendCalibration,
   appendEvents,
   eventId,
+  readAdoption,
   readAllEvents,
   readLiveState,
   readManifests,
@@ -16,6 +18,7 @@ import {
   readSnapshot,
   readWatchlist,
   readWindow,
+  writeAdoption,
   writeManifests,
   writeMeta,
   writeSnapshot,
@@ -282,6 +285,24 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       errors.push(...manifests.errors);
     } catch (error) {
       errors.push(`manifests: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    // Adoption. Not GitHub: npm, PyPI, crates.io and Homebrew, all free and
+    // unauthenticated, so none of this touches the GitHub budget. Roughly a
+    // hundred requests for the whole watchlist, most of it two batch endpoints.
+    //
+    // Wrapped like every other collector — the registries are other people's
+    // services and one of them being down must leave the rest of the run
+    // intact.
+    try {
+      const adoption = await collectAdoption(readWatchlist(), readAdoption(), { now: nowIso });
+      writeAdoption(adoption.rows);
+      errors.push(...adoption.errors);
+      for (const registry of adoption.missed) {
+        errors.push(`adoption ${registry}: no reading this run, last known counts carried forward`);
+      }
+    } catch (error) {
+      errors.push(`adoption: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     requestsConsumed = client.stats().consumed;

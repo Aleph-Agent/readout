@@ -27,7 +27,7 @@ const index: IndexBundle = {
 };
 
 function entry(id: string): WatchlistEntry {
-  return { id, category: 'ai-ml', added: '2026-07-01', active: true };
+  return { id, category: 'ai-ml', added: '2026-07-01', active: true, packages: [] };
 }
 
 function state(id: string, over: Partial<LiveStateRow> = {}): LiveStateRow {

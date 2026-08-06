@@ -472,7 +472,7 @@ function build(): WatchlistEntry[] {
       }
       seen.set(key, category);
 
-      entries.push({ id, category, added: ADDED, active: true });
+      entries.push({ id, category, added: ADDED, active: true, packages: [] });
     }
   }
 

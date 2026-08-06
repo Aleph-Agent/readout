@@ -143,3 +143,7 @@ dist/
 # OS noise
 .DS_Store
 Thumbs.db
+
+# Wrangler local state. Miniflare caches and dev bundles — machine-local build
+# artefacts that were tracked for a while and are not sources.
+.wrangler/

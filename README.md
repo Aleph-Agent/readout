@@ -1,9 +1,11 @@
 # Readout
 
+**[readout-7pt.pages.dev](https://readout-7pt.pages.dev)** · [how the readings are taken](https://readout-7pt.pages.dev/method) · [feed](https://readout-7pt.pages.dev/feed.xml)
+
 One agent watches ~400 open-source repositories and reports five signals about
 them. It runs every four hours on GitHub Actions, commits what it reads to this
-repository, and publishes a static site. No server, no database, no API on the
-read path.
+repository, and publishes a static site. Every page and every bundle is a file;
+the single dynamic route is `/api/ask`, and no page depends on it.
 
 The commit history of `data/` is the point. It is an audit trail: every reading
 is timestamped, append-only, and checkable against GitHub directly.
@@ -16,7 +18,11 @@ is timestamped, append-only, and checkable against GitHub directly.
 | Forks | What is being copied faster than its own baseline? |
 | Demand | What are developers asking for, across more than one project? |
 | Stack | What dependencies are moving? |
-| Lineage | Which models descend from which? *(not collecting yet)* |
+| Lineage | Which models say they were built on which? |
+
+Whether each detector's threshold is reachable at all is published too, on the
+index under Our record. A detector nothing has ever come close to is not a quiet
+detector, it is a misconfigured one, and the site says so about itself.
 
 ## How to read it
 
@@ -104,7 +110,17 @@ missed, and because the negative result is worth being able to reproduce.
 node scripts/verify-watchlist.ts   # check every entry against the API
 node scripts/retire-watchlist.ts   # mark archived and deleted ones inactive
 node scripts/derive-watchlist.ts   # propose candidates, writes nothing
+node scripts/derive-packages.ts    # map repositories to packages, writes nothing
 ```
+
+`derive-packages.ts` fills the `packages` field, which is what lets the agent
+ask what a project's downloads are doing rather than only what its repository is
+doing. It never maps on a name match: a candidate is proposed, the registry's own
+record for that name is fetched, and the mapping is kept only when the registry
+points back at this repository. That rule is not decoration — the first version
+matched on substring and mapped `angular/angular` to the npm package `angular`,
+which belongs to the archived `angular/angular.js`, and would have credited a
+dead project's downloads to a live one.
 
 Nothing is ever removed. Retired entries stay on the list with `active: false`,
 because deleting one would erase the record that it was watched at all, and the

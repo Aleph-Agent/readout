@@ -21,8 +21,10 @@ import {
   WATCHLIST_PATH,
   WINDOW_PATH,
   CALIBRATION_PATH,
+  ADOPTION_PATH,
 } from './paths.ts';
 import { CALIBRATION_KEYS, type CalibrationRow } from './calibration.ts';
+import { ADOPTION_KEYS, type AdoptionRow } from '../types/adoption.ts';
 import { SUMMARY_KEYS, type SummaryRecord } from '../types/summaries.ts';
 import { WINDOW_KEYS, type WindowRow } from '../types/window.ts';
 import { MANIFEST_KEYS, type ManifestRow } from '../types/manifests.ts';
@@ -113,6 +115,26 @@ export function readWindow(): WindowRow[] {
 export function writeWindow(rows: readonly WindowRow[]): void {
   writeJsonl(WINDOW_PATH, rows, WINDOW_KEYS, {
     sortBy: repoSortKey,
+    rejectDuplicates: true,
+  });
+}
+
+// ------------------------------------------------------------------- adoption
+
+export function readAdoption(): AdoptionRow[] {
+  return readJsonl(ADOPTION_PATH).map((row) => conform<AdoptionRow>(row, ADOPTION_KEYS));
+}
+
+/**
+ * Sorted by repository, then registry, then package name.
+ *
+ * Three keys because one repository can publish several packages to several
+ * registries, and a stable order across all three is what keeps the daily diff
+ * to the counts that actually moved.
+ */
+export function writeAdoption(rows: readonly AdoptionRow[]): void {
+  writeJsonl(ADOPTION_PATH, rows, ADOPTION_KEYS, {
+    sortBy: (row) => [repoSortKey(row), row.registry, row.name].join(' '),
     rejectDuplicates: true,
   });
 }

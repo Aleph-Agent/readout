@@ -34,6 +34,7 @@ function seedWatchlist(): void {
     category: 'devtool',
     added: '2026-08-04',
     active: true,
+    packages: [],
   }));
   ledger.writeWatchlist(entries);
 }
@@ -165,7 +166,7 @@ describe('pulse dry run', () => {
     // endpoints on a full watchlist.
     ledger.writeWatchlist([
       ...ledger.readWatchlist(),
-      { id: 'zz-extra/repo', category: 'devtool', added: '2026-08-04', active: true },
+      { id: 'zz-extra/repo', category: 'devtool', added: '2026-08-04', active: true, packages: [] },
     ]);
 
     server.publish('v2.0.0');

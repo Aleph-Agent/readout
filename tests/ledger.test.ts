@@ -27,7 +27,7 @@ afterAll(() => {
 });
 
 function entry(id: string): WatchlistEntry {
-  return { id, category: 'devtool', added: '2026-08-04', active: true };
+  return { id, category: 'devtool', added: '2026-08-04', active: true, packages: [] };
 }
 
 function stateRow(id: string, forks: number, etag: string | null = null): LiveStateRow {

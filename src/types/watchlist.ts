@@ -46,13 +46,38 @@ export interface WatchlistEntry {
    * would erase the record that we ever watched it.
    */
   active: boolean;
+  /**
+   * Registries this repository actually ships to, as `registry:name`.
+   *
+   * GitHub measures what people build. It says nothing about what anyone
+   * installs, and stars and forks are both cheap to manufacture while a
+   * download count is not. This is the join that lets the second question be
+   * asked at all.
+   *
+   * Curated and verified rather than guessed: a mapping is only written after
+   * the registry's own record of the package points back at this repository.
+   * A wrong mapping would attribute one project's adoption to another, which is
+   * the worst class of error this project can make. Empty is the honest answer
+   * for a repository that publishes nothing, and most do not publish to every
+   * registry.
+   *
+   * Known registries are in `REGISTRIES`. The prefix is required so the same
+   * bare name in two ecosystems can never collide.
+   */
+  packages: string[];
 }
+
+/** Registries with a free, unauthenticated download or install count. */
+export const REGISTRIES = ['npm', 'pypi', 'crates', 'brew'] as const;
+
+export type Registry = (typeof REGISTRIES)[number];
 
 export const WATCHLIST_KEYS = [
   'id',
   'category',
   'added',
   'active',
+  'packages',
 ] as const satisfies readonly (keyof WatchlistEntry)[];
 
 export type _WatchlistKeysExhaustive = AssertExhaustive<

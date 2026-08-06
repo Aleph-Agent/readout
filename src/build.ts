@@ -572,6 +572,9 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
       category: 'devtool',
       added: earliest.slice(0, 10),
       active: false,
+      // A repository off the watchlist is no longer read, so nothing is being
+      // counted for it in any registry either.
+      packages: [],
     });
   }
 

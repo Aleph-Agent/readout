@@ -31,7 +31,7 @@ function read<T>(name: string): T {
 }
 
 function entry(id: string): WatchlistEntry {
-  return { id, category: 'devtool', added: '2026-08-04', active: true };
+  return { id, category: 'devtool', added: '2026-08-04', active: true, packages: [] };
 }
 
 function stateRow(id: string, forks: number): LiveStateRow {

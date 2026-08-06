@@ -26,6 +26,16 @@ export const WINDOW_PATH = join(LIVE_DIR, 'window.jsonl');
 
 /** Last-seen dependency set per repository, so the next run can diff it. */
 export const MANIFESTS_PATH = join(LIVE_DIR, 'manifests.jsonl');
+
+/**
+ * Download and install counts per package, with a bounded trend.
+ *
+ * Lives under `live/` rather than as an append-only ledger because it carries
+ * its own history inline: one row per package holding the last few weeks of
+ * readings. Appending at this grain would add a megabyte of git a month to
+ * answer a question that never looks back further than that.
+ */
+export const ADOPTION_PATH = join(LIVE_DIR, 'adoption.jsonl');
 export const META_PATH = join(DATA_DIR, 'meta.json');
 
 /**

@@ -147,7 +147,7 @@ for (const [category, queries] of Object.entries(QUERIES) as [Category, readonly
   }
 
   for (const id of picked) {
-    derived.push({ id, category, added: today, active: true });
+    derived.push({ id, category, added: today, active: true, packages: [] });
   }
 }
 

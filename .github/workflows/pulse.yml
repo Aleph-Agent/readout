@@ -121,15 +121,37 @@ jobs:
           git config user.email "readout-agent@users.noreply.github.com"
           git add data
           git commit --allow-empty -m "chore(data): pulse $(date -u +'%Y-%m-%dT%H:%MZ')"
-          # The concurrency group serialises every ledger writer, so the plain
-          # push is the normal path. Checkout is shallow, so only unshallow on
-          # the rare race where someone pushed to the branch mid-run.
-          git push origin "HEAD:${GITHUB_REF_NAME}" || {
+
+          # The concurrency group serialises the scheduled writers, so the plain
+          # push is the normal path. It does not serialise a person pushing by
+          # hand, and that race lost a run's readings once: the fallback rebased
+          # and the rebase conflicted on data/, because both sides had touched
+          # it.
+          #
+          # Rebase is the wrong tool here. This run holds the newest reading of
+          # every file it writes by construction — it just took them — so on a
+          # race the answer is to take the remote history and re-apply this
+          # run's data on top, not to replay a commit hunk by hunk.
+          push_ledger() {
+            git push origin "HEAD:${GITHUB_REF_NAME}" && return 0
+
             git fetch --unshallow --quiet origin "${GITHUB_REF_NAME}" \
               || git fetch --quiet origin "${GITHUB_REF_NAME}"
-            git rebase "origin/${GITHUB_REF_NAME}"
+
+            # Keep the generated files, move onto the remote tip, put them back.
+            local tree
+            tree=$(mktemp -d)
+            cp -r data "${tree}/"
+            git reset --hard "origin/${GITHUB_REF_NAME}"
+            rm -rf data
+            cp -r "${tree}/data" data
+
+            git add data
+            git commit --allow-empty -m "chore(data): pulse $(date -u +'%Y-%m-%dT%H:%MZ')"
             git push origin "HEAD:${GITHUB_REF_NAME}"
           }
+
+          push_ledger
 
       - name: Open an issue on failure
         # GitHub does not notify on scheduled workflow failure. Without this the

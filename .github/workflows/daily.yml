@@ -86,12 +86,24 @@ jobs:
           set -euo pipefail
           git config user.name  "readout-agent"
           git config user.email "readout-agent@users.noreply.github.com"
+          message="chore(data): daily snapshot $(date -u +'%Y-%m-%d')"
           git add data
-          git commit --allow-empty -m "chore(data): daily snapshot $(date -u +'%Y-%m-%d')"
+          git commit --allow-empty -m "${message}"
+
+          # Rebase is the wrong recovery for a data-only commit: on a race it
+          # conflicts on the very files both sides wrote. This run holds the
+          # newest reading of everything it touched, so take the remote history
+          # and re-apply the generated files on top. See pulse.yml.
           git push origin "HEAD:${GITHUB_REF_NAME}" || {
             git fetch --unshallow --quiet origin "${GITHUB_REF_NAME}" \
               || git fetch --quiet origin "${GITHUB_REF_NAME}"
-            git rebase "origin/${GITHUB_REF_NAME}"
+            tree=$(mktemp -d)
+            cp -r data "${tree}/"
+            git reset --hard "origin/${GITHUB_REF_NAME}"
+            rm -rf data
+            cp -r "${tree}/data" data
+            git add data
+            git commit --allow-empty -m "${message}"
             git push origin "HEAD:${GITHUB_REF_NAME}"
           }
 

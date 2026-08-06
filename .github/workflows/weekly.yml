@@ -80,12 +80,22 @@ jobs:
           set -euo pipefail
           git config user.name  "readout-agent"
           git config user.email "readout-agent@users.noreply.github.com"
+          message="chore(data): weekly lineage $(date -u +'%Y-%m-%d')"
           git add data
-          git commit --allow-empty -m "chore(data): weekly lineage $(date -u +'%Y-%m-%d')"
+          git commit --allow-empty -m "${message}"
+
+          # See pulse.yml: rebase conflicts on a data-only commit, and this run
+          # already holds the newest reading of everything it wrote.
           git push origin "HEAD:${GITHUB_REF_NAME}" || {
             git fetch --unshallow --quiet origin "${GITHUB_REF_NAME}" \
               || git fetch --quiet origin "${GITHUB_REF_NAME}"
-            git rebase "origin/${GITHUB_REF_NAME}"
+            tree=$(mktemp -d)
+            cp -r data "${tree}/"
+            git reset --hard "origin/${GITHUB_REF_NAME}"
+            rm -rf data
+            cp -r "${tree}/data" data
+            git add data
+            git commit --allow-empty -m "${message}"
             git push origin "HEAD:${GITHUB_REF_NAME}"
           }
 

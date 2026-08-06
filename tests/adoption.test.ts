@@ -5,7 +5,7 @@ import {
   parsePackageId,
   recordAdoption,
 } from '../src/collectors/adoption.ts';
-import { npmBatches, NPM_BATCH } from '../src/lib/registries.ts';
+import { npmBatches, NPM_BATCH, ThrottledError } from '../src/lib/registries.ts';
 import type { RegistryClient } from '../src/lib/registries.ts';
 import type { AdoptionRow } from '../src/types/adoption.ts';
 import type { WatchlistEntry } from '../src/types/watchlist.ts';
@@ -153,11 +153,29 @@ describe('collecting', () => {
     const result = await collectAdoption(
       [entry('a/one', ['npm:shared']), entry('b/two', ['npm:shared'])],
       [],
-      { now: NOW, client: stub({ npmDownloads: async () => new Map([['shared', 10]]) }) },
+      { now: NOW, delayMs: 0, client: stub({ npmDownloads: async () => new Map([['shared', 10]]) }) },
     );
 
     expect(result.rows.map((row) => row.id).sort()).toEqual(['a/one', 'b/two']);
     expect(result.rows.every((row) => row.count === 10)).toBe(true);
+  });
+
+  it('records being refused, which is not the same as a package not existing', async () => {
+    // The first live run tripped pypistats' rate limit and lost 31 of 63
+    // readings with nothing anywhere to say why. A throttled run looked exactly
+    // like a run where half the packages had been delisted.
+    const result = await collectAdoption([entry('a/one', ['pypi:one'])], [], {
+      now: NOW,
+      delayMs: 0,
+      client: stub({
+        pypiDownloads: async () => {
+          throw new ThrottledError('https://pypistats.org/api/packages/one/recent', 429);
+        },
+      }),
+    });
+
+    expect(result.errors.join(' ')).toContain('refused 1 of 1');
+    expect(result.rows[0]?.count).toBeNull();
   });
 
   it('spends nothing on a retired repository', async () => {

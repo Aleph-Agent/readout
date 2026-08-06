@@ -15,6 +15,9 @@
 
 import {
   createRegistryClient,
+  PER_PACKAGE_DELAY_MS,
+  sleep,
+  ThrottledError,
   WINDOW_OF,
   type RegistryClient,
 } from '../lib/registries.ts';
@@ -47,6 +50,8 @@ export interface AdoptionCollectionOptions {
   now: string;
   client?: RegistryClient;
   trendDays?: number;
+  /** Pacing between per-package reads. Zero in tests, which make no requests. */
+  delayMs?: number;
 }
 
 /**
@@ -169,13 +174,19 @@ export async function collectAdoption(
     }
   }
 
-  // No batch endpoint for these two, so one request each. Both are small sets.
+  // No batch endpoint for these two, so one request each — paced, because the
+  // first unpaced run tripped pypistats' rate limit and lost 31 of 63 readings
+  // without recording that anything had gone wrong.
   for (const registry of ['pypi', 'crates'] as const) {
     const names = [...(wanted.get(registry)?.keys() ?? [])];
     if (names.length === 0) continue;
 
     const found = new Map<string, number>();
-    for (const name of names) {
+    let refused = 0;
+
+    for (const [index, name] of names.entries()) {
+      if (index > 0) await sleep(options.delayMs ?? PER_PACKAGE_DELAY_MS);
+
       try {
         const count =
           registry === 'pypi'
@@ -183,11 +194,22 @@ export async function collectAdoption(
             : await client.cratesDownloads(name);
         if (count !== null) found.set(name, count);
       } catch (error) {
+        // Being refused is a different fact from a package not existing, and
+        // the run record has to be able to tell them apart afterwards.
+        refused += 1;
+        if (error instanceof ThrottledError) continue;
         errors.push(
           `adoption ${registry} ${name}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }
+
+    if (refused > 0) {
+      errors.push(
+        `adoption ${registry}: refused ${refused} of ${names.length} reads, last known counts carried forward`,
+      );
+    }
+
     counts.set(registry, found);
     if (found.size === 0) missed.push(registry);
   }

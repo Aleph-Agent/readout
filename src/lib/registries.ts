@@ -47,17 +47,52 @@ export interface RegistryClient {
   requests(): number;
 }
 
+/**
+ * Raised when a registry refuses because it is being asked too fast.
+ *
+ * Separated from "no such package" on purpose. The first version returned null
+ * for both, and a run that tripped pypistats' rate limit was indistinguishable
+ * from a run where half the packages had been delisted — 31 of 63 PyPI reads
+ * came back empty with nothing recorded anywhere to say why. A missing reading
+ * has to be able to explain itself.
+ */
+export class ThrottledError extends Error {
+  constructor(url: string, status: number, options?: ErrorOptions) {
+    super(status === 0 ? `registry unreachable: ${url}` : `registry refused with ${status}: ${url}`, options);
+    this.name = 'ThrottledError';
+  }
+}
+
 async function getJson(url: string): Promise<unknown | null> {
+  let response: Response;
   try {
-    const response = await fetch(url, { headers: { 'user-agent': USER_AGENT } });
-    if (!response.ok) return null;
+    response = await fetch(url, { headers: { 'user-agent': USER_AGENT } });
+  } catch (error) {
+    // Unreachable is a missing reading, not a failed run. The site already
+    // knows how to render "not measured" and must never render it as a zero.
+    throw new ThrottledError(url, 0, { cause: error });
+  }
+
+  // 404 is an answer: no such package. Anything else in this range is our
+  // problem — a bad name we generated — and is still not a reading.
+  if (response.status === 404) return null;
+  if (response.status === 429 || response.status >= 500) {
+    throw new ThrottledError(url, response.status);
+  }
+  if (!response.ok) return null;
+
+  try {
     return await response.json();
   } catch {
-    // A registry being unreachable is a missing reading, not a failed run. The
-    // site already knows how to render "not measured" and must never render it
-    // as a zero.
     return null;
   }
+}
+
+/** Pacing for the endpoints with no batch form. Verified the hard way. */
+export const PER_PACKAGE_DELAY_MS = 400;
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /** Split into batches, with scoped names separated out — npm 400s on those. */

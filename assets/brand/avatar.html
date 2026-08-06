@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  /* 400×400, but the only size that matters is 48×48 — that is where it is
+     actually seen, in a timeline. So: one mark, high contrast, no wordmark, no
+     detail that survives only at full size. */
+  :root {
+    --ink-000: #0c0f08;
+    --ink-300: #4a5338;
+    --lime: #ccff00;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 400px;
+    height: 400px;
+    background: var(--ink-000);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .grid {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(#2c331f 1px, transparent 1px) 0 0 / 100% 40px,
+      linear-gradient(90deg, #2c331f 1px, transparent 1px) 0 0 / 40px 100%;
+    opacity: 0.5;
+  }
+
+  .floor {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(90% 90% at 50% 40%, rgba(12,15,8,0) 0%, rgba(12,15,8,0.88) 100%);
+  }
+
+  /* Five bars, one above the bar. The comb is the product's signature and it is
+     the one shape that still reads at avatar size — a spike among flat marks is
+     legible at 48px in a way a letterform with any detail is not. */
+  .comb {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    gap: 19px;
+    height: 236px;
+  }
+  .comb i {
+    display: block;
+    width: 31px;
+    background: var(--ink-300);
+  }
+  .comb i.lit {
+    background: var(--lime);
+  }
+
+  /* The baseline the spike is measured against, drawn because a deviation with
+     no visible reference is not a measurement. */
+  .base {
+    position: absolute;
+    left: -30px;
+    right: -30px;
+    bottom: 54px;
+    height: 3px;
+    background: repeating-linear-gradient(
+      to right,
+      var(--ink-300) 0 8px,
+      transparent 8px 16px
+    );
+  }
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="floor"></div>
+
+  <div class="comb">
+    <div class="base"></div>
+    <i style="height:61px"></i>
+    <i style="height:52px"></i>
+    <i class="lit" style="height:236px"></i>
+    <i style="height:55px"></i>
+    <i style="height:48px"></i>
+  </div>
+</body>
+</html>

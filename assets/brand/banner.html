@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: 'Plex Condensed';
+    src: url('../../dist/fonts/ibm-plex-sans-condensed-latin-600-normal.woff2') format('woff2');
+    font-weight: 600;
+  }
+  @font-face {
+    font-family: 'Plex Mono';
+    src: url('../../dist/fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
+    font-weight: 400;
+  }
+
+  /* The site's own tokens. An account picture that does not match the product
+     is a second brand nobody asked for. */
+  :root {
+    --ink-000: #0c0f08;
+    --ink-300: #4a5338;
+    --ink-500: #8e9683;
+    --ink-900: #e6ebda;
+    --lime: #ccff00;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1500px;
+    height: 500px;
+    background: var(--ink-000);
+    position: relative;
+    overflow: hidden;
+    font-family: 'Plex Condensed', sans-serif;
+  }
+
+  /* The same drifting grid the site has behind it, held still. */
+  .grid {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(#2c331f 1px, transparent 1px) 0 0 / 100% 50px,
+      linear-gradient(90deg, #2c331f 1px, transparent 1px) 0 0 / 50px 100%;
+    opacity: 0.55;
+  }
+
+  .floor {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(120% 130% at 28% 30%, rgba(12,15,8,0) 0%, rgba(12,15,8,0.72) 60%, rgba(12,15,8,0.94) 100%);
+  }
+
+  /* X crops the sides on mobile and drops the avatar over the bottom-left
+     corner on profile. Everything that must survive sits above that corner and
+     inside the middle band, clear of both. */
+  .plate {
+    position: absolute;
+    left: 96px;
+    top: 96px;
+    width: 980px;
+  }
+
+  .mark {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    height: 44px;
+    margin-bottom: 26px;
+  }
+  .mark i { display: block; width: 7px; background: var(--ink-300); }
+  .mark i.lit { background: var(--lime); }
+
+  .word {
+    font-size: 118px;
+    line-height: 0.86;
+    letter-spacing: 0.02em;
+    color: var(--ink-900);
+    text-transform: uppercase;
+  }
+
+  .rule {
+    width: 176px;
+    height: 5px;
+    background: var(--lime);
+    margin: 26px 0 22px;
+  }
+
+  .line {
+    font-family: 'Plex Mono', monospace;
+    font-size: 20px;
+    line-height: 1.55;
+    color: var(--ink-500);
+    white-space: nowrap;
+  }
+  .line b { color: var(--ink-900); font-weight: 400; }
+  .line em { font-style: normal; color: var(--lime); }
+
+  /* The velocity strip: the product's signature element, and real data shape —
+     mostly at rest with a few readings above baseline, which is what an honest
+     day actually looks like. */
+  .strip {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 1500px;
+    height: 74px;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    padding: 0 0 0 2px;
+  }
+  .strip i {
+    flex: 1;
+    background: var(--ink-300);
+    height: 7px;
+  }
+  .strip i.up { background: var(--lime); }
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="floor"></div>
+
+  <div class="plate">
+    <div class="mark">
+      <i style="height:12px"></i>
+      <i style="height:19px"></i>
+      <i style="height:13px"></i>
+      <i class="lit" style="height:44px"></i>
+      <i style="height:16px"></i>
+      <i style="height:11px"></i>
+      <i style="height:22px"></i>
+    </div>
+    <div class="word">Readout</div>
+    <div class="rule"></div>
+    <div class="line">
+      An instrument pointed at <b>388 open-source repositories</b>.<br>
+      Every reading links to its source. <em>readout-7pt.pages.dev</em>
+    </div>
+  </div>
+
+  <div class="strip" id="strip"></div>
+
+<script>
+  // A real distribution rather than a decorative sawtooth: almost everything
+  // sits at baseline and a handful deviate, because that is what the readings
+  // actually look like on a normal day.
+  const strip = document.getElementById('strip');
+  const spikes = { 23: 48, 24: 27, 61: 36, 96: 62, 97: 34, 131: 25, 168: 41, 169: 22, 204: 29 };
+  for (let i = 0; i < 232; i += 1) {
+    const bar = document.createElement('i');
+    const spike = spikes[i];
+    if (spike) {
+      bar.className = 'up';
+      bar.style.height = spike + 'px';
+    } else {
+      bar.style.height = (6 + ((i * 37) % 9)) + 'px';
+    }
+    strip.appendChild(bar);
+  }
+</script>
+</body>
+</html>

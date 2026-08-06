@@ -1,5 +1,6 @@
 import { COMPARISON, isCapped, readingsOf, SIGNAL_LABEL } from './vocabulary.ts';
 import { REACHABLE_SHARE } from '../lib/calibration.ts';
+import { MIN_INSTALLS } from '../lib/divergence.ts';
 import { COMPARE_SCRIPT } from './compare.ts';
 import { STACK_SCRIPT } from './stack.ts';
 import type { Disclosure, IndexBundle, LensBundle, LensName, StripMark } from '../types/bundles.ts';
@@ -943,6 +944,52 @@ function adoptionHtml(index: IndexBundle): string {
 }
 
 /**
+ * Where attention and use disagree.
+ *
+ * The one reading here that no single source could produce. Stars come from
+ * GitHub, installs from a registry, and the disagreement between them exists
+ * only because both are on the same page — which is the entire reason this
+ * project is not a GitHub summariser.
+ *
+ * It states a disagreement. It does not say which number is the right one to
+ * care about, and it never calls either side a winner.
+ */
+function divergenceHtml(index: IndexBundle): string {
+  const { divergence } = index;
+  if (divergence.compared === 0) return '';
+
+  const row = (reading: (typeof divergence.used)[number]): string => `<tr>
+      <td>${repoLink(reading.repo)}</td>
+      <td class="n num">${reading.stars.toLocaleString('en')}</td>
+      <td class="n"><span class="big num">${reading.installs.toLocaleString('en')}</span></td>
+      <td class="n num">${reading.perStar >= 100 ? Math.round(reading.perStar).toLocaleString('en') : reading.perStar.toFixed(1)}</td>
+    </tr>`;
+
+  const table = (
+    caption: string,
+    rows: readonly (typeof divergence.used)[number][],
+  ): string => `<div class="wrap"><table class="readout">
+  <caption class="label">${caption}</caption>
+  <thead><tr>
+    <th scope="col">Repository</th>
+    <th scope="col" class="n">Stars</th>
+    <th scope="col" class="n">Installs, weekly</th>
+    <th scope="col" class="n">Per star</th>
+  </tr></thead>
+  <tbody>${rows.map(row).join('')}</tbody>
+</table></div>`;
+
+  return `${table('Used far more than watched', divergence.used)}
+${table('Watched far more than used, through this registry', divergence.watched)}
+<p class="basis label">Stars measure attention, installs measure use, and they are different
+questions. Median across the ${divergence.compared} repositories where both figures are available:
+${divergence.median === null ? '—' : divergence.median.toLocaleString('en')} installs per star.
+A project distributed mainly as a binary will sit low here and that is a fact about the channel, not
+about the project — repositories under ${MIN_INSTALLS.toLocaleString('en')} weekly installs are
+excluded for exactly that reason. <a href="/method">How</a></p>`;
+}
+
+/**
  * What other people's analysis says about the watchlist.
  *
  * The first reading here that is not GitHub's numbers or a registry's counts.
@@ -1063,6 +1110,7 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     index,
     meta,
     body: `${heroHtml(index, meta)}
+${band('Attention vs use', divergenceHtml(index), 'Stars and installs answer different questions, and this is where they disagree. No single source can produce this reading.')}
 ${band('Installs', adoptionHtml(index), 'Stars can be bought. Installs cannot.')}
 ${band('Health', healthHtml(index), 'OpenSSF and OSV. Not judged here.')}
 ${band('Ask', askHtml(), 'Answered only from the readings here.')}

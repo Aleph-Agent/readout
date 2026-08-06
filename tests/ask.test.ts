@@ -24,6 +24,7 @@ function index(over: Partial<IndexBundle> = {}): IndexBundle {
     ],
     calibration: [],
     adoption: { measured: 0, unread: 0, weekly: 0, weeklyPackages: 0, top: [] },
+    divergence: { compared: 0, median: null, used: [], watched: [] },
     health: { scored: 0, unscored: 0, median: null, advisories: 0, weakest: [] },
     lenses: {
       ships: { status: 'active', count: 21 },

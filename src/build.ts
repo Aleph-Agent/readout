@@ -21,6 +21,7 @@ import { lastDetectionByRepo } from './lib/confidence.ts';
 import { buildCoverage } from './lib/coverage.ts';
 import { summariseAdoption } from './lib/adoption-summary.ts';
 import { summariseHealth } from './lib/health-summary.ts';
+import { summariseDivergence } from './lib/divergence.ts';
 import { renderBadge } from './site/badge.ts';
 import { summariseWindow, type CalibrationSummary } from './lib/calibration.ts';
 
@@ -487,10 +488,29 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   const categoryOf = new Map(watchlist.map((entry) => [entry.id, entry.category as string]));
   const strip = buildStrip(now, lastDetectionByRepo(all), history, categoryOf);
 
+  // Weekly installs per repository, largest across the packages it publishes.
+  // npm and PyPI only: those two report a rolling week and so can be compared
+  // with each other. Declared here because the index needs it — divergence is
+  // computed from it — and the bundles below need it too.
+  const adoptionByRepo = new Map<string, number>();
+  for (const row of readAdoption()) {
+    if (row.count === null || (row.registry !== 'npm' && row.registry !== 'pypi')) continue;
+    adoptionByRepo.set(row.id, Math.max(adoptionByRepo.get(row.id) ?? 0, row.count));
+  }
+  const healthByRepo = new Map(readHealth().map((row) => [row.id, row]));
+
   const index: IndexBundle = {
     strip,
     adoption: summariseAdoption(readAdoption()),
     health: summariseHealth(readHealth()),
+    divergence: summariseDivergence(
+      strip.map((mark) => ({
+        id: mark.id,
+        name: mark.name,
+        stars: mark.stars,
+        installs: adoptionByRepo.get(mark.id) ?? null,
+      })),
+    ),
     scorecard: scoreFindings(all, now),
     today: addressable.filter((event) => event.detectedAt.slice(0, 10) === today),
     watchlist: {
@@ -532,12 +552,6 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   // One row per watched repository, flattened across every axis this project
   // reads. Fetched only by /compare, never by the index — 388 rows is small,
   // but it is not small enough to put on a page that does not use it.
-  const adoptionByRepo = new Map<string, number>();
-  for (const row of readAdoption()) {
-    if (row.count === null || (row.registry !== 'npm' && row.registry !== 'pypi')) continue;
-    adoptionByRepo.set(row.id, Math.max(adoptionByRepo.get(row.id) ?? 0, row.count));
-  }
-  const healthByRepo = new Map(readHealth().map((row) => [row.id, row]));
   const findingsByRepo = new Map<string, number>();
   for (const event of addressable) {
     findingsByRepo.set(event.repo, (findingsByRepo.get(event.repo) ?? 0) + 1);

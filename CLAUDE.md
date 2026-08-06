@@ -19,17 +19,14 @@ Code, comments, commits, copy in English. Conversation in Indonesian.
 
 ## Skill routing by phase
 
-| Phase | Load |
+| Work | Load |
 |---|---|
-| 0 — Scaffold | `free-tier-guard`, `signal-collector` |
-| 1 — Collectors | `signal-collector`, `data-integrity` |
-| 2 — Build step | `free-tier-guard`, `data-integrity` |
-| 3 — Frontend | `frontend-design`, then `instrument-ui` |
-| 4 — Profile pages | `instrument-ui`, `data-integrity` |
-| 5 — More collectors | `signal-collector`, `data-integrity` |
-| 6 — Social | `canvas-design`, `data-integrity` |
+| Any collector, workflow, or cadence change | `signal-collector` + `free-tier-guard` |
+| Anything the site asserts, any prompt, any label | `data-integrity` |
+| Any frontend | `frontend-design`, then `instrument-ui` |
+| Social cards | `canvas-design`, `data-integrity` |
 
-If a phase's skills are not loaded, stop and load them before writing code.
+If the relevant skills are not loaded, stop and load them before writing code.
 
 ## Cadence
 
@@ -49,14 +46,15 @@ data/
 ├── live/state.jsonl          Overwritten each pulse. Sorted by repo id.
 ├── live/window.jsonl         Timestamped fork samples. Rolling 24h delta.
 ├── live/manifests.jsonl      Last-seen dependency set. Diffed daily.
+├── live/adoption.jsonl       Downloads per package. 35-day trend inline.
 ├── history/YYYY-MM-DD.jsonl  Appended once daily. Immutable.
 ├── events/YYYY-MM.jsonl      Append-only. Never rewritten.
+├── calibration.jsonl         Append-only. How close everything got to each bar.
 ├── summaries.jsonl           Generated prose by event id. Rewritable.
 ├── watchlist.jsonl           Committed. Changes are reviewed commits.
 └── meta.json                 Last run status.
 ```
 
-Sorted output with fixed key order keeps git diffs line-level. `window`, `summaries`, and `manifests` were added during the build; MASTER.md Part 2 says why.
-
-Everything else — brief, architecture, skills, library map, build prompts, the
-ask endpoint, failure modes — is in `MASTER.md`.
+Sorted output with fixed key order keeps git diffs line-level. Everything below
+`state` was added during the build; MASTER.md Parts 2 and 9 say why, along with
+the brief, architecture, skills, build prompts, and known failure modes.

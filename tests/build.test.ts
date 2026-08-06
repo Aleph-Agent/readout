@@ -262,6 +262,9 @@ describe('output hygiene', () => {
       // the commit log, which is a credibility argument aimed at an audience
       // that does not read strangers' commit logs.
       'method.html',
+      // What models cost. The first page here with nothing to do with a
+      // repository.
+      'models.html',
       'ships.html',
       'stack.html',
     ]);

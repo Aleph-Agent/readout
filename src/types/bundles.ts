@@ -1,5 +1,6 @@
 import type { CalibrationSummary } from '../lib/calibration.ts';
 import type { DivergenceSummary } from '../lib/divergence.ts';
+import type { ModelSummary } from '../lib/models-summary.ts';
 import type { ConfidenceState, EventRecord } from './events.ts';
 
 /**
@@ -192,6 +193,8 @@ export interface HealthSummary {
 
 export interface IndexBundle {
   strip: StripMark[];
+  /** What models cost. Nothing to do with a repository. */
+  models: ModelSummary;
   /** Where attention and use disagree. See `lib/divergence.ts`. */
   divergence: DivergenceSummary;
   /** What is actually installed. See `collectors/adoption.ts`. */

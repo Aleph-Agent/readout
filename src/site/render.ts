@@ -46,6 +46,7 @@ const NAV: { href: string; label: string; lens: LensName | null }[] = [
   // The tools sit after the readings: a visitor who does not know what this
   // measures has no use for a tool that measures it.
   { href: '/stack', label: 'Your stack', lens: null },
+  { href: '/models', label: 'Models', lens: null },
   { href: '/compare', label: 'Compare', lens: null },
   { href: '/method', label: 'Method', lens: null },
 ];
@@ -1423,6 +1424,79 @@ ${band(
   reads is at <a href="/data/stack-index.json">/data/stack-index.json</a>.</p></noscript>`,
   'Advisories are checked for every dependency. Scorecard and licence only for the ones tracked here.',
 )}`,
+  });
+}
+
+/**
+ * What models cost, and what stopped being offered.
+ *
+ * The first page here with nothing to do with a repository. It exists because
+ * the prices move weekly across sixty providers and nobody keeps a dated
+ * record — ask what a model cost three months ago and there is no honest
+ * answer anywhere, which is how teams choose on a price they remember.
+ */
+export function renderModels(index: IndexBundle, meta: MetaRecord): string {
+  const { models } = index;
+
+  const price = (value: number): string =>
+    value >= 1 ? `$${value.toFixed(2)}` : `$${value.toFixed(3)}`;
+
+  const table = (
+    caption: string,
+    rows: readonly (typeof models.cheapest)[number][],
+  ): string =>
+    rows.length === 0
+      ? ''
+      : `<div class="wrap"><table class="readout">
+  <caption class="label">${caption}</caption>
+  <thead><tr>
+    <th scope="col">Model</th>
+    <th scope="col" class="n">Per million in</th>
+    <th scope="col" class="n">Context</th>
+    <th scope="col" class="n">Moved</th>
+  </tr></thead>
+  <tbody>${rows
+    .map(
+      (row) => `<tr>
+      <td>${esc(row.id)}</td>
+      <td class="n"><span class="big num">${price(row.prompt)}</span></td>
+      <td class="n num">${row.context === null ? '<span class="dim">—</span>' : row.context.toLocaleString('en')}</td>
+      <td class="n num">${
+        row.moved === null || row.moved === 0
+          ? '<span class="dim">—</span>'
+          : `${row.moved > 0 ? '+' : '−'}${price(Math.abs(row.moved)).slice(1)}`
+      }</td>
+    </tr>`,
+    )
+    .join('')}</tbody>
+</table></div>`;
+
+  return layout({
+    title: 'Models — what they cost',
+    description:
+      'A dated record of what language models cost across sixty providers, what changed, and what quietly stopped being offered.',
+    current: '/models',
+    path: '/models',
+    index,
+    meta,
+    body: `<section class="hero">
+  <h1 class="hero-thesis">What a model costs today.</h1>
+  <p class="hero-sub">
+    Prices move weekly across ${models.providers} providers and nobody keeps a dated record. Ask
+    what a model cost three months ago and there is no honest answer anywhere — which is how teams
+    end up choosing on a price they remember.
+  </p>
+  <div class="hero-figures">
+    <div class="figure"><span class="figure-value num">${models.available}</span><span class="label">Models offered</span></div>
+    <div class="figure"><span class="figure-value num">${models.providers}</span><span class="label">Providers</span></div>
+    <div class="figure"><span class="figure-value num">${models.moved.length}</span><span class="label">Prices moved</span></div>
+    <div class="figure"><span class="figure-value num">${models.withdrawn}</span><span class="label">No longer offered</span></div>
+  </div>
+</section>
+
+${band('Moved', table('Largest price change in the trend window', models.moved), 'Measured against the oldest reading held, not against yesterday — a price that drifted over three weeks moved.')}
+${band('Cheapest', table('Lowest price per million prompt tokens', models.cheapest), 'Free tiers are excluded from both ends. Zero is a different offer, not a lower price.')}
+${band('Dearest', table('Highest price per million prompt tokens', models.dearest), 'Four orders of magnitude separate the two ends of this catalogue.')}`,
   });
 }
 

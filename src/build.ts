@@ -9,6 +9,7 @@ import {
   readAllEvents,
   latestCalibration,
   readHealth,
+  readModels,
   readLiveState,
   readMeta,
   readSnapshot,
@@ -22,6 +23,7 @@ import { buildCoverage } from './lib/coverage.ts';
 import { summariseAdoption } from './lib/adoption-summary.ts';
 import { summariseHealth } from './lib/health-summary.ts';
 import { summariseDivergence } from './lib/divergence.ts';
+import { summariseModels } from './lib/models-summary.ts';
 import { renderBadge } from './site/badge.ts';
 import { summariseWindow, type CalibrationSummary } from './lib/calibration.ts';
 
@@ -40,6 +42,7 @@ import {
   renderIndex,
   renderLens,
   renderMethod,
+  renderModels,
   renderStack,
   SITE_SCRIPT,
 } from './site/render.ts';
@@ -503,6 +506,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     strip,
     adoption: summariseAdoption(readAdoption()),
     health: summariseHealth(readHealth()),
+    models: summariseModels(readModels()),
     divergence: summariseDivergence(
       strip.map((mark) => ({
         id: mark.id,
@@ -758,6 +762,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   pages.set('method.html', renderMethod(index, previous));
   pages.set('compare.html', renderCompare(index, previous));
   pages.set('stack.html', renderStack(index, previous));
+  pages.set('models.html', renderModels(index, previous));
 
   // One badge per watched repository. A maintainer who embeds one puts a
   // permanent link back in a README that may be read more in a week than this
@@ -778,6 +783,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     '/method',
     '/compare',
     '/stack',
+    '/models',
     ...LENSES.map((lens) => `/${lens}`),
     ...[...profiles.keys()].map((repo) => `/repo/${repo}`),
     ...addressable.map((event) => eventPath(event)),

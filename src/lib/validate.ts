@@ -130,6 +130,23 @@ export function templatedSentence(event: EventRecord): string | null {
     return `${event.repo} was archived and is now read-only.`;
   }
 
+  if (event.kind === 'model-price') {
+    const from = metricNumber(metrics, 'from');
+    const to = metricNumber(metrics, 'to');
+    if (from === null || to === null) return null;
+
+    // States the direction and both ends. No model is involved and none could
+    // add anything here except a chance of being wrong about a price.
+    const direction = to > from ? 'rose' : 'fell';
+    return `${event.repo} ${direction} from $${from} to $${to} per million prompt tokens.`;
+  }
+
+  if (event.kind === 'model-withdrawn') {
+    const last = metricString(metrics, 'lastSeen');
+    if (last === null) return null;
+    return `${event.repo} is no longer offered. Last seen ${last}.`;
+  }
+
   if (event.kind === 'lineage') {
     const base = metricString(metrics, 'baseModel');
     const added = metricNumber(metrics, 'newDescendants');

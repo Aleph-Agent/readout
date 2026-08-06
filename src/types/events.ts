@@ -53,6 +53,17 @@ export type EventKind =
   | 'licence'
   /** The repository went read-only. Also a field diff, also unfalsifiable. */
   | 'archived'
+  /**
+   * A model's price moved. The first kind here that is not about a repository.
+   *
+   * Prices across sixty providers span four orders of magnitude and move
+   * weekly, and no dated record of them exists anywhere — ask what a model cost
+   * three months ago and there is no honest answer, which is how teams choose
+   * on a price they remember.
+   */
+  | 'model-price'
+  /** A model stopped being offered. Nobody else records this at all. */
+  | 'model-withdrawn'
   /** Supersedes an earlier event that turned out to be wrong. Never a delete. */
   | 'correction';
 

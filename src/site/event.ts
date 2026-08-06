@@ -27,6 +27,8 @@ const KIND_LABEL: Record<EventRecord['kind'], string> = {
   lineage: 'Lineage',
   licence: 'Licence change',
   archived: 'Archived',
+  'model-price': 'Model price change',
+  'model-withdrawn': 'Model withdrawn',
   correction: 'Correction',
 };
 

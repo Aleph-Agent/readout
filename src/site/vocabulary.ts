@@ -19,6 +19,8 @@ export const SIGNAL_LABEL: Record<EventKind, string> = {
   lineage: 'Lineage',
   licence: 'Licence change',
   archived: 'Archived',
+  'model-price': 'Model price',
+  'model-withdrawn': 'Model withdrawn',
   correction: 'Correction',
 };
 

@@ -44,6 +44,15 @@ export const ADOPTION_PATH = join(LIVE_DIR, 'adoption.jsonl');
  * moving rather than every day it did not.
  */
 export const HEALTH_PATH = join(LIVE_DIR, 'health.jsonl');
+
+/**
+ * The model catalogue: price, context window, and availability per model.
+ *
+ * The first file here with nothing to do with a repository. Overwritten daily
+ * and carrying its own trend inline, like adoption — a model that was withdrawn
+ * keeps its row, because that row is the only evidence it was ever offered.
+ */
+export const MODELS_PATH = join(LIVE_DIR, 'models.jsonl');
 export const META_PATH = join(DATA_DIR, 'meta.json');
 
 /**

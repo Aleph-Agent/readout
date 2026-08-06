@@ -1,9 +1,10 @@
-﻿import { existsSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { collectAdoption } from '../collectors/adoption.ts';
 import { collectHealth } from '../collectors/health.ts';
 import { collectIssues } from '../collectors/issues.ts';
+import { collectModels } from '../collectors/models.ts';
 import { collectManifests } from '../collectors/manifests.ts';
 import { lastDetectionByRepo } from '../lib/confidence.ts';
 import { createGitHubClient, type GitHubClient } from '../lib/github.ts';
@@ -12,6 +13,8 @@ import {
   appendEvents,
   eventId,
   readAdoption,
+  readEvents,
+  readModels,
   readAllEvents,
   readLiveState,
   readManifests,
@@ -21,6 +24,7 @@ import {
   readWindow,
   writeAdoption,
   writeHealth,
+  writeModels,
   writeManifests,
   writeMeta,
   writeSnapshot,
@@ -316,6 +320,23 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       errors.push(...health.errors);
     } catch (error) {
       errors.push(`health: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    // The model catalogue. One free unauthenticated request for 400 models
+    // across 58 providers, and the first reading here with nothing to do with a
+    // repository. Prices move weekly and nobody keeps a dated record of them.
+    try {
+      const models = await collectModels(readModels(), {
+        now: nowIso,
+        today,
+        seen: new Set(readEvents(month).map((event) => event.id)),
+      });
+      writeModels(models.rows);
+      if (models.events.length > 0) appendEvents(month, models.events);
+      for (const event of models.events) events.push(event);
+      errors.push(...models.errors);
+    } catch (error) {
+      errors.push(`models: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     requestsConsumed = client.stats().consumed;

@@ -88,8 +88,20 @@ async function getJson(url: string): Promise<unknown | null> {
   }
 }
 
-/** Pacing for the endpoints with no batch form. Verified the hard way. */
-export const PER_PACKAGE_DELAY_MS = 400;
+/**
+ * Pacing for the endpoints with no batch form. Measured, not guessed.
+ *
+ * Unpaced, 31 of 63 PyPI reads were refused. At 400ms it was 38 of 63 — no
+ * better, which says the limit is not a simple requests-per-second. At 1200ms
+ * it settles. That costs the daily job about eighty seconds, which is nothing
+ * for a job nobody is waiting on.
+ *
+ * pypistats remains the weakest source here and probably always will be: it is
+ * one person's free service and it owes this project nothing. The mitigation is
+ * that a refused read carries the previous count forward, so the figure goes
+ * stale rather than disappearing, and the run record says how many it lost.
+ */
+export const PER_PACKAGE_DELAY_MS = 1200;
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

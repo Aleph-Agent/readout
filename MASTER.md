@@ -1330,6 +1330,8 @@ cannot copy without also being honest.
 | Groq quota exhausted during development | Develop prompts against a local model first. |
 | Published claim turns out wrong | Append a correction event. Never delete, never force push. |
 | Ask endpoint quota drained by one client | Per-IP, per-colo limit through the cache API; identical questions answered from cache. |
+| pypistats refuses a read | Paced at 1200ms and still refuses some. A refused read carries the previous count forward and is counted in the run record — the figure goes stale, never missing, and never zero. |
+| A package is mapped to the wrong repository | Mappings are verified against the registry's own declared repository, matched as a whole path segment. Never on a name match. |
 | Ask endpoint down or out of quota | It answers with the reason and the site is untouched. No page may depend on it. |
 
 ---

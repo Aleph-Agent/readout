@@ -556,7 +556,12 @@ export async function onRequestPost(context: { request: Request }): Promise<Resp
       product,
       covered: true,
       asOf: bundle.generatedAt,
-      supportedCycles: releases.filter((row) => row.supported).map((row) => row.cycle),
+      // Every supported cycle of the product, not only the ones asked about.
+      // Filtered to the question, a query for python 3.9 answered
+      // `supportedCycles: []` — true of the row asked for and read as "python
+      // has nothing supported", which is the opposite of the answer. This
+      // field is the "what do I move to" half and it is useless narrowed.
+      supportedCycles: all.filter((row) => !row.ended).map((row) => row.cycle),
       releases,
       source: `https://endoflife.date/${product}`,
       limits: [

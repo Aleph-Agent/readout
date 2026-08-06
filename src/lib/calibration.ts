@@ -23,6 +23,8 @@
  * Pure, so the summary is testable without a collector, a network, or a day.
  */
 
+import type { AssertExhaustive } from '../types/keys.ts';
+
 export interface CalibrationRow {
   /** `YYYY-MM-DD` UTC of the run. One row per collector per day. */
   date: string;
@@ -109,6 +111,16 @@ export const CALIBRATION_KEYS = [
   'p99',
   'unbounded',
 ] as const satisfies readonly (keyof CalibrationRow)[];
+
+/**
+ * `satisfies` only catches a key that does not exist on the row. This catches
+ * the other direction — a field added to `CalibrationRow` and forgotten here,
+ * which would be silently dropped on write. Every other record in the project
+ * has this guard and this one did not.
+ */
+export type _CalibrationKeysExhaustive = AssertExhaustive<
+  Exclude<keyof CalibrationRow, (typeof CALIBRATION_KEYS)[number]>
+>;
 
 /**
  * What a reader needs to know about one collector, over a window of days.

@@ -355,6 +355,49 @@ describe('telling a first-time visitor what this is', () => {
   });
 });
 
+describe('magnitude, drawn', () => {
+  const withAdoption = () =>
+    index({
+      adoption: {
+        measured: 3,
+        unread: 0,
+        weekly: 900,
+        weeklyPackages: 2,
+        top: [
+          { repo: 'a/one', registry: 'npm', name: 'one', count: 800, window: 'week' },
+          { repo: 'b/two', registry: 'pypi', name: 'two', count: 100, window: 'week' },
+          { repo: 'c/three', registry: 'brew', name: 'three', count: 40, window: '30d' },
+        ],
+      },
+    });
+
+  it('scales every bar against the largest reading and says what it is', () => {
+    // A bar with no stated maximum is a shape, not a measurement.
+    const html = renderIndex(withAdoption(), meta());
+
+    expect(html).toContain('--share:100.0%');
+    expect(html).toContain('--share:12.5%');
+    expect(html).toContain('Bars are drawn against 800');
+  });
+
+  it('steps the shade with the same figure the length carries', () => {
+    // Redundant on purpose: nothing here may depend on telling hues apart, and
+    // five identity colours failed the all-pairs check on this surface.
+    const html = renderIndex(withAdoption(), meta());
+
+    expect(html).toContain('--step:var(--mag-5)');
+    expect(html).toContain('--step:var(--mag-1)');
+  });
+
+  it('carries the final figure in the markup, not only in the animation', () => {
+    // The count-up replaces this for a second. Without scripting the number is
+    // simply correct, which is the only acceptable failure mode.
+    const html = renderIndex(withAdoption(), meta());
+    expect(html).toContain('data-count="900"');
+    expect(html).toContain('>900<');
+  });
+});
+
 describe('the method page', () => {
   it('states the limits as plainly as the readings', () => {
     const html = renderMethod(index(), meta());

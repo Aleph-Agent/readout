@@ -72,6 +72,36 @@ for (const el of document.querySelectorAll('[data-at]')) {
  * inert and says why, and every reading it could have described is on the page
  * underneath it anyway. Nothing here is the only route to anything.
  */
+/**
+ * Counts the headline figure up to its value, once.
+ *
+ * The magnitude is the whole point of that number and reading "4,432,665,399"
+ * does not convey it — watching it climb does. Progressive enhancement in the
+ * strict sense: the final value is already in the HTML, and this only replaces
+ * it for the duration of the animation, so without scripting nothing is lost.
+ *
+ * Skipped entirely under reduced motion rather than shortened, because a
+ * count-up shortened to nothing is a flicker.
+ */
+const COUNT_SCRIPT = `
+const counter = document.querySelector('[data-count]');
+if (counter && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const target = Number(counter.dataset.count);
+  if (Number.isFinite(target) && target > 0) {
+    const format = new Intl.NumberFormat('en');
+    const started = performance.now();
+    const step = (now) => {
+      const t = Math.min(1, (now - started) / 1400);
+      // Eases out hard, so most of the climb happens early and the last digits
+      // settle rather than race.
+      const eased = 1 - Math.pow(1 - t, 4);
+      counter.textContent = format.format(Math.round(target * eased));
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+}`.trim();
+
 const ASK_SCRIPT = `
 const form = document.getElementById('ask-form');
 if (form) {
@@ -385,6 +415,7 @@ ${options.body}
 </main>
 ${colophonHtml(options.index, options.meta)}
 <script>${AGE_SCRIPT}
+${COUNT_SCRIPT}
 ${ASK_SCRIPT}</script>${analyticsHtml()}
 </body>
 </html>
@@ -685,7 +716,7 @@ function heroHtml(index: IndexBundle, meta: MetaRecord): string {
     index.adoption.weekly === 0
       ? ''
       : `<div class="hero-headline">
-    <span class="hero-headline-value num">${index.adoption.weekly.toLocaleString('en')}</span>
+    <span class="hero-headline-value num" data-count="${index.adoption.weekly}">${index.adoption.weekly.toLocaleString('en')}</span>
     <span class="hero-headline-label">weekly downloads across the ${index.adoption.weeklyPackages}
     npm and PyPI packages these repositories publish. Measured, not estimated — and the only figure
     here that is a number today rather than in two weeks.</span>
@@ -813,16 +844,30 @@ function adoptionHtml(index: IndexBundle): string {
   const { adoption } = index;
   if (adoption.top.length === 0) return '';
 
+  // Magnitude on a shared scale, so the table reads as a chart rather than as a
+  // column of digits nobody compares. Bars are drawn against the largest
+  // reading and the scale is stated in the caption — a bar with no stated
+  // maximum is a shape, not a measurement.
+  const peak = Math.max(...adoption.top.map((reading) => reading.count));
+
   const rows = adoption.top
-    .map(
-      (reading, rank) => `<tr>
+    .map((reading, rank) => {
+      const share = peak === 0 ? 0 : reading.count / peak;
+      // Five steps of one hue. Ordered by lightness, so the step carries the
+      // same information the length does and neither depends on hue vision.
+      const step = Math.min(5, Math.max(1, Math.ceil(share * 5)));
+
+      return `<tr>
       <td class="n dim num">${rank + 1}</td>
       <td>${repoLink(reading.repo)}</td>
       <td class="dim">${esc(REGISTRY_LABEL[reading.registry] ?? reading.registry)} <span class="dim">${esc(reading.name)}</span></td>
       <td class="n"><span class="big num">${reading.count.toLocaleString('en')}</span></td>
+      <td class="mag-cell">
+        <span class="mag" style="--share:${(share * 100).toFixed(1)}%;--step:var(--mag-${step});--i:${rank}"></span>
+      </td>
       <td class="dim">${esc(WINDOW_LABEL[reading.window] ?? reading.window)}</td>
-    </tr>`,
-    )
+    </tr>`;
+    })
     .join('');
 
   return `<div class="wrap"><table class="readout readout-adoption">
@@ -832,11 +877,14 @@ function adoptionHtml(index: IndexBundle): string {
     <th scope="col">Repository</th>
     <th scope="col">Package</th>
     <th scope="col" class="n">Downloads</th>
+    <th scope="col">Against the largest</th>
     <th scope="col">Window</th>
   </tr></thead>
   <tbody>${rows}</tbody>
 </table></div>
-<p class="basis label">Counts come from each registry's own public figures and are never added across
+<p class="basis label">Bars are drawn against ${peak.toLocaleString('en')}, the largest reading here, and
+the shade steps with the same figure the length does — neither depends on telling colours apart.
+Counts come from each registry's own public figures and are never added across
 registries with different windows: the combined weekly total above covers npm and PyPI only, which
 both report a rolling week. Homebrew reports a month and crates.io ninety days, so they are listed
 here with their own window and folded into no total. A package that could not be read keeps its last

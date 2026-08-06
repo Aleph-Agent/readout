@@ -87,6 +87,24 @@
   --alert: #f0883e;
   --nominal: #3fb950;
 
+  /* One sequential ramp, for magnitude.
+
+     Colour-coding the five watchlist categories was the obvious way to put more
+     colour on this page, and it was checked rather than assumed: every
+     five-hue set tried — including the reference palette's own first five —
+     failed the all-pairs test on a dark surface. Violet against blue came back
+     at ΔE 1.9 for protanopia, red against magenta at 7.8 for normal vision.
+     Five identity colours cannot be told apart here, so there are none.
+
+     Magnitude can carry colour safely, because a sequential ramp is one hue
+     ordered by lightness and has no confusion pairs by construction. Steps run
+     dim to bright: on a dark ground, brighter reads as more. */
+  --mag-1: #1c5cab;
+  --mag-2: #2a78d6;
+  --mag-3: #3987e5;
+  --mag-4: #5598e7;
+  --mag-5: #86b6ef;
+
   --face-label: 'Plex Condensed', ui-sans-serif, system-ui, sans-serif;
   --face-data: 'Plex Mono', ui-monospace, monospace;
   --face-prose: 'Plex Serif', ui-serif, Georgia, serif;
@@ -438,6 +456,37 @@ a:hover {
 .readout-adoption .big {
   font-size: var(--t-mid);
   color: var(--ink-900);
+}
+
+.mag-cell {
+  width: 34%;
+  min-width: 120px;
+}
+
+/* One bar per reading, on a shared scale stated in the caption.
+
+   The width is the measurement and the shade is the same measurement stepped —
+   redundant on purpose, so nothing here depends on distinguishing hues. Rounded
+   at the reading end only: the other end is the zero it is anchored to and
+   rounding it would put a curve where the axis is. */
+.mag {
+  display: block;
+  height: 8px;
+  width: var(--share);
+  background: var(--step);
+  border-radius: 0 4px 4px 0;
+  /* Grows from zero, left to right, in rank order. The length is the value, so
+     drawing it is the value arriving rather than an entrance effect — a
+     different dataset draws a visibly different shape. */
+  transform-origin: left center;
+  animation: grow 620ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i) * 28ms);
+}
+
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
 }
 
 /* Before any baseline has filled the comb is all outlines. Dimmed as a whole so
@@ -826,6 +875,16 @@ a.lens-cell:hover {
   background: var(--ink-050);
 }
 
+.readout td {
+  transition: background 120ms ease;
+}
+
+/* The row under the cursor is the row being read. A left edge in the alert
+   colour marks it without moving anything, which a lift or a shadow would. */
+.readout tbody tr:hover td:first-child {
+  box-shadow: inset 2px 0 0 var(--alert);
+}
+
 .readout .n {
   text-align: right;
   padding-right: 20px;
@@ -1152,6 +1211,32 @@ a.lens-cell:hover {
   50% {
     opacity: 0.35;
   }
+}
+
+/* The comb arrives in reading order, left to right.
+
+   The brief names a sparkline drawing in reading order as permitted motion.
+   This is that, across four hundred marks: the sweep takes the same time
+   whatever the data is, but the shape it uncovers is the data, and a watchlist
+   with a spike in it looks visibly different arriving than a flat one does.
+   Done as one clip on the whole figure rather than a delay per mark: staggering
+   388 rects means 388 inline custom properties and six kilobytes of markup to
+   say the same thing. */
+.strip svg {
+  animation: wipe 900ms ease-out backwards;
+}
+
+@keyframes wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+/* Counts up on load, then stops. The magnitude is the point of the figure and
+   watching it climb is the only way a reader feels four billion rather than
+   reading it. Scripted, so it degrades to the final value with no script. */
+.hero-headline-value {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Draws left to right, the order the axis is read in. */

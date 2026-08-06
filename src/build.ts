@@ -28,7 +28,7 @@ import { templatedSentence } from './lib/validate.ts';
 import { scoreFindings } from './lib/scorecard.ts';
 import { assertSafeRepoId, DIST_DATA_DIR, DIST_DIR, ROOT, utcDate } from './lib/paths.ts';
 import { buildAskContext, MAX_CONTEXT_BYTES } from './site/ask-context.ts';
-import { eventSlug, renderIndex, renderLens } from './site/render.ts';
+import { eventSlug, renderIndex, renderLens, renderMethod } from './site/render.ts';
 import {
   eventPath,
   renderEventPage,
@@ -648,8 +648,11 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     pages.set(`e/${slug}.html`, renderEventPage(event, index, previous));
   }
 
+  pages.set('method.html', renderMethod(index, previous));
+
   const sitemapPaths = [
     '/',
+    '/method',
     ...LENSES.map((lens) => `/${lens}`),
     ...[...profiles.keys()].map((repo) => `/repo/${repo}`),
     ...addressable.map((event) => eventPath(event)),

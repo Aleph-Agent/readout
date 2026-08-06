@@ -250,6 +250,10 @@ describe('output hygiene', () => {
       'forks.html',
       'index.html',
       'lineage.html',
+      // How the readings are taken and what they cannot support. It was all in
+      // the commit log, which is a credibility argument aimed at an audience
+      // that does not read strangers' commit logs.
+      'method.html',
       'ships.html',
       'stack.html',
     ]);

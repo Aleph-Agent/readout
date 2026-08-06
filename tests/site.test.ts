@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { renderIndex, renderLens, stripSvg } from '../src/site/render.ts';
+import { renderIndex, renderLens, renderMethod, stripSvg } from '../src/site/render.ts';
 import type { IndexBundle, LensBundle, StripMark } from '../src/types/bundles.ts';
 import type { EventRecord } from '../src/types/events.ts';
 import { EMPTY_META, type MetaRecord } from '../src/types/meta.ts';
@@ -337,6 +337,42 @@ describe('telling a first-time visitor what this is', () => {
     expect(html).not.toMatch(/\bprice\b/i);
     expect(html).not.toMatch(/\bappreciat/i);
     expect(html).not.toMatch(/connect (your )?wallet/i);
+  });
+});
+
+describe('the method page', () => {
+  it('states the limits as plainly as the readings', () => {
+    const html = renderMethod(index(), meta());
+
+    expect(html).toContain('It is not a survey');
+    expect(html).toContain('never an endorsement');
+    expect(html).toContain('co-occurrence, never a cause');
+    expect(html).toContain('not real-time');
+  });
+
+  it('discloses the conflict of interest with a number', () => {
+    // A fifth of the watchlist is the field the funding lives in. Disclosed
+    // here because a reader should not have to find it themselves, and because
+    // it is exactly what costs a project its credibility when someone else
+    // finds it first.
+    const html = renderMethod(
+      index({
+        watchlist: { total: 400, active: 400, byCategory: {} },
+        coverage: [
+          { category: 'crypto-web3', repositories: 80, measured: 0, forksAdded: null, findings: 0, busiest: null },
+        ],
+      }),
+      meta(),
+    );
+
+    expect(html).toContain('The conflict worth stating');
+    expect(html).toContain('80 of the 400 repositories watched — 20%');
+  });
+
+  it('says how a reader can tell the instrument is broken', () => {
+    const html = renderMethod(index(), meta());
+    expect(html).toContain('never approached');
+    expect(html).toContain('this instrument is set too high');
   });
 });
 

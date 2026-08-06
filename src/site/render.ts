@@ -37,6 +37,10 @@ const NAV: { href: string; label: string; lens: LensName | null }[] = [
   { href: '/demand', label: 'Demand', lens: 'demand' },
   { href: '/stack', label: 'Stack', lens: 'stack' },
   { href: '/lineage', label: 'Lineage', lens: 'lineage' },
+  // How it works, what it cannot do, and who is paying. It was all in the
+  // commit log, which is a credibility argument aimed at an audience that does
+  // not read strangers' commit logs.
+  { href: '/method', label: 'Method', lens: null },
 ];
 
 /**
@@ -674,6 +678,11 @@ function heroHtml(index: IndexBundle, meta: MetaRecord): string {
       <span class="label">Last reading, UTC</span>
     </div>
   </div>
+  <p class="hero-follow">
+    Most days nothing crosses a threshold, so this is a poor page to check daily and a reasonable
+    one to subscribe to. <a href="/feed.xml">The feed</a> carries confirmed findings only, at the
+    moment they appear here. <a href="/method">How these readings are taken.</a>
+  </p>
 </section>`;
 }
 
@@ -837,6 +846,168 @@ ${band(
   'How often this instrument has been right, and whether its thresholds are within reach of anything at all. Both published whatever they say.',
 )}
 ${band('The token', tokenHtml(), 'What funds this, stated before anyone has to ask.')}`,
+  });
+}
+
+/**
+ * How it works, what it cannot do, and who is paying for it.
+ *
+ * The project's stated credibility argument was "the commit log is public".
+ * That is an argument aimed at an audience that does not exist: nobody reads a
+ * stranger's commit log. Everything load-bearing about the method was only
+ * legible to someone willing to read three hundred commits, which is to say it
+ * was not legible.
+ */
+export function renderMethod(index: IndexBundle, meta: MetaRecord): string {
+  const { disclosure, watchlist, coverage } = index;
+
+  const crypto = coverage.find((row) => row.category === 'crypto-web3');
+  const cryptoShare =
+    crypto === undefined || watchlist.active === 0
+      ? null
+      : Math.round((crypto.repositories / watchlist.active) * 100);
+
+  return layout({
+    title: 'Method — Readout',
+    description:
+      'How these readings are taken, what they cannot support, and who pays for the instrument.',
+    current: '/method',
+    path: '/method',
+    index,
+    meta,
+    body: `<section class="hero">
+  <h1 class="hero-thesis">How these readings are taken.</h1>
+  <p class="hero-sub">
+    Everything below is checkable. The agent that collects this data is a public repository, every
+    figure on the site links to the source it came from, and the bundles behind every page are
+    published at <a href="/data/index.json">/data/index.json</a>. This page exists because none of
+    that is any use to a reader who would have to go looking for it.
+  </p>
+</section>
+
+${band(
+  'How a reading is taken',
+  `<div class="prose method-prose">
+  <p>
+    Every ${disclosure.cadenceHours} hours the agent reads ${watchlist.active} repositories and
+    writes down what it sees. Nothing is inferred from a single reading. A repository's fork count
+    is compared against that repository's own trailing average — never against another
+    repository's — and a comparison is only made once there are
+    ${disclosure.minBaselineDays} days of history to compare with. Before then the count is shown
+    raw and marked forming, which means not measured yet rather than measured at zero.
+  </p>
+  <p>
+    A threshold crossed once is <em>detected</em>. It becomes <em>confirmed</em> only if it is still
+    true on the next day's reading. That costs a day of speed and buys the thing that cannot be
+    bought back: fork counts are trivially inflatable with throwaway accounts, and a single
+    observation cannot tell a real surge from a manufactured one.
+  </p>
+  <p>
+    Sentences that interpret a reading are written by a language model, and are set in this typeface
+    with a dashed edge so they never look like the measurements around them. Before publication
+    every number in such a sentence is checked against the record it describes; if the model
+    produced a figure that is not there, the sentence is discarded and a templated one is used
+    instead. A sentence that is certainly true beats a fluent one that might not be.
+  </p>
+</div>`,
+)}
+
+${band(
+  'What this cannot tell you',
+  `<div class="prose method-prose">
+  <p>
+    <strong>It is not a survey.</strong> The watchlist is ${watchlist.active} repositories chosen by
+    hand. If something happens outside them, this instrument does not see it and has no way of
+    knowing it missed it. No figure here supports a claim about open source as a whole, or about any
+    field as a whole.
+  </p>
+  <p>
+    <strong>It does not measure quality, popularity or momentum.</strong> It measures fork counts,
+    release tags, issue text, dependency manifests and declared model ancestry. A repository
+    appearing here is an observation, never an endorsement, and never a judgement that the project
+    is good, bad, safe or unsafe.
+  </p>
+  <p>
+    <strong>A finding is a co-occurrence, never a cause.</strong> That forks rose and a release
+    followed is in the record. That one caused the other is not, and is never claimed.
+  </p>
+  <p>
+    <strong>It is not real-time.</strong> Readings are ${disclosure.cadenceHours} hours apart at
+    best, and a scheduled run can be delayed. The header always states when the last successful
+    reading actually happened.
+  </p>
+</div>`,
+)}
+
+${band(
+  'How you can tell if it is broken',
+  `<div class="prose method-prose">
+  <p>
+    A detector set above anything that happens in the real world produces the same empty page as a
+    quiet month, and looks equally healthy. So every observation is compared against its threshold
+    whether or not it crosses, and the distribution is recorded the same day and published on the
+    index under Our record.
+  </p>
+  <p>
+    If a detector reads <em>never approached</em>, nothing has come within half its threshold across
+    the whole window. That is not a statement about the repositories being watched. It is a
+    statement that this instrument is set too high, and it is published because the alternative is
+    asking readers to assume otherwise.
+  </p>
+  <p>
+    The same section states how many confirmed fork findings were followed by a release from the
+    same repository within ${index.scorecard.windowDays} days. That measures co-occurrence rather
+    than accuracy, the sample is small, and it is published whatever it says.
+  </p>
+</div>`,
+)}
+
+${band(
+  'Who pays, and what that buys',
+  `<div class="prose method-prose">
+  <p>
+    This is funded by a token on Robinhood Chain. Trading it pays a fee, most of which goes to
+    whoever launched the pool. Holding it grants nothing here, there is nothing to connect a wallet
+    to, and no reading is behind it. It has not launched.
+  </p>
+  <p>
+    <strong>The conflict worth stating.</strong>${
+      cryptoShare === null
+        ? ' Part of the watchlist is crypto and blockchain infrastructure, which is the same field the funding mechanism lives in.'
+        : ` ${crypto?.repositories} of the ${watchlist.active} repositories watched — ${cryptoShare}% — are crypto and blockchain infrastructure, the same field this project's funding lives in.`
+    }
+    That share was chosen by hand and nothing measured it. It is disclosed here because a reader
+    should not have to discover it themselves, and because it is exactly the kind of thing that
+    costs a project its credibility when someone else finds it first.
+  </p>
+  <p>
+    Corrections work the same way. Findings are append-only: a wrong one is superseded by a
+    correction that appears in the same place with the same prominence, never deleted.
+    ${
+      index.lenses.demand.count === 0
+        ? 'Every demand cluster published on the first live run was wrong and all of them were retracted that way.'
+        : ''
+    }
+  </p>
+</div>`,
+)}
+
+${band(
+  'Reading it without visiting',
+  `<div class="prose method-prose">
+  <p>
+    Most days nothing crosses a threshold, which makes this a poor page to check daily and a
+    reasonable one to subscribe to. The feed at <a href="/feed.xml">/feed.xml</a> carries confirmed
+    findings only, and carries them at the same moment they appear here.
+  </p>
+  <p>
+    If you would rather work with the data directly, every bundle behind every page is a static
+    file: <a href="/data/index.json">/data/index.json</a> for the current state,
+    <a href="/data/ask-context.json">/data/ask-context.json</a> for the record the answer box is
+    restricted to. No key, no rate limit, no account.
+  </p>
+</div>`,
+)}`,
   });
 }
 

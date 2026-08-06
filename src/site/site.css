@@ -395,6 +395,18 @@ a:hover {
   color: var(--ink-900);
 }
 
+/* The product is rare events and the shape is a page you have to visit, which
+   punishes the reader for the site being honest about a quiet day. Until that
+   is properly resolved, the feed is at least named where it can be seen. */
+.hero-follow {
+  margin: 22px 0 0;
+  font-family: var(--face-prose);
+  font-size: var(--t-small);
+  line-height: 1.6;
+  color: var(--ink-500);
+  max-width: 60ch;
+}
+
 /* ------------------------------------------------------------------- bands
 
    The page was a stack of sections separated by hairlines, and nothing told a
@@ -623,6 +635,31 @@ a.lens-cell:hover {
   font-size: var(--t-micro);
   color: var(--ink-700);
   align-self: end;
+}
+
+/* Prose on the method page: the one place this product argues in paragraphs
+   rather than reporting in rows, because "what this cannot tell you" is not a
+   measurement and must not be dressed as one. */
+.method-prose {
+  display: grid;
+  gap: 14px;
+  max-width: 64ch;
+}
+
+.method-prose p {
+  margin: 0;
+  font-size: var(--t-base);
+  color: var(--ink-700);
+}
+
+.method-prose strong {
+  color: var(--ink-900);
+  font-weight: 400;
+}
+
+.method-prose em {
+  font-style: normal;
+  color: var(--ink-900);
 }
 
 /* ------------------------------------------------------------------- token */

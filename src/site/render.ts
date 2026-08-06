@@ -521,6 +521,7 @@ function watchlistReadout(marks: readonly StripMark[]): string {
     .map(
       (mark) => `<tr>
       <td><a href="/repo/${esc(mark.id)}">${esc(mark.name)}</a></td>
+      <td class="dim">${esc(mark.category)}</td>
       <td class="dim">${esc(mark.language ?? '—')}</td>
       <td class="n num">${mark.forks.toLocaleString('en')}</td>
       <td class="n num">${mark.stars.toLocaleString('en')}</td>
@@ -533,7 +534,7 @@ function watchlistReadout(marks: readonly StripMark[]): string {
   return `<div class="wrap"><table class="readout">
   <caption class="label">Watchlist — ${marks.length} repositories, busiest ${Math.min(SHOWN, marks.length)} shown</caption>
   <thead><tr>
-    <th scope="col">Repository</th><th scope="col">Language</th>
+    <th scope="col">Repository</th><th scope="col">Category</th><th scope="col">Language</th>
     <th scope="col" class="n">Forks</th><th scope="col" class="n">Stars</th>
     <th scope="col" class="n">Added</th><th scope="col">Reading</th>
   </tr></thead>
@@ -621,6 +622,63 @@ function lensesHtml(index: IndexBundle): string {
 }
 
 /**
+ * What the watchlist is pointed at.
+ *
+ * "388 repositories" is a number nobody can picture. These five rows are the
+ * answer to the question it leaves open — 388 of what — and every column is a
+ * measurement with its window and its sample size stated, because a total with
+ * no sample behind it is not a reading.
+ */
+function coverageHtml(index: IndexBundle): string {
+  if (index.coverage.length === 0) return '';
+
+  const rows = index.coverage
+    .map(
+      (row) => `<tr>
+      <td>${esc(row.category)}</td>
+      <td class="n num">${row.repositories}</td>
+      <td class="n num">${row.measured === 0 ? '<span class="dim">—</span>' : row.measured}</td>
+      <td class="n num">${row.forksAdded === null ? '<span class="dim">—</span>' : row.forksAdded.toLocaleString('en')}</td>
+      <td class="n num">${row.findings}</td>
+      <td>${row.busiest === null ? '<span class="dim">—</span>' : repoLink(row.busiest)}</td>
+    </tr>`,
+    )
+    .join('');
+
+  const totals = index.coverage.reduce(
+    (sum, row) => ({
+      repositories: sum.repositories + row.repositories,
+      findings: sum.findings + row.findings,
+    }),
+    { repositories: 0, findings: 0 },
+  );
+
+  return `<div class="wrap"><table class="readout">
+  <caption class="label">Coverage — ${index.coverage.length} categories, ${totals.repositories} repositories</caption>
+  <thead><tr>
+    <th scope="col">Category</th>
+    <th scope="col" class="n">Watched</th>
+    <th scope="col" class="n">Measured</th>
+    <th scope="col" class="n">Forks added</th>
+    <th scope="col" class="n">Findings</th>
+    <th scope="col">Busiest</th>
+  </tr></thead>
+  <tbody>${rows}</tbody>
+  <tfoot><tr>
+    <td class="label">All</td>
+    <td class="n num">${totals.repositories}</td>
+    <td class="n num" colspan="2"><span class="dim">—</span></td>
+    <td class="n num">${totals.findings}</td>
+    <td><span class="dim">—</span></td>
+  </tr></tfoot>
+</table></div>
+<p class="basis label">Watched is the count being read now. Measured is how many of those have an
+observation window long enough to compare, and Forks added is summed over those only — a category
+with none shows no figure rather than a zero. Findings counts every reading ever published for a
+repository in that category, including repositories since retired.</p>`;
+}
+
+/**
  * What the token is, stated before anyone has to ask.
  *
  * The rules here are strict and worth stating plainly: nothing about price,
@@ -691,11 +749,12 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     body: `${heroHtml(index, meta)}
 ${band('01', 'Ask', askHtml(), 'Answered from the readings below and from nothing else. Any figure not in the record is discarded rather than smoothed over.')}
 ${band('02', 'Readings', lensesHtml(index), 'What each of the five readings answers, and how many findings each has on record.')}
-${band('03', 'Fork velocity', stripSvg(index.strip, releasedToday), `One mark per repository, each measured against its own trailing baseline rather than against the others.`)}
-${band('04', 'Today', `${table}${formingNotice}`, 'Everything detected since midnight UTC. Empty is the ordinary state and is reported as such.')}
-${band('05', 'Watchlist', watchlistReadout(index.strip), 'Every repository being read, ordered by what it gained across the current window.')}
-${band('06', 'Our record', scorecardHtml(index), 'How often this instrument has been right, published whatever it says.')}
-${band('07', 'The token', tokenHtml(), 'What funds this, stated before anyone has to ask.')}`,
+${band('03', 'Coverage', coverageHtml(index), 'What the watchlist is pointed at. A category is the reason a repository is watched, chosen by hand — it is not a fact about the repository and not a survey of that field.')}
+${band('04', 'Fork velocity', stripSvg(index.strip, releasedToday), `One mark per repository, each measured against its own trailing baseline rather than against the others.`)}
+${band('05', 'Today', `${table}${formingNotice}`, 'Everything detected since midnight UTC. Empty is the ordinary state and is reported as such.')}
+${band('06', 'Watchlist', watchlistReadout(index.strip), 'Every repository being read, ordered by what it gained across the current window.')}
+${band('07', 'Our record', scorecardHtml(index), 'How often this instrument has been right, published whatever it says.')}
+${band('08', 'The token', tokenHtml(), 'What funds this, stated before anyone has to ask.')}`,
   });
 }
 

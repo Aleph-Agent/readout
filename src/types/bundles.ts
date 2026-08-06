@@ -69,12 +69,36 @@ export interface StripMark {
   language: string | null;
   /** The name GitHub uses now, which is not always the id it is watched under. */
   name: string;
+  /** Why it is watched, chosen by hand. Not a fact about the repository. */
+  category: string;
 }
 
 export interface WatchlistSummary {
   total: number;
   active: number;
   byCategory: Record<string, number>;
+}
+
+/**
+ * One category's share of the instrument's attention.
+ *
+ * The category is a claim about why a repository is being watched, not a fact
+ * about the repository — see `types/watchlist.ts`. Anything rendered from this
+ * has to say so, because "79 database repositories" reads as a survey of
+ * databases unless it is stated otherwise, and it is not one.
+ */
+export interface CoverageRow {
+  category: string;
+  /** Active watchlist entries in this category. */
+  repositories: number;
+  /** Of those, how many have an observation window long enough to measure. */
+  measured: number;
+  /** Forks gained across the window, summed over `measured`. Null when zero. */
+  forksAdded: number | null;
+  /** Findings on record for repositories in this category, all time. */
+  findings: number;
+  /** The largest single contributor to `forksAdded`, or null when unmeasured. */
+  busiest: string | null;
 }
 
 /**
@@ -107,6 +131,8 @@ export interface IndexBundle {
   /** Everything detected today, across every lens, newest first. */
   today: EventRecord[];
   watchlist: WatchlistSummary;
+  /** What the watchlist is pointed at, one row per category. */
+  coverage: CoverageRow[];
   lenses: Record<LensName, { status: CollectorStatus; count: number }>;
   disclosure: Disclosure;
 }

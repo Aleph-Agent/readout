@@ -20,6 +20,7 @@ function mark(over: Partial<StripMark> = {}): StripMark {
     forks: 100,
     stars: 1000,
     language: 'TypeScript',
+    category: 'devtool',
     ...over,
   };
 }
@@ -30,6 +31,9 @@ function index(over: Partial<IndexBundle> = {}): IndexBundle {
     scorecard: { resolved: 0, followed: 0, rate: null, windowDays: 7, pending: 0 },
     today: [],
     watchlist: { total: 400, active: 400, byCategory: { devtool: 400 } },
+    coverage: [
+      { category: 'devtool', repositories: 400, measured: 0, forksAdded: null, findings: 0, busiest: null },
+    ],
     lenses: {
       ships: { status: 'active', count: 0 },
       forks: { status: 'active', count: 0 },
@@ -308,21 +312,7 @@ describe('telling a first-time visitor what this is', () => {
     // and the next began. Every section carries its number and its name in the
     // same rail, and a missing one is a section a reader cannot place.
     const html = renderIndex(
-      index({
-        strip: [
-          {
-            id: 'a/one',
-            delta: 60,
-            multiplier: 24,
-            capped: false,
-            state: 'confirmed',
-            forks: 900,
-            stars: 5000,
-            language: 'Go',
-            name: 'a/one',
-          },
-        ],
-      }),
+      index({ strip: [mark({ delta: 60, multiplier: 24, state: 'confirmed' })] }),
       meta(),
     );
 

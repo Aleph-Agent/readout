@@ -15,6 +15,7 @@ function mark(over: Partial<StripMark> = {}): StripMark {
     forks: 10,
     stars: 100,
     language: 'TypeScript',
+    category: 'devtool',
     ...over,
   };
 }

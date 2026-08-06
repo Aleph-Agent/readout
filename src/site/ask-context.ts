@@ -61,8 +61,17 @@ export interface AskFinding {
   metrics?: EventMetrics;
 }
 
+export interface AskCoverage {
+  category: string;
+  repositories: number;
+  measured: number;
+  forksAdded: number | null;
+  findings: number;
+}
+
 export interface AskRepo {
   repo: string;
+  category: string;
   language: string | null;
   forks: number;
   stars: number;
@@ -78,6 +87,8 @@ export interface AskContext {
     cadenceHours: number;
     minBaselineDays: number;
     signals: Record<string, { status: string; findings: number; answers: string }>;
+    /** What the watchlist is pointed at. Answers "do you watch X" concretely. */
+    coverage: AskCoverage[];
     /** Stated so the model can repeat the limits rather than paper over them. */
     limits: string[];
   };
@@ -110,6 +121,7 @@ const ANSWERS: Record<string, string> = {
 function limitsOf(index: IndexBundle): string[] {
   return [
     `The watchlist is curated by hand and partial. It is ${index.watchlist.active} repositories chosen deliberately, not a survey of open source, so it cannot support any claim about open source as a whole.`,
+    'A category is the reason a repository was added to the watchlist, chosen by hand. It is not a fact about the repository and the set of repositories in a category is not a survey of that field.',
     `Fork activity is compared against each repository's own trailing baseline, never against other repositories, except in the specific case of a fork-outlier finding which names its comparison group and that group's size.`,
     `A repository needs ${index.disclosure.minBaselineDays} days of history before any multiplier is computed. Until then its counts are raw and marked forming, and "forming" means not measured yet rather than measured at zero.`,
     'A finding is a co-occurrence in the record. It is never evidence of cause, and popularity, quality and momentum are not measured here at all.',
@@ -154,6 +166,7 @@ export function buildAskContext(
     .map(
       (mark): AskRepo => ({
         repo: mark.name,
+        category: mark.category,
         language: mark.language,
         forks: mark.forks,
         stars: mark.stars,
@@ -171,6 +184,13 @@ export function buildAskContext(
       cadenceHours: index.disclosure.cadenceHours,
       minBaselineDays: index.disclosure.minBaselineDays,
       signals,
+      coverage: index.coverage.map((row) => ({
+        category: row.category,
+        repositories: row.repositories,
+        measured: row.measured,
+        forksAdded: row.forksAdded,
+        findings: row.findings,
+      })),
       limits: limitsOf(index),
     },
     record: {

@@ -15,6 +15,7 @@ import {
   writeMeta,
 } from './lib/ledger.ts';
 import { lastDetectionByRepo } from './lib/confidence.ts';
+import { buildCoverage } from './lib/coverage.ts';
 import { templatedSentence } from './lib/validate.ts';
 import { scoreFindings } from './lib/scorecard.ts';
 import { assertSafeRepoId, DIST_DATA_DIR, DIST_DIR, ROOT, utcDate } from './lib/paths.ts';
@@ -274,6 +275,7 @@ function buildStrip(
   now: Date,
   lastDetection: ReadonlyMap<string, string>,
   history: ReadonlyMap<string, DailyForkCount[]>,
+  categoryOf: ReadonlyMap<string, string>,
 ): StripMark[] {
   const today = utcDate(now);
   const state = readLiveState();
@@ -309,6 +311,10 @@ function buildStrip(
       stars: row.stars,
       language: row.language,
       name: row.fullName ?? row.id,
+      // Every state row is a watchlist row, so the lookup cannot miss. The
+      // fallback exists so a schema drift renders as an unclassified repository
+      // rather than throwing the whole build.
+      category: categoryOf.get(row.id) ?? 'unclassified',
     });
   }
 
@@ -450,9 +456,11 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   };
 
   const history = readHistorySeries(now, DEFAULT_THRESHOLDS.baselineWindowDays);
+  const categoryOf = new Map(watchlist.map((entry) => [entry.id, entry.category as string]));
+  const strip = buildStrip(now, lastDetectionByRepo(all), history, categoryOf);
 
   const index: IndexBundle = {
-    strip: buildStrip(now, lastDetectionByRepo(all), history),
+    strip,
     scorecard: scoreFindings(all, now),
     today: addressable.filter((event) => event.detectedAt.slice(0, 10) === today),
     watchlist: {
@@ -460,6 +468,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
       active: readActiveWatchlist().length,
       byCategory,
     },
+    coverage: buildCoverage(watchlist, strip, addressable),
     lenses: lensSummary,
     disclosure,
   };

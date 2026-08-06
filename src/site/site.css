@@ -510,6 +510,60 @@ a:hover {
 /* The product is rare events and the shape is a page you have to visit, which
    punishes the reader for the site being honest about a quiet day. Until that
    is properly resolved, the feed is at least named where it can be seen. */
+/* Three doors, directly under the opening figure.
+
+   The site had three tools and an MCP endpoint and mentioned none of them
+   above the fold — a visitor met six tables of readings and left. A tool
+   nobody can find is a tool nobody has. */
+.hero-doors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1px;
+  background: var(--ink-100);
+  border: 1px solid var(--ink-100);
+  margin-top: 26px;
+}
+
+.door {
+  display: grid;
+  gap: 5px;
+  align-content: start;
+  background: var(--ink-025);
+  padding: 16px 16px 18px;
+  border: 0;
+}
+
+.door:hover {
+  background: var(--ink-050);
+}
+
+.door-name {
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-small);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mag-5);
+}
+
+.door-note {
+  font-family: var(--face-prose);
+  font-size: var(--t-small);
+  line-height: 1.5;
+  color: var(--ink-500);
+}
+
+.method-code {
+  margin: 0;
+  overflow-x: auto;
+  background: var(--ink-025);
+  border-left: 2px solid var(--mag-5);
+  padding: 12px 14px;
+  font-family: var(--face-data);
+  font-size: var(--t-small);
+  color: var(--ink-900);
+}
+
 .hero-follow {
   margin: 22px 0 0;
   font-family: var(--face-prose);

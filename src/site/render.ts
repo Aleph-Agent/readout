@@ -309,11 +309,8 @@ function calibrationHtml(index: IndexBundle): string {
   </tr></thead>
   <tbody>${rows}</tbody>
 </table></div>
-<p class="basis label">Every observation is compared against its threshold whether or not it crosses,
-and the result is written down the same day. Without this, a detector set above anything that
-happens in the real world would look exactly like a quiet month, for as long as it took anyone to
-notice. Never approached means nothing has exceeded half the bar across the whole window — that is
-a statement about this instrument, not about the repositories.</p>`;
+<p class="basis label">Never approached means nothing reached half the bar — a fault in this
+instrument, not in the repositories. <a href="/method">How</a></p>`;
 }
 
 function colophonHtml(index: IndexBundle, meta: MetaRecord): string {
@@ -728,10 +725,8 @@ function heroHtml(index: IndexBundle, meta: MetaRecord): string {
   return `<section class="hero">
   <h1 class="hero-thesis">An instrument pointed at <em>${watchlist.active} open-source repositories</em>.</h1>
   <p class="hero-sub">
-    Every ${disclosure.cadenceHours} hours it reads what those projects are doing and writes the
-    numbers down here, permanently. It compares each project against its own history rather than
-    against anything else, links every figure to the place you can check it, and says plainly when
-    it has nothing to report — which is most days, for most projects.
+    Read every ${disclosure.cadenceHours} hours. Compared against its own history, never against
+    anything else. Every figure links to its source.
   </p>
   ${
     index.adoption.weekly === 0
@@ -753,11 +748,20 @@ function heroHtml(index: IndexBundle, meta: MetaRecord): string {
       <span class="label">Last reading, UTC</span>
     </div>
   </div>
-  <p class="hero-follow">
-    Most days nothing crosses a threshold, so this is a poor page to check daily and a reasonable
-    one to subscribe to. <a href="/feed.xml">The feed</a> carries confirmed findings only, at the
-    moment they appear here. <a href="/method">How these readings are taken.</a>
-  </p>
+  <div class="hero-doors">
+    <a class="door" href="/stack">
+      <span class="door-name">Check your stack</span>
+      <span class="door-note">Paste a manifest. Nothing leaves the browser.</span>
+    </a>
+    <a class="door" href="/compare">
+      <span class="door-name">Compare two projects</span>
+      <span class="door-note">Every axis at once.</span>
+    </a>
+    <a class="door" href="/method#agents">
+      <span class="door-name">Wire it to your agent</span>
+      <span class="door-note">MCP endpoint. Read-only, no key.</span>
+    </a>
+  </div>
 </section>`;
 }
 
@@ -832,10 +836,8 @@ function coverageHtml(index: IndexBundle): string {
     <td><span class="dim">—</span></td>
   </tr></tfoot>
 </table></div>
-<p class="basis label">Watched is the count being read now. Measured is how many of those have an
-observation window long enough to compare, and Forks added is summed over those only — a category
-with none shows no figure rather than a zero. Findings counts every reading ever published for a
-repository in that category, including repositories since retired.</p>`;
+<p class="basis label">Forks added covers measured repositories only. No figure means not
+yet measured, never zero.</p>`;
 }
 
 const REGISTRY_LABEL: Record<string, string> = {
@@ -903,13 +905,8 @@ function adoptionHtml(index: IndexBundle): string {
   </tr></thead>
   <tbody>${rows}</tbody>
 </table></div>
-<p class="basis label">Bars are drawn against ${peak.toLocaleString('en')}, the largest reading here, and
-the shade steps with the same figure the length does — neither depends on telling colours apart.
-Counts come from each registry's own public figures and are never added across
-registries with different windows: the combined weekly total above covers npm and PyPI only, which
-both report a rolling week. Homebrew reports a month and crates.io ninety days, so they are listed
-here with their own window and folded into no total. A package that could not be read keeps its last
-known count and is excluded from the sample.</p>`;
+<p class="basis label">Bars against ${peak.toLocaleString('en')}. Windows never added together.
+<a href="/method">How</a></p>`;
 }
 
 /**
@@ -955,12 +952,8 @@ function healthHtml(index: IndexBundle): string {
   </tr></thead>
   <tbody>${rows}</tbody>
 </table></div>
-<p class="basis label">Scores are the OpenSSF Scorecard as published by Google's Open Source Insights,
-not a judgement made here — they measure declared practices such as code review, branch protection
-and workflow permissions, and a low score is not a statement that a project is unsafe. Advisories
-are OSV's count against the packages a repository publishes, all time, so an old and well-patched
-project can carry more of them than a young one. ${health.unscored} watched repositories have never
-been scanned and appear nowhere above; that is not a score of zero.</p>`;
+<p class="basis label">Scorecards OpenSSF, advisories OSV — neither judged here.
+${health.unscored} never scanned, and absent rather than zero. <a href="/method">How</a></p>`;
 }
 
 /**
@@ -1037,22 +1030,22 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     index,
     meta,
     body: `${heroHtml(index, meta)}
-${band('Ask', askHtml(), 'Answered from the readings below and from nothing else. Any figure not in the record is discarded rather than smoothed over.')}
-${band('Installs', adoptionHtml(index), 'What is actually being downloaded. A star can be bought and a fork can be manufactured; a hundred million installs a week cannot.')}
-${band('Health', healthHtml(index), "What other people's analysis says. The scorecard is OpenSSF's and the advisories are OSV's — neither is a judgement made here, and both are dated and cited.")}
-${band('Readings', lensesHtml(index), 'What each of the five readings answers, and how many findings each has on record.')}
-${band('Today', `${table}${formingNotice}`, 'Everything detected since midnight UTC. Empty is the ordinary state and is reported as such.')}
+${band('Ask', askHtml(), 'Answered only from the readings below.')}
+${band('Installs', adoptionHtml(index), 'Stars can be bought. Installs cannot.')}
+${band('Health', healthHtml(index), 'OpenSSF and OSV. Not judged here.')}
+${band('Readings', lensesHtml(index), 'What each signal answers.')}
+${band('Today', `${table}${formingNotice}`, 'Since midnight UTC. Empty is the ordinary state.')}
 ${band(
   'Watchlist',
   `${stripSvg(index.strip, releasedToday)}${coverageHtml(index)}${watchlistReadout(index.strip)}`,
-  'What is being read, and what it is being compared against. A category is the reason a repository was added, chosen by hand — it is not a fact about the repository and not a survey of that field.',
+  'Curated and partial. A category is why a repository was added, not a fact about it.',
 )}
 ${band(
   'Our record',
   `${scorecardHtml(index)}${calibrationHtml(index)}`,
-  'How often this instrument has been right, and whether its thresholds are within reach of anything at all. Both published whatever they say.',
+  'How often this has been right, and whether its bars are reachable.',
 )}
-${band('The token', tokenHtml(), 'What funds this, stated before anyone has to ask.')}`,
+${band('The token', tokenHtml(), 'What funds this.')}`,
   });
 }
 
@@ -1195,6 +1188,23 @@ ${band(
         ? 'Every demand cluster published on the first live run was wrong and all of them were retracted that way.'
         : ''
     }
+  </p>
+</div>`,
+)}
+
+${band(
+  'For coding agents',
+  `<div class="prose method-prose" id="agents">
+  <p>
+    An MCP server over the same readings, so an agent answers "is this dependency healthy" from a
+    measurement taken today rather than from training data a year old.
+  </p>
+  <pre class="method-code">{ "mcpServers": { "readout": { "url": "${SITE_ORIGIN}/api/mcp" } } }</pre>
+  <p>
+    Four read-only tools: <code>check_package</code>, <code>check_stack</code>,
+    <code>compare_repositories</code>, <code>search_repositories</code>. No key, no account, no
+    quota. Every result carries the limits above with it, because a scorecard pasted into a code
+    review without them is a claim this project does not make.
   </p>
 </div>`,
 )}

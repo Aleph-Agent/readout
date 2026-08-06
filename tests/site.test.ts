@@ -314,7 +314,7 @@ describe('telling a first-time visitor what this is', () => {
     const html = renderIndex(index(), meta());
     expect(html).toContain('An instrument pointed at');
     expect(html).toContain('400 open-source repositories');
-    expect(html).toContain('compares each project against its own history');
+    expect(html).toContain('Compared against its own history');
   });
 
   it('says what each of the five readings answers', () => {
@@ -322,6 +322,28 @@ describe('telling a first-time visitor what this is', () => {
     expect(html).toContain('five readings');
     expect(html).toContain('What released a new version?');
     expect(html).toContain('Which models say they were built on which?');
+  });
+
+  it('puts the tools where a first-time visitor lands', () => {
+    // The site had three tools and an MCP endpoint and mentioned none of them
+    // above the fold. A tool nobody can find is a tool nobody has.
+    const html = renderIndex(index(), meta());
+
+    expect(html).toContain('Check your stack');
+    expect(html).toContain('Compare two projects');
+    expect(html).toContain('Wire it to your agent');
+  });
+
+  it('keeps the index to readings rather than explanations', () => {
+    // 613 words of explanatory prose across 15 paragraphs, on a page whose job
+    // is showing numbers. The caveats belong on /method, linked, not repeated
+    // under every table.
+    const html = renderIndex(index(), meta());
+    const prose = [...html.matchAll(/<p class="(?:band-note|basis[^"]*|hero-sub)"[^>]*>([\s\S]*?)<\/p>/g)]
+      .map((match) => (match[1] as string).replace(/<[^>]+>/g, ''))
+      .join(' ');
+
+    expect(prose.split(/\s+/).filter(Boolean).length).toBeLessThan(220);
   });
 
   it('names every band in the same rail, so the page has an order', () => {
@@ -378,7 +400,7 @@ describe('magnitude, drawn', () => {
 
     expect(html).toContain('--share:100.0%');
     expect(html).toContain('--share:12.5%');
-    expect(html).toContain('Bars are drawn against 800');
+    expect(html).toContain('Bars against 800');
   });
 
   it('steps the shade with the same figure the length carries', () => {

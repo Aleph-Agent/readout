@@ -160,10 +160,41 @@ export interface AdoptionSummary {
   top: AdoptionReading[];
 }
 
+/** One project as another body assessed it. */
+export interface HealthReading {
+  repo: string;
+  scorecard: number | null;
+  scoredAt: string | null;
+  advisories: number | null;
+}
+
+/**
+ * What other people's analysis says about the watchlist.
+ *
+ * Not this project's judgement. The score is the OpenSSF Scorecard computed by
+ * Google's Open Source Insights and the advisory counts are OSV's; both are
+ * cited, because a claim about somebody else's security posture is only
+ * defensible when the reader can see who made it.
+ */
+export interface HealthSummary {
+  /** Repositories with a scorecard. Unscanned is not scored zero. */
+  scored: number;
+  /** Repositories looked up but never scanned by OpenSSF. */
+  unscored: number;
+  /** Median scorecard across `scored`, or null when nothing is scored. */
+  median: number | null;
+  /** Advisories filed against everything the watchlist publishes. */
+  advisories: number;
+  /** Lowest-scoring projects first, which is the only ordering that is useful. */
+  weakest: HealthReading[];
+}
+
 export interface IndexBundle {
   strip: StripMark[];
   /** What is actually installed. See `collectors/adoption.ts`. */
   adoption: AdoptionSummary;
+  /** What other people's analysis says. See `collectors/health.ts`. */
+  health: HealthSummary;
   /** How the project's own confirmed findings have held up so far. */
   scorecard: ScorecardSummary;
   /** Everything detected today, across every lens, newest first. */

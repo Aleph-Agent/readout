@@ -22,7 +22,9 @@ import {
   WINDOW_PATH,
   CALIBRATION_PATH,
   ADOPTION_PATH,
+  HEALTH_PATH,
 } from './paths.ts';
+import { HEALTH_KEYS, type HealthRow } from '../types/health.ts';
 import { CALIBRATION_KEYS, type CalibrationRow } from './calibration.ts';
 import { ADOPTION_KEYS, type AdoptionRow } from '../types/adoption.ts';
 import { SUMMARY_KEYS, type SummaryRecord } from '../types/summaries.ts';
@@ -135,6 +137,19 @@ export function readAdoption(): AdoptionRow[] {
 export function writeAdoption(rows: readonly AdoptionRow[]): void {
   writeJsonl(ADOPTION_PATH, rows, ADOPTION_KEYS, {
     sortBy: (row) => [repoSortKey(row), row.registry, row.name].join(' '),
+    rejectDuplicates: true,
+  });
+}
+
+// --------------------------------------------------------------------- health
+
+export function readHealth(): HealthRow[] {
+  return readJsonl(HEALTH_PATH).map((row) => conform<HealthRow>(row, HEALTH_KEYS));
+}
+
+export function writeHealth(rows: readonly HealthRow[]): void {
+  writeJsonl(HEALTH_PATH, rows, HEALTH_KEYS, {
+    sortBy: repoSortKey,
     rejectDuplicates: true,
   });
 }

@@ -36,6 +36,14 @@ export const MANIFESTS_PATH = join(LIVE_DIR, 'manifests.jsonl');
  * answer a question that never looks back further than that.
  */
 export const ADOPTION_PATH = join(LIVE_DIR, 'adoption.jsonl');
+
+/**
+ * Other people's assessment of a watched project: the OpenSSF Scorecard and
+ * the advisories filed against what it publishes. Overwritten daily — these
+ * are current states, not events, and the history that matters is the score
+ * moving rather than every day it did not.
+ */
+export const HEALTH_PATH = join(LIVE_DIR, 'health.jsonl');
 export const META_PATH = join(DATA_DIR, 'meta.json');
 
 /**

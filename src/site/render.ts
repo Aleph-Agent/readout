@@ -892,6 +892,57 @@ known count and is excluded from the sample.</p>`;
 }
 
 /**
+ * What other people's analysis says about the watchlist.
+ *
+ * The first reading here that is not GitHub's numbers or a registry's counts.
+ * It is also the one that has to be handled most carefully: a low score is a
+ * claim about somebody else's engineering practices, so it is cited to the
+ * body that made it, dated, and never computed here.
+ *
+ * Only scanned projects appear. A repository OpenSSF has never looked at has no
+ * score, and sorting it to the bottom of a list ordered by score would publish
+ * "worst practices" about a project nobody assessed.
+ */
+function healthHtml(index: IndexBundle): string {
+  const { health } = index;
+  if (health.scored === 0) return '';
+
+  const rows = health.weakest
+    .map(
+      (reading) => `<tr>
+      <td>${repoLink(reading.repo)}</td>
+      <td class="n"><span class="score num">${(reading.scorecard as number).toFixed(1)}</span></td>
+      <td class="n num">${reading.advisories === null ? '<span class="dim">—</span>' : reading.advisories}</td>
+      <td class="dim">${reading.scoredAt === null ? '<span class="dim">—</span>' : esc(reading.scoredAt)}</td>
+    </tr>`,
+    )
+    .join('');
+
+  return `<div class="hero-figures health-figures">
+  <div class="figure"><span class="figure-value num">${health.median === null ? '—' : health.median.toFixed(1)}</span><span class="label">Median scorecard, of 10</span></div>
+  <div class="figure"><span class="figure-value num">${health.scored}</span><span class="label">Repositories scanned</span></div>
+  <div class="figure"><span class="figure-value num">${health.unscored}</span><span class="label">Never scanned</span></div>
+  <div class="figure"><span class="figure-value num">${health.advisories.toLocaleString('en')}</span><span class="label">Advisories on record</span></div>
+</div>
+<div class="wrap"><table class="readout">
+  <caption class="label">Lowest scores among the ${health.scored} scanned</caption>
+  <thead><tr>
+    <th scope="col">Repository</th>
+    <th scope="col" class="n">Scorecard</th>
+    <th scope="col" class="n">Advisories</th>
+    <th scope="col">Scored</th>
+  </tr></thead>
+  <tbody>${rows}</tbody>
+</table></div>
+<p class="basis label">Scores are the OpenSSF Scorecard as published by Google's Open Source Insights,
+not a judgement made here — they measure declared practices such as code review, branch protection
+and workflow permissions, and a low score is not a statement that a project is unsafe. Advisories
+are OSV's count against the packages a repository publishes, all time, so an old and well-patched
+project can carry more of them than a young one. ${health.unscored} watched repositories have never
+been scanned and appear nowhere above; that is not a score of zero.</p>`;
+}
+
+/**
  * What the token is, stated before anyone has to ask.
  *
  * The rules here are strict and worth stating plainly: nothing about price,
@@ -962,6 +1013,7 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     body: `${heroHtml(index, meta)}
 ${band('Ask', askHtml(), 'Answered from the readings below and from nothing else. Any figure not in the record is discarded rather than smoothed over.')}
 ${band('Installs', adoptionHtml(index), 'What is actually being downloaded. A star can be bought and a fork can be manufactured; a hundred million installs a week cannot.')}
+${band('Health', healthHtml(index), "What other people's analysis says. The scorecard is OpenSSF's and the advisories are OSV's — neither is a judgement made here, and both are dated and cited.")}
 ${band('Readings', lensesHtml(index), 'What each of the five readings answers, and how many findings each has on record.')}
 ${band('Today', `${table}${formingNotice}`, 'Everything detected since midnight UTC. Empty is the ordinary state and is reported as such.')}
 ${band(

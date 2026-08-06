@@ -1,7 +1,8 @@
-import { existsSync, readdirSync, rmSync } from 'node:fs';
+﻿import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { collectAdoption } from '../collectors/adoption.ts';
+import { collectHealth } from '../collectors/health.ts';
 import { collectIssues } from '../collectors/issues.ts';
 import { collectManifests } from '../collectors/manifests.ts';
 import { lastDetectionByRepo } from '../lib/confidence.ts';
@@ -19,6 +20,7 @@ import {
   readWatchlist,
   readWindow,
   writeAdoption,
+  writeHealth,
   writeManifests,
   writeMeta,
   writeSnapshot,
@@ -47,7 +49,7 @@ import type { MetaRecord } from '../types/meta.ts';
  * The daily job: write the canonical snapshot, then classify spikes against it.
  *
  * History is written once a day rather than once a pulse. Six snapshots daily
- * would multiply repository growth sixfold and buy nothing — a baseline only
+ * would multiply repository growth sixfold and buy nothing â€” a baseline only
  * needs daily resolution.
  */
 
@@ -164,7 +166,7 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
   const events: EventRecord[] = [];
 
   // Every multiplier this run computes, crossing or not. Kept so the project
-  // can tell "nothing happened" from "our bar is above the world" — see
+  // can tell "nothing happened" from "our bar is above the world" â€” see
   // `lib/calibration.ts`. Without it a quiet month is indistinguishable from a
   // broken detector, and the evidence to tell them apart is gone by then.
   const spikeMultipliers: number[] = [];
@@ -291,7 +293,7 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
     // unauthenticated, so none of this touches the GitHub budget. Roughly a
     // hundred requests for the whole watchlist, most of it two batch endpoints.
     //
-    // Wrapped like every other collector — the registries are other people's
+    // Wrapped like every other collector â€” the registries are other people's
     // services and one of them being down must leave the rest of the run
     // intact.
     try {
@@ -303,6 +305,17 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       }
     } catch (error) {
       errors.push(`adoption: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    // Health. deps.dev and OSV, both free and unauthenticated, and neither
+    // touching the GitHub budget. Paced, because deps.dev has no batch form and
+    // 388 requests fired at once at somebody's free service is rude.
+    try {
+      const health = await collectHealth(readWatchlist(), { now: nowIso });
+      writeHealth(health.rows);
+      errors.push(...health.errors);
+    } catch (error) {
+      errors.push(`health: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     requestsConsumed = client.stats().consumed;
@@ -413,7 +426,7 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
   //
   //    Daily resolution matters for a trailing 30-day baseline and for nothing
   //    else; past that the files are dead weight that every clone of this
-  //    repository has to carry forever. Events are never pruned — they are the
+  //    repository has to carry forever. Events are never pruned â€” they are the
   //    claims, and the audit trail only means something if it is complete.
   const pruned = pruneHistory(now, options.retainDailyDays ?? RETAIN_DAILY_DAYS);
   if (pruned > 0) console.log(`pruned ${pruned} daily snapshots older than 90 days`);

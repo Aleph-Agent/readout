@@ -8,6 +8,7 @@ import {
   readAdoption,
   readAllEvents,
   readCalibration,
+  readHealth,
   readLiveState,
   readMeta,
   readSnapshot,
@@ -19,6 +20,7 @@ import {
 import { lastDetectionByRepo } from './lib/confidence.ts';
 import { buildCoverage } from './lib/coverage.ts';
 import { summariseAdoption } from './lib/adoption-summary.ts';
+import { summariseHealth } from './lib/health-summary.ts';
 import { summariseWindow, type CalibrationSummary } from './lib/calibration.ts';
 
 /** Detectors whose reachability is published. Order is display order. */
@@ -479,6 +481,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   const index: IndexBundle = {
     strip,
     adoption: summariseAdoption(readAdoption()),
+    health: summariseHealth(readHealth()),
     scorecard: scoreFindings(all, now),
     today: addressable.filter((event) => event.detectedAt.slice(0, 10) === today),
     watchlist: {

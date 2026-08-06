@@ -5,17 +5,21 @@
  * value below is derived from that, and the two things it warns about most are
  * the two things this direction sits closest to.
  *
- * Not "near-black with a bright accent". The ground is warm graphite, the way
- * painted equipment housing is warm, and the two signal colours are indicator
- * lamps — earthy and desaturated — not neon. Nothing glows.
+ * The brief warns against "near-black with a bright accent", and asks for warm
+ * graphite with earthy, desaturated indicator lamps. That was built, rejected,
+ * rebuilt, and rejected again across three revisions. The maintainer was then
+ * shown four directions side by side with their values and chose this one: a
+ * cool slate ground with two signal colours that are actually legible as
+ * signals. Their project, their call, and it is recorded here rather than left
+ * as an unexplained departure.
+ *
+ * What the brief still gets, and keeps: colour only where it carries meaning,
+ * two signal colours and no third, no colour-only encoding, and nothing that
+ * glows. An accent that can be seen is not the same thing as neon.
  *
  * Not a newspaper. There are no columns, no masthead, no kickers. Every number
  * is labelled with its unit, its comparison window, and its sample count,
  * because that is the vernacular of measurement rather than editorial.
- *
- * Rebuilt once, after the first version was reported as tiring to read and hard
- * to navigate. Both complaints had causes rather than being matters of taste,
- * and the fixes are marked where they are made.
  */
 
 /* ------------------------------------------------------------------ fonts */
@@ -54,32 +58,34 @@
 /* ----------------------------------------------------------------- tokens */
 
 :root {
-  /* One neutral ramp, warm, so it reads as equipment rather than as screen.
-     Rebuilt at both ends after eye strain was reported.
+  /* One neutral ramp, cool.
 
-     The old ramp ran #0e0d0c to #f5f2ea. Near-white on near-black is 17:1, and
-     above roughly 12:1 on a dark ground the light strokes bloom into the dark
-     — the eye keeps refocusing on an edge that will not settle. The ground is
-     lifted off black and the top is pulled off white. The ratio lands near
-     12:1, which is still far above the 4.5:1 anyone needs. */
-  --ink-000: #141310;
-  --ink-025: #1a1815;
-  --ink-050: #211f1b;
-  --ink-100: #2b2823;
-  --ink-200: #393530;
-  --ink-300: #5c574e;
-  --ink-500: #948d82;
-  --ink-700: #c3bcb0;
-  --ink-900: #e7e1d5;
+     Warm graphite was tried through three revisions and rejected each time.
+     The earthy direction the brief asks for kept reading as brown rather than
+     as equipment, and desaturating the signal colours to match left them
+     sitting at almost the same value as the ground — present, but never
+     announcing anything. Cool slate separates the ramp from the signals
+     instead of blending them.
 
-  /* Two signal colours. There is no third, and neither is ever the only
-     carrier of meaning — every coloured state also has a glyph and a label.
+     Chosen by the maintainer from four directions shown side by side. */
+  --ink-000: #0d1117;
+  --ink-025: #12171e;
+  --ink-050: #161b22;
+  --ink-100: #1f252e;
+  --ink-200: #262c36;
+  --ink-300: #3d444d;
+  --ink-500: #8b949e;
+  --ink-700: #b9c1cc;
+  --ink-900: #f0f3f6;
 
-     Both were desaturated in the rebuild. A saturated red on a dark ground
-     fringes at the edge of every letterform, which is the other half of why
-     the page was tiring. Indicator lamps, not neon. */
-  --alert: #cf7a5e;
-  --nominal: #92a97b;
+  /* Two signal colours, and this time they are legible as signals.
+
+     The muted pair before them was the other half of the problem: terracotta
+     and sage sat close enough to the warm ground that a confirmed spike looked
+     much like a quiet row. These are meant to be seen. Neither is ever the only
+     carrier of meaning — every coloured state still has a glyph and a label. */
+  --alert: #f0883e;
+  --nominal: #3fb950;
 
   --face-label: 'Plex Condensed', ui-sans-serif, system-ui, sans-serif;
   --face-data: 'Plex Mono', ui-monospace, monospace;
@@ -137,9 +143,9 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(195, 188, 176, 0.03) 45%,
-    rgba(195, 188, 176, 0.09) 80%,
-    rgba(195, 188, 176, 0.16) 96%,
+    rgba(185, 193, 204, 0.03) 45%,
+    rgba(185, 193, 204, 0.09) 80%,
+    rgba(185, 193, 204, 0.16) 96%,
     transparent
   );
   /* Slow on purpose. A fast pass behind a table of numbers reads as a loading
@@ -165,9 +171,9 @@
   inset: 0;
   background: radial-gradient(
     150% 110% at 50% 0%,
-    rgba(20, 19, 16, 0) 0%,
-    rgba(20, 19, 16, 0.5) 55%,
-    rgba(20, 19, 16, 0.85) 100%
+    rgba(13, 17, 23, 0) 0%,
+    rgba(13, 17, 23, 0.5) 55%,
+    rgba(13, 17, 23, 0.85) 100%
   );
 }
 

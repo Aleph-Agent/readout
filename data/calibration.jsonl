@@ -1,0 +1,2 @@
+{"date":"2026-08-06","collector":"fork-spike","metric":"multiplier against own baseline","threshold":3,"measured":0,"crossed":0,"max":null,"p50":null,"p90":null,"p99":null,"unbounded":0}
+{"date":"2026-08-06","collector":"fork-outlier","metric":"ratio to category median","threshold":8,"measured":0,"crossed":0,"max":null,"p50":null,"p90":null,"p99":null,"unbounded":0}

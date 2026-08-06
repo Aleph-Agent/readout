@@ -160,6 +160,30 @@ const TOOLS = [
     },
   },
   {
+    name: 'find_model',
+    description:
+      'Find language models by price and context window, from a catalogue read daily across sixty providers. Use this before choosing a model: prices move weekly and span four orders of magnitude, and no dated record of them exists anywhere else, so a model chosen from memory is usually chosen on a price that has since changed.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        minContext: { type: 'integer', description: 'Minimum context window in tokens.' },
+        maxPrice: {
+          type: 'number',
+          description: 'Maximum USD per million prompt tokens.',
+        },
+        provider: { type: 'string', description: 'Restrict to one provider, e.g. anthropic.' },
+        sort: {
+          type: 'string',
+          enum: ['price', 'context', 'price-per-context'],
+          description:
+            'price-per-context is cost per million divided by hundred-thousands of window — the right ordering when the job needs the window, and published nowhere else.',
+        },
+        limit: { type: 'integer', minimum: 1, maximum: MAX_RESULTS },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'search_repositories',
     description:
       'Find watched repositories whose name contains a string, with their current readings. Use it to discover what is covered before calling the other tools.',
@@ -362,6 +386,79 @@ export async function onRequestPost(context: { request: Request }): Promise<Resp
       benchmarkRepositories: index.benchmark.repositories,
       packages: covered,
       limits: LIMITS,
+    });
+  }
+
+  if (toolName === 'find_model') {
+    const models = await loadJson<
+      {
+        id: string;
+        provider: string;
+        prompt: number | null;
+        completion: number | null;
+        context: number | null;
+        firstSeen: string;
+      }[]
+    >(origin, '/data/models.json');
+
+    if (models === null) {
+      return toolResult(id, { error: 'The catalogue could not be loaded.' }, true);
+    }
+
+    const minContext = typeof args['minContext'] === 'number' ? args['minContext'] : 0;
+    const maxPrice =
+      typeof args['maxPrice'] === 'number' ? args['maxPrice'] : Number.POSITIVE_INFINITY;
+    const provider = asString(args['provider'], 60)?.toLowerCase() ?? null;
+    const sort = asString(args['sort'], 24) ?? 'price';
+    const limitRaw = args['limit'];
+    const limit =
+      typeof limitRaw === 'number' && Number.isFinite(limitRaw)
+        ? Math.min(MAX_RESULTS, Math.max(1, Math.floor(limitRaw)))
+        : 10;
+
+    // Free tiers are excluded. Zero is a different offer — rate-limited, often
+    // a preview — and returning it as the cheapest would answer the question
+    // asked with something that is not an answer to it.
+    const matched = models
+      .filter(
+        (model) =>
+          typeof model.prompt === 'number' &&
+          model.prompt > 0 &&
+          model.prompt <= maxPrice &&
+          (model.context ?? 0) >= minContext &&
+          (provider === null || model.provider.toLowerCase() === provider),
+      )
+      .map((model) => ({
+        ...model,
+        perContext:
+          model.context === null || model.context <= 0
+            ? null
+            : Math.round(((model.prompt as number) / (model.context / 100_000)) * 1_000_000) /
+              1_000_000,
+      }));
+
+    matched.sort((a, b) => {
+      if (sort === 'context') return (b.context ?? 0) - (a.context ?? 0);
+      if (sort === 'price-per-context') {
+        return (a.perContext ?? Infinity) - (b.perContext ?? Infinity);
+      }
+      return (a.prompt as number) - (b.prompt as number);
+    });
+
+    return toolResult(id, {
+      matched: matched.length,
+      returned: Math.min(limit, matched.length),
+      sortedBy: sort,
+      units: {
+        prompt: 'USD per million prompt tokens',
+        perContext: 'USD per million prompt tokens, per 100k of context window',
+      },
+      models: matched.slice(0, limit),
+      limits: [
+        'Prices are read daily from one catalogue and are what that catalogue reports, not what a provider bills you — quotas, batch tiers and negotiated rates are not visible here.',
+        'Free tiers are excluded. Zero is a different offer rather than a lower price.',
+        'A context window is what the catalogue advertises. It is not a statement about how well a model uses it.',
+      ],
     });
   }
 

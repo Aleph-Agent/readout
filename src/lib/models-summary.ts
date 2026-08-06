@@ -16,6 +16,16 @@ export interface ModelReading {
   context: number | null;
   /** Change in USD per million against the oldest reading held. Null if one. */
   moved: number | null;
+  /**
+   * USD per million prompt tokens, per 100k of context window.
+   *
+   * Everyone compares price per token as though the context window were the
+   * same, and it is not — both axes span four orders of magnitude
+   * independently. A model at ten times the price with thirty times the window
+   * is cheaper for the job that needs the window, and nothing published
+   * anywhere says so. Null when the catalogue reports no window.
+   */
+  perContext: number | null;
 }
 
 export interface ModelSummary {
@@ -30,6 +40,13 @@ export interface ModelSummary {
   dearest: ModelReading[];
   /** Models whose price moved within the trend window, largest move first. */
   moved: ModelReading[];
+  /**
+   * Cheapest per 100k of context window.
+   *
+   * A different question from "cheapest", and the one that matters when the
+   * job needs the window. Nobody publishes it.
+   */
+  perContext: ModelReading[];
 }
 
 function reading(row: ModelRow & { prompt: number }): ModelReading {
@@ -48,6 +65,10 @@ function reading(row: ModelRow & { prompt: number }): ModelReading {
       first === undefined || last === undefined || row.samples.length < 2
         ? null
         : Math.round((last.prompt - first.prompt) * 1_000_000) / 1_000_000,
+    perContext:
+      row.context === null || row.context <= 0
+        ? null
+        : Math.round((row.prompt / (row.context / 100_000)) * 1_000_000) / 1_000_000,
   };
 }
 
@@ -74,5 +95,9 @@ export function summariseModels(rows: readonly ModelRow[]): ModelSummary {
     cheapest: byPrice.slice(0, SHOWN),
     dearest: [...byPrice].reverse().slice(0, SHOWN),
     moved,
+    perContext: priced
+      .filter((row): row is ModelReading & { perContext: number } => row.perContext !== null)
+      .sort((a, b) => a.perContext - b.perContext || (a.id < b.id ? -1 : 1))
+      .slice(0, SHOWN),
   };
 }

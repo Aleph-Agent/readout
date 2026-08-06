@@ -1494,6 +1494,31 @@ export function renderModels(index: IndexBundle, meta: MetaRecord): string {
   </div>
 </section>
 
+${band(
+  'Cheapest per context',
+  models.perContext.length === 0
+    ? ''
+    : `<div class="wrap"><table class="readout">
+  <caption class="label">Price per million, per 100k of context window</caption>
+  <thead><tr>
+    <th scope="col">Model</th>
+    <th scope="col" class="n">Per million in</th>
+    <th scope="col" class="n">Context</th>
+    <th scope="col" class="n">Per 100k context</th>
+  </tr></thead>
+  <tbody>${models.perContext
+    .map(
+      (row) => `<tr>
+      <td>${esc(row.id)}</td>
+      <td class="n num">${price(row.prompt)}</td>
+      <td class="n num">${row.context === null ? '<span class="dim">—</span>' : row.context.toLocaleString('en')}</td>
+      <td class="n"><span class="big num">$${(row.perContext as number).toFixed(4)}</span></td>
+    </tr>`,
+    )
+    .join('')}</tbody>
+</table></div>`,
+  'Everyone compares price per token as though the window were the same. Both axes span four orders of magnitude independently, and nobody publishes this one.',
+)}
 ${band('Moved', table('Largest price change in the trend window', models.moved), 'Measured against the oldest reading held, not against yesterday — a price that drifted over three weeks moved.')}
 ${band('Cheapest', table('Lowest price per million prompt tokens', models.cheapest), 'Free tiers are excluded from both ends. Zero is a different offer, not a lower price.')}
 ${band('Dearest', table('Highest price per million prompt tokens', models.dearest), 'Four orders of magnitude separate the two ends of this catalogue.')}`,

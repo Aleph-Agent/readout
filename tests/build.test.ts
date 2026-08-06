@@ -94,6 +94,9 @@ describe('bundle emission', () => {
       'index.json',
       'lineage.json',
       'meta.json',
+      // Every model, flat, for the endpoint that answers "cheapest with 200k
+      // context" — a question an agent asks several times a session.
+      'models.json',
       'ships.json',
       'stack-index.json',
       'stack.json',

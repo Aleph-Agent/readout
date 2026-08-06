@@ -10,6 +10,7 @@ import {
   latestCalibration,
   readHealth,
   readModels,
+  readManifests,
   readLiveState,
   readMeta,
   readSnapshot,
@@ -606,9 +607,55 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     }
   }
 
+  // Every model, flat, for the endpoint that answers "cheapest with 200k
+  // context". An agent asks that several times a session and currently answers
+  // it from training data a year old.
+  emitted.set(
+    'models.json',
+    stableJson(
+      readModels()
+        .filter((row) => row.available)
+        .map((row) => ({
+          id: row.id,
+          provider: row.provider,
+          prompt: row.prompt,
+          completion: row.completion,
+          context: row.context,
+          firstSeen: row.firstSeen,
+        })),
+    ),
+  );
+
+  // How many watched projects depend on each package.
+  //
+  // Built from manifests.jsonl, which has been collected since Prompt 5, is the
+  // largest file in the ledger, and had never been read by anything. It turns a
+  // dependency from a name into a position: forty-seven tracked projects
+  // depending on something makes it infrastructure, and one makes it a choice
+  // somebody made alone.
+  const dependents = new Map<string, number>();
+  for (const manifest of readManifests()) {
+    for (const name of Object.keys(manifest.deps ?? {})) {
+      // Case-folded, and underscores folded to hyphens. PyPI treats PyYAML and
+      // pyyaml as one package and npm forbids uppercase outright; counting them
+      // separately splits the tally and understates every Python dependency.
+      // It also produced two keys differing only by case in the same JSON
+      // object, which is legal and which several parsers refuse to read.
+      const clean = name.trim().toLowerCase().replace(/_/g, '-');
+      if (clean === '') continue;
+      dependents.set(clean, (dependents.get(clean) ?? 0) + 1);
+    }
+  }
+
   emitted.set(
     'stack-index.json',
     stableJson({
+      // Only packages more than one watched project depends on. A count of one
+      // is not a finding, and carrying six thousand of them would triple the
+      // file to say nothing.
+      dependents: Object.fromEntries(
+        [...dependents.entries()].filter(([, count]) => count > 1).sort(),
+      ),
       // The corpus is what makes a visitor's number mean anything: "5.2" is
       // not a reading until it sits beside what 388 tracked projects median.
       benchmark: {

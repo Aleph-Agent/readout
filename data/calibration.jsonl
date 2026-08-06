@@ -2,3 +2,4 @@
 {"date":"2026-08-06","collector":"fork-outlier","metric":"ratio to category median","threshold":8,"measured":0,"crossed":0,"max":null,"p50":null,"p90":null,"p99":null,"unbounded":0}
 {"date":"2026-08-06","collector":"demand","metric":"engagement across repositories","threshold":60,"measured":0,"crossed":0,"max":null,"p50":null,"p90":null,"p99":null,"unbounded":0}
 {"date":"2026-08-06","collector":"lineage","metric":"new descendants this week","threshold":10,"measured":12,"crossed":0,"max":1,"p50":0,"p90":0,"p99":1,"unbounded":0}
+{"date":"2026-08-06","collector":"fork-outlier","metric":"ratio to category median","threshold":8,"measured":7,"crossed":7,"max":66,"p50":31,"p90":66,"p99":66,"unbounded":0}

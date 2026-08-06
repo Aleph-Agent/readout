@@ -489,6 +489,11 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   const calibrationWindow = latestCalibration().filter((row) => row.date >= calibrationFloor);
 
   const categoryOf = new Map(watchlist.map((entry) => [entry.id, entry.category as string]));
+  // Read before anything that stamps a time. The ask context is dated with the
+  // last successful reading rather than with `now`, so this has to exist before
+  // the bundles are built — see the comment there.
+  const previous = readMeta();
+
   const strip = buildStrip(now, lastDetectionByRepo(all), history, categoryOf);
 
   // Weekly installs per repository, largest across the packages it publishes.
@@ -536,7 +541,20 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   // like every other bundle: the endpoint fetches it from this same deployment,
   // so the model's grounding is a URL anybody can open and check against the
   // answer they were given.
-  const askContext = stableJson(buildAskContext(index, addressable, index.strip, now.toISOString()));
+  // Stamped with when the readings were taken, not with when this file was
+  // written. Those are different facts and only one of them is a property of
+  // the data — `now` made this the single non-deterministic file in the build,
+  // which broke the byte-identical guarantee this module's own docstring rests
+  // the deploy gate on. It is also the more honest of the two: a reader asking
+  // how fresh the grounding is wants the reading time.
+  const askContext = stableJson(
+    buildAskContext(
+      index,
+      addressable,
+      index.strip,
+      previous.lastSuccessfulRunAt ?? now.toISOString(),
+    ),
+  );
 
   // Asserted here rather than discovered in production. Groq's free tier counts
   // a single request against a 6,000-token-per-minute allowance and refuses
@@ -619,8 +637,6 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
       })),
     ),
   );
-
-  const previous = readMeta();
 
   const pages = new Map<string, string>([
     ['index.html', renderIndex(index, previous)],

@@ -211,7 +211,13 @@ export async function collectModels(
     if (present.has(id)) continue;
 
     rows.push({ ...was, available: false });
-    if (!was.available) continue;
+
+    // Tested positively rather than as `!was.available`. A row that predates
+    // the field reads as undefined, and the negation would silently swallow the
+    // withdrawal — the safe direction of the mistake that produced 249 false
+    // findings, but the same mistake. Only a model previously known to be
+    // available can be reported as withdrawn.
+    if (was.available !== true) continue;
 
     const eventKey = eventId('model-withdrawn', id, options.today);
     if (options.seen.has(eventKey)) continue;

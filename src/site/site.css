@@ -369,6 +369,78 @@ a:hover {
 
 .hero {
   padding: 64px 0 40px;
+  position: relative;
+}
+
+/* The install block, top right of the opening screen.
+
+   An MCP endpoint nobody can find is an MCP endpoint nobody installs, and it
+   was previously mentioned only on /method. Here it sits beside the thesis and
+   is copyable in one click. */
+.install {
+  position: absolute;
+  top: 58px;
+  right: 0;
+  width: min(340px, 42vw);
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  padding: 14px 16px 16px;
+  background: var(--ink-025);
+  border: 1px solid var(--ink-100);
+  border-left: 2px solid var(--mag-5);
+}
+
+.install-label {
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mag-5);
+}
+
+.install-code {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  white-space: pre;
+  font-family: var(--face-data);
+  font-size: var(--t-micro);
+  line-height: 1.6;
+  color: var(--ink-700);
+}
+
+.install-copy {
+  background: var(--ink-050);
+  border: 1px solid var(--ink-100);
+  color: var(--ink-900);
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.install-copy:hover {
+  background: var(--ink-100);
+}
+
+.install-note {
+  font-family: var(--face-prose);
+  font-size: var(--t-micro);
+  color: var(--ink-500);
+}
+
+/* Below this the thesis and the block would fight for the same column. */
+@media (max-width: 900px) {
+  .install {
+    position: static;
+    width: 100%;
+    margin-bottom: 28px;
+  }
 }
 
 .hero-thesis {

@@ -18,6 +18,7 @@
  * Pure. The diff is the whole collector.
  */
 
+import { became, changed } from '../lib/diffing.ts';
 import { eventId } from '../lib/ledger.ts';
 import type { EventRecord } from '../types/events.ts';
 import type { LiveStateRow } from '../types/state.ts';
@@ -48,18 +49,10 @@ export function collectLicences(
     const before = previous.get(row.id);
     if (before === undefined) continue;
 
-    // A field that is absent from the previous row is not a previous value.
-    //
-    // `license` and `archived` were added to the schema after 400 state rows
-    // already existed, and `conform` fills a missing key with undefined. The
-    // first version compared against that and published 207 licence changes in
-    // one run — every repository on the watchlist appearing to relicense from
-    // "unidentified" to whatever it had always been. All 207 were retracted.
-    //
-    // undefined means never recorded and is not comparable. null means recorded
-    // and GitHub could not identify one, which is a real value and a real
-    // transition when it changes.
-    if (before.license !== undefined && before.license !== row.license) {
+    // `changed` is where the absent-versus-empty rule lives. See lib/diffing.ts
+    // for why it is a shared helper rather than a condition written out here.
+    const move = changed(before.license, row.license);
+    if (move !== null) {
       // Null on either side is "GitHub could not identify one", which is a real
       // transition worth reporting and is worded as what it is rather than as a
       // licence named "none".
@@ -80,15 +73,15 @@ export function collectLicences(
           summarySource: null,
           evidenceUrl: `https://github.com/${row.id}`,
           metrics: {
-            from: before.license ?? 'unidentified',
-            to: row.license ?? 'unidentified',
+            from: move.from ?? 'unidentified',
+            to: move.to ?? 'unidentified',
           },
           supersedes: null,
         });
       }
     }
 
-    if (before.archived !== undefined && !before.archived && row.archived) {
+    if (became(before.archived, row.archived)) {
       const id = eventId('archived', row.id, options.today);
       if (!options.seen.has(id)) {
         events.push({

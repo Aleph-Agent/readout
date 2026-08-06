@@ -7,7 +7,7 @@ import {
   readActiveWatchlist,
   readAdoption,
   readAllEvents,
-  readCalibration,
+  latestCalibration,
   readHealth,
   readLiveState,
   readMeta,
@@ -482,7 +482,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   // quiet fortnight read as a broken detector; a longer one would keep saying a
   // threshold is fine long after the data moved away from it.
   const calibrationFloor = utcDate(new Date(now.getTime() - CALIBRATION_WINDOW_DAYS * 86_400_000));
-  const calibrationWindow = readCalibration().filter((row) => row.date >= calibrationFloor);
+  const calibrationWindow = latestCalibration().filter((row) => row.date >= calibrationFloor);
 
   const categoryOf = new Map(watchlist.map((entry) => [entry.id, entry.category as string]));
   const strip = buildStrip(now, lastDetectionByRepo(all), history, categoryOf);

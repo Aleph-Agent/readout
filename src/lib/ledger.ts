@@ -212,22 +212,41 @@ export function readCalibration(): CalibrationRow[] {
 }
 
 /**
- * Append one day's calibration rows.
+ * Append calibration rows. Later readings of a day supersede earlier ones.
  *
- * Idempotent per day and per collector, so a re-run repairs nothing and
- * duplicates nothing. Appending rather than rewriting is the point: this file
- * is the evidence that the thresholds were or were not reachable on a given
- * day, and evidence that can be edited afterwards is not evidence.
+ * This was idempotent per day and it was wrong. The first run of 2026-08-06
+ * measured nothing for the demand detector — a partial run, before the
+ * collectors had finished — and every later run that day was refused, so the
+ * record said "this detector cannot see anything" for a full day on the
+ * strength of its worst reading. A diagnostic that locks in its first answer is
+ * worse than none, because it looks authoritative.
+ *
+ * Still append-only: nothing is rewritten and the earlier reading stays on
+ * disk. `latestCalibration` takes the last row per day and collector, so the
+ * most complete run of a day is the one the site reads.
+ *
+ * Exact duplicates are still dropped, so a re-run that measured the same thing
+ * adds no line.
  */
 export function appendCalibration(rows: readonly CalibrationRow[]): void {
   if (rows.length === 0) return;
 
   const existing = readCalibration();
-  const seen = new Set(existing.map((row) => `${row.date}:${row.collector}:${row.metric}`));
-  const fresh = rows.filter((row) => !seen.has(`${row.date}:${row.collector}:${row.metric}`));
+  const identical = new Set(existing.map((row) => JSON.stringify(row)));
+  const fresh = rows.filter((row) => !identical.has(JSON.stringify(row)));
   if (fresh.length === 0) return;
 
   appendJsonl(CALIBRATION_PATH, fresh, CALIBRATION_KEYS);
+}
+
+/**
+ * One row per day and collector: the last written, which is the most complete
+ * run of that day.
+ */
+export function latestCalibration(): CalibrationRow[] {
+  const byKey = new Map<string, CalibrationRow>();
+  for (const row of readCalibration()) byKey.set(`${row.date}:${row.collector}`, row);
+  return [...byKey.values()];
 }
 
 // ------------------------------------------------------------------- events

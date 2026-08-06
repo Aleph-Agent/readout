@@ -86,17 +86,26 @@ describe('first read', () => {
 });
 
 describe('guards', () => {
-  it('refuses a week that is mostly one uploader', async () => {
-    // The first live sample from this API had its three newest descendants all
-    // from one account. Bulk uploading is the lineage version of a fork farm.
-    const client = stub({ 'meta-llama/Llama-3.1-8B': models(40, 2) });
+  it('refuses a week that is one uploader, however many models', async () => {
+    // The spread test is what still does the work after the count threshold was
+    // lowered on the calibration record. Bulk uploading is the lineage version
+    // of a fork farm: forty models from one account is one person's afternoon.
+    const client = stub({ 'meta-llama/Llama-3.1-8B': models(40, 1) });
     const result = await collectLineage(client, [root()], OPTIONS);
     expect(result.events).toHaveLength(0);
   });
 
-  it('refuses a quiet week', async () => {
-    const client = stub({ 'meta-llama/Llama-3.1-8B': models(4, 4) });
+  it('refuses a week with a single new model', async () => {
+    const client = stub({ 'meta-llama/Llama-3.1-8B': models(1, 1) });
     expect((await collectLineage(client, [root()], OPTIONS)).events).toHaveLength(0);
+  });
+
+  it('reports two models from two accounts, which is the new floor', async () => {
+    // Lowered from ten and three. Twelve roots were read and the busiest gained
+    // one descendant in a week — a peak of 10% of the old bar, which the front
+    // page called "never approached". Waiting longer would have said the same.
+    const client = stub({ 'meta-llama/Llama-3.1-8B': models(2, 2) });
+    expect((await collectLineage(client, [root()], OPTIONS)).events).toHaveLength(1);
   });
 
   it('skips a retired root without spending a request', async () => {
@@ -174,11 +183,11 @@ describe('calibration', () => {
     // A quarter where no root ever gained more than two models is a fact about
     // minNew, not about model lineage — and only knowable if the quiet weeks
     // were recorded at the time.
-    const client = stub({ 'meta-llama/Llama-3.1-8B': models(4, 4) });
+    const client = stub({ 'meta-llama/Llama-3.1-8B': models(1, 1) });
     const result = await collectLineage(client, [root()], OPTIONS);
 
     expect(result.events).toHaveLength(0);
-    expect(result.observations).toEqual([4]);
+    expect(result.observations).toEqual([1]);
   });
 
   it('excludes a first read, which gains nothing by definition', async () => {

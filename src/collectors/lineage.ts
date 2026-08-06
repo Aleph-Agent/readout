@@ -30,8 +30,18 @@ export interface LineageThresholds {
 }
 
 export const DEFAULT_LINEAGE_THRESHOLDS: LineageThresholds = {
-  minNew: 10,
-  minAccounts: 3,
+  // Lowered from 10 and 3 on the calibration record, which is what that record
+  // is for. Twelve roots were read and the busiest gained one descendant in a
+  // week — a peak of 10% of the bar, reported on the front page as "never
+  // approached". A detector nothing has come within reach of is not measuring
+  // anything, and waiting longer would only have produced the same sentence.
+  //
+  // Two from two accounts is deliberately close to the floor. The account rule
+  // is what still does the work: it is a spread test, and bulk uploading is the
+  // lineage version of a fork farm. One person publishing five fine-tunes stays
+  // silent; two people publishing one each does not.
+  minNew: 2,
+  minAccounts: 2,
 };
 
 export interface LineageCollectionResult {

@@ -108,6 +108,24 @@ if (counter && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
   }
 }`.trim();
 
+/** Copy buttons. Confirms in place, because a click with no feedback reads as broken. */
+const COPY_SCRIPT = `
+for (const button of document.querySelectorAll('[data-copy]')) {
+  button.addEventListener('click', async () => {
+    const source = document.getElementById(button.dataset.copy);
+    if (!source) return;
+    try {
+      await navigator.clipboard.writeText(source.textContent.trim());
+      const was = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = was; }, 1600);
+    } catch {
+      // Clipboard refused — usually an insecure context. The text is on the
+      // page and selectable, so say nothing rather than pretending it worked.
+    }
+  });
+}`.trim();
+
 const ASK_SCRIPT = `
 const form = document.getElementById('ask-form');
 if (form) {
@@ -397,9 +415,14 @@ export function eventSlug(id: string): string {
  * absolute UTC, the headline figure is already its final value, and the two
  * tools say plainly that they need scripting.
  */
-export const SITE_SCRIPT = [AGE_SCRIPT, COUNT_SCRIPT, ASK_SCRIPT, COMPARE_SCRIPT, STACK_SCRIPT].join(
-  '\n\n',
-);
+export const SITE_SCRIPT = [
+  AGE_SCRIPT,
+  COUNT_SCRIPT,
+  COPY_SCRIPT,
+  ASK_SCRIPT,
+  COMPARE_SCRIPT,
+  STACK_SCRIPT,
+].join('\n\n');
 
 export function layout(options: PageOptions): string {
   const description =
@@ -723,6 +746,12 @@ function heroHtml(index: IndexBundle, meta: MetaRecord): string {
   const findings = Object.values(index.lenses).reduce((total, lens) => total + lens.count, 0);
 
   return `<section class="hero">
+  <aside class="install">
+    <span class="install-label">Install for your coding agent</span>
+    <code class="install-code" id="install-code">{ "mcpServers": { "readout": { "url": "${SITE_ORIGIN}/api/mcp" } } }</code>
+    <button type="button" class="install-copy" data-copy="install-code">Copy</button>
+    <span class="install-note">Read-only. No key, no account.</span>
+  </aside>
   <h1 class="hero-thesis">An instrument pointed at <em>${watchlist.active} open-source repositories</em>.</h1>
   <p class="hero-sub">
     Read every ${disclosure.cadenceHours} hours. Compared against its own history, never against

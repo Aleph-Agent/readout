@@ -1,0 +1,55 @@
+name: 'Readout dependency check'
+description: >-
+  Fail a build when a dependency is archived, has relicensed to a
+  source-available licence, or carries security advisories. Reads published
+  measurements; no key, no account, no service to sign up to.
+author: 'Readout'
+
+branding:
+  icon: 'activity'
+  color: 'green'
+
+inputs:
+  manifest:
+    description: 'Path to package.json, requirements.txt or Cargo.toml.'
+    required: false
+    default: 'package.json'
+  registry:
+    description: 'npm, pypi or crates. Inferred from the manifest when omitted.'
+    required: false
+    default: ''
+  fail-on:
+    description: >-
+      Comma-separated conditions that fail the build: archived, relicensed,
+      advisories. Empty reports without failing.
+    required: false
+    default: 'archived,relicensed'
+  endpoint:
+    description: 'Override the Readout origin. For testing this action itself.'
+    required: false
+    default: 'https://readout-7pt.pages.dev'
+
+outputs:
+  archived:
+    description: 'Dependencies whose repository is archived.'
+    value: ${{ steps.check.outputs.archived }}
+  relicensed:
+    description: 'Dependencies on a source-available licence.'
+    value: ${{ steps.check.outputs.relicensed }}
+  advisories:
+    description: 'Total advisories across the dependencies read.'
+    value: ${{ steps.check.outputs.advisories }}
+
+runs:
+  using: 'composite'
+  steps:
+    # Node is already on every GitHub runner, so this needs no setup step and
+    # no dependency. The whole action is one script against two public APIs.
+    - id: check
+      shell: bash
+      run: node "${GITHUB_ACTION_PATH}/action/check.mjs"
+      env:
+        READOUT_MANIFEST: ${{ inputs.manifest }}
+        READOUT_REGISTRY: ${{ inputs.registry }}
+        READOUT_FAIL_ON: ${{ inputs.fail-on }}
+        READOUT_ENDPOINT: ${{ inputs.endpoint }}

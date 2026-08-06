@@ -2,6 +2,31 @@
 
 **[readout-7pt.pages.dev](https://readout-7pt.pages.dev)** · [your stack](https://readout-7pt.pages.dev/stack) · [compare](https://readout-7pt.pages.dev/compare) · [method](https://readout-7pt.pages.dev/method) · [feed](https://readout-7pt.pages.dev/feed.xml)
 
+## Check your dependencies in CI
+
+```yaml
+- uses: kaitzyy-dev/readout@main
+  with:
+    manifest: package.json
+    fail-on: archived,relicensed
+```
+
+Fails the build when a dependency's repository has been archived or has moved
+to a source-available licence, and reports advisories either way. No key, no
+account, no service to sign up to — it reads published measurements and talks
+to OSV. A network problem is never a finding: if the readings cannot be fetched
+the step says so and passes, because a build that breaks when somebody else's
+site is down is a build that gets deleted.
+
+Also runs against `requirements.txt` and `Cargo.toml`.
+
+## Suggest something to watch
+
+The watchlist is curated and partial, and it was chosen by hand with no method
+beyond judgement — its weakest point. [Open an issue](../../issues/new?template=watch-a-repository.yml)
+to argue for a repository. Every change to the list is a reviewed commit, so
+that issue is where the review happens.
+
 ## For coding agents
 
 An MCP server over the same readings, so an agent can answer "is this

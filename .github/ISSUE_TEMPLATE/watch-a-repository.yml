@@ -1,0 +1,76 @@
+name: Suggest a repository to watch
+description: Propose something for the watchlist, or say why one should be retired.
+title: 'watch: owner/name'
+labels: ['watchlist']
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The watchlist is curated and partial by design, and it was chosen by
+        hand with no method beyond judgement. That is its weakest point, and
+        this is the fix: the set of things being watched should be argued about
+        in public rather than decided quietly.
+
+        Every change to it is a reviewed commit, so this issue is where the
+        review happens.
+
+  - type: input
+    id: repository
+    attributes:
+      label: Repository
+      description: As GitHub spells it.
+      placeholder: owner/name
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: >-
+        Why it would be watched, not what it is. The category is the comparison
+        group a fork-outlier finding is measured against.
+      options:
+        - ai-ml
+        - web-framework
+        - database
+        - devtool
+        - crypto-web3
+        - none of these fit
+    validations:
+      required: true
+
+  - type: input
+    id: packages
+    attributes:
+      label: Packages it publishes
+      description: >-
+        Optional, and verified before it is accepted. `registry:name`, comma
+        separated. Without one the repository still gets fork, release and
+        scorecard readings — it just has no download figure.
+      placeholder: npm:vite, pypi:requests
+    validations:
+      required: false
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why this one
+      description: >-
+        One or two sentences. Stars are not an argument — plenty of starred
+        repositories are tutorials and link collections, which is exactly what
+        deriving this list mechanically produced and why it is curated instead.
+        What would a reading about this project tell somebody?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: understood
+    attributes:
+      label: Before submitting
+      options:
+        - label: >-
+            I understand appearing here is an observation, not an endorsement,
+            and that nothing published about a repository is a judgement of it.
+          required: true

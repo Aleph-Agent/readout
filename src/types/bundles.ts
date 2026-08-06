@@ -125,8 +125,45 @@ export interface ScorecardSummary {
   pending: number;
 }
 
+/** One package's standing, for the page rather than for the ledger. */
+export interface AdoptionReading {
+  repo: string;
+  registry: string;
+  name: string;
+  count: number;
+  window: string;
+}
+
+/**
+ * What is being installed, summarised.
+ *
+ * The one dataset here that is full rather than forming. Everything derived
+ * from GitHub needs fourteen days before it can say anything; a download count
+ * is a number today, which is why this is what the page leads on.
+ */
+export interface AdoptionSummary {
+  /** Packages with a reading. The sample behind every figure below. */
+  measured: number;
+  /** Packages mapped but not readable this run. Stated, never counted as zero. */
+  unread: number;
+  /**
+   * Combined weekly downloads across npm and PyPI only.
+   *
+   * Both report a rolling week, so they add. Homebrew reports a month and
+   * crates.io ninety days; folding those in would produce a number measuring
+   * nothing, so they are excluded here and shown in the table with their own
+   * windows.
+   */
+  weekly: number;
+  /** Packages behind `weekly`. A total without its sample is not a reading. */
+  weeklyPackages: number;
+  top: AdoptionReading[];
+}
+
 export interface IndexBundle {
   strip: StripMark[];
+  /** What is actually installed. See `collectors/adoption.ts`. */
+  adoption: AdoptionSummary;
   /** How the project's own confirmed findings have held up so far. */
   scorecard: ScorecardSummary;
   /** Everything detected today, across every lens, newest first. */

@@ -23,6 +23,7 @@ function index(over: Partial<IndexBundle> = {}): IndexBundle {
       { category: 'devtool', repositories: 80, measured: 20, forksAdded: 512, findings: 9, busiest: 'b/two' },
     ],
     calibration: [],
+    adoption: { measured: 0, unread: 0, weekly: 0, weeklyPackages: 0, top: [] },
     lenses: {
       ships: { status: 'active', count: 21 },
       forks: { status: 'active', count: 0 },

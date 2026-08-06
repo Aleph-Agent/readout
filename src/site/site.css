@@ -395,6 +395,55 @@ a:hover {
   color: var(--ink-900);
 }
 
+/* The one figure on this page with real magnitude behind it.
+
+   Everything derived from GitHub is in the hundreds and needs a fortnight
+   before it means anything. A weekly download count is in the hundreds of
+   millions and is true today. Setting it at this size is not decoration — it is
+   the only honest opportunity the page has to look like something is
+   happening, because something is. */
+.hero-headline {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 30px;
+  padding: 22px 0 0;
+  border-top: 1px solid var(--ink-200);
+  max-width: 62ch;
+}
+
+.hero-headline-value {
+  font-family: var(--face-data);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(30px, 5.4vw, 54px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--nominal);
+}
+
+.hero-headline-label {
+  font-family: var(--face-prose);
+  font-size: var(--t-small);
+  line-height: 1.6;
+  color: var(--ink-500);
+}
+
+/* Downloads carry the scale in this table, so they are set larger than the
+   row around them. Nothing else in the product does this, which is the point. */
+.readout-adoption .big {
+  font-size: var(--t-mid);
+  color: var(--ink-900);
+}
+
+/* Before any baseline has filled the comb is all outlines. Dimmed as a whole so
+   it reads as an instrument at rest rather than as a chart with values in it. */
+.strip-forming svg {
+  opacity: 0.75;
+}
+
+.strip {
+  margin: 0;
+}
+
 /* The product is rare events and the shape is a page you have to visit, which
    punishes the reader for the site being honest about a quiet day. Until that
    is properly resolved, the feed is at least named where it can be seen. */

@@ -16,6 +16,7 @@ const index: IndexBundle = {
   watchlist: { total: 400, active: 400, byCategory: {} },
   coverage: [],
   calibration: [],
+  adoption: { measured: 0, unread: 0, weekly: 0, weeklyPackages: 0, top: [] },
   lenses: {
     ships: { status: 'active', count: 0 },
     forks: { status: 'active', count: 0 },

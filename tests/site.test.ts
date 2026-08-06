@@ -35,6 +35,7 @@ function index(over: Partial<IndexBundle> = {}): IndexBundle {
       { category: 'devtool', repositories: 400, measured: 0, forksAdded: null, findings: 0, busiest: null },
     ],
     calibration: [],
+    adoption: { measured: 0, unread: 0, weekly: 0, weeklyPackages: 0, top: [] },
     lenses: {
       ships: { status: 'active', count: 0 },
       forks: { status: 'active', count: 0 },
@@ -146,18 +147,32 @@ describe('the velocity strip', () => {
     expect(svg).toContain('mark-forming');
   });
 
-  it('says so in a sentence rather than drawing 400 identical marks', () => {
-    // Before any window fills, every mark is the same height and colour: fifty
-    // kilobytes of SVG conveying nothing.
+  it('still draws the comb before any baseline has filled', () => {
+    // This used to refuse, on the grounds that a flat comb is fifty kilobytes
+    // of SVG saying nothing. That reasoning was about information and it cost
+    // the product its face: for the first fourteen days the page had no chart,
+    // no image, and nothing anybody would remember. A comb of outlines is not
+    // nothing — it says these are being measured and none has moved.
     const nothing = Array.from({ length: 400 }, (_, i) =>
       mark({ id: `r${i}/x`, state: 'forming', multiplier: null }),
     );
     const html = stripSvg(nothing, new Set());
 
-    expect(html).not.toContain('<rect');
-    expect(html).toContain('Baseline forming');
+    expect(html).toContain('<rect');
+    expect(html).toContain('strip-forming');
+    // Outlines, never fills. "Not measured yet" must never look like a reading.
+    expect(html).not.toContain('mark-quiet');
+    expect(html).toContain('All baselines still forming');
     expect(html).toContain('400 repositories');
-    expect(html.length).toBeLessThan(1000);
+  });
+
+  it('keeps a forming comb cheap enough to serve', () => {
+    // Four hundred marks is the whole point, but it still has to fit in a page
+    // that is thirty kilobytes rather than becoming most of one.
+    const nothing = Array.from({ length: 400 }, (_, i) =>
+      mark({ id: `r${i}/x`, state: 'forming', multiplier: null }),
+    );
+    expect(stripSvg(nothing, new Set()).length).toBeLessThan(60_000);
   });
 
   it('carries a text alternative, since the table below is the accessible path', () => {

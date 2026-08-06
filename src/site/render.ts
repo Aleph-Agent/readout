@@ -397,7 +397,10 @@ const STRIP_CAP = 50;
 
 /** Log scale, so ordinary activity reads as a low comb and a spike stands out. */
 function markHeight(multiplier: number | null): number {
-  if (multiplier === null) return 0.06;
+  // Unmeasured marks are drawn low but visible. Tall enough that four hundred
+  // of them read as an instrument at rest; short enough that they can never be
+  // mistaken for a reading, which the outline stroke also guards against.
+  if (multiplier === null) return 0.16;
   const scaled = Math.log1p(Math.max(0, multiplier)) / Math.log1p(STRIP_CAP);
   return Math.min(1, Math.max(0.03, scaled));
 }
@@ -415,20 +418,17 @@ const BASELINE_HEIGHT = markHeight(1);
 export function stripSvg(marks: readonly StripMark[], releasedToday: ReadonlySet<string>): string {
   if (marks.length === 0) return '';
 
-  // Before any window has filled, every mark is the same height and the same
-  // colour: fifty kilobytes of SVG saying nothing. Say it in a sentence
-  // instead, and bring the chart back when there is something to chart.
+  // This used to refuse to draw until something deviated, on the grounds that a
+  // flat comb is fifty kilobytes of SVG saying nothing. That reasoning was
+  // about information and it cost the product its face: for the first fourteen
+  // days the page had no chart, no image, and nothing a reader would remember.
+  //
+  // A comb of outline marks is not nothing. It says: these are being measured,
+  // this is where normal sits, and none of them has moved off it. Drawn as
+  // outlines rather than filled bars so "not measured yet" never looks like
+  // "measured at zero", and labelled as forming underneath.
   const measured = marks.filter((mark) => mark.state !== 'forming');
-  if (measured.length === 0) {
-    return `<div class="strip">
-  <div class="notice">
-    <strong>Baseline forming</strong>
-    All ${marks.length} repositories are being measured, and none has a full observation window yet.
-    The strip appears once there is deviation to draw. Until then there is nothing to show, which is
-    different from showing nothing.
-  </div>
-</div>`;
-  }
+  const forming = measured.length === 0;
 
   const H = 100;
   const step = 100 / marks.length;
@@ -462,29 +462,42 @@ export function stripSvg(marks: readonly StripMark[], releasedToday: ReadonlySet
           ? ` style="--beat:${Math.max(0.6, 3 - Math.log1p(mark.multiplier) / 2).toFixed(2)}s"`
           : '';
 
-      return `<rect class="${cls}"${beat} x="${x}" y="${(H - h).toFixed(2)}" width="${width.toFixed(3)}" height="${h.toFixed(2)}"><title>${esc(mark.name)} — ${esc(mark.state)}</title></rect>`;
+      // Hover titles carry a repository name, which is worth 40 bytes on a
+      // mark that has a reading. On a forming mark the title would say the
+      // same thing 388 times over — the caption already says it once — and 15KB
+      // of identical tooltips is not an accessibility feature. The aria-label
+      // and the table underneath are the accessible path either way.
+      const title =
+        mark.state === 'forming'
+          ? ''
+          : `<title>${esc(mark.name)} — ${esc(mark.state)}</title>`;
+
+      return `<rect class="${cls}"${beat} x="${x}" y="${(H - h).toFixed(1)}" width="${width.toFixed(3)}" height="${h.toFixed(1)}">${title}</rect>`;
     })
     .join('');
 
   const baselineY = (H - BASELINE_HEIGHT * H).toFixed(2);
 
-  return `<div class="strip">
+  return `<figure class="strip${forming ? ' strip-forming' : ''}">
   <svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" role="img"
        aria-label="One mark per watched repository. Height is deviation from that repository's own fork baseline. ${marks.filter((m) => m.state === 'confirmed').length} confirmed above baseline.">
     <line class="baseline-rule" x1="0" y1="${baselineY}" x2="100" y2="${baselineY}"></line>
     ${bars}
   </svg>
-  <div class="strip-scale">
-    <span class="label">First by name</span>
-    <span class="label">Dashed line = this repository's normal</span>
-    <span class="label">Last by name</span>
-  </div>
+  <figcaption class="strip-scale">
+    <span class="label">${marks.length} repositories, first to last by name</span>
+    <span class="label">${
+      forming
+        ? 'All baselines still forming — outlines, not readings'
+        : "Dashed line = this repository's normal"
+    }</span>
+  </figcaption>
   <div class="strip-legend">
     <span class="state state-confirmed">Confirmed spike</span>
     <span class="state state-detected">Detected once</span>
     <span class="state state-forming">Baseline forming</span>
   </div>
-</div>`;
+</figure>`;
 }
 
 // ---------------------------------------------------------------- fragments
@@ -668,6 +681,16 @@ function heroHtml(index: IndexBundle, meta: MetaRecord): string {
     against anything else, links every figure to the place you can check it, and says plainly when
     it has nothing to report — which is most days, for most projects.
   </p>
+  ${
+    index.adoption.weekly === 0
+      ? ''
+      : `<div class="hero-headline">
+    <span class="hero-headline-value num">${index.adoption.weekly.toLocaleString('en')}</span>
+    <span class="hero-headline-label">weekly downloads across the ${index.adoption.weeklyPackages}
+    npm and PyPI packages these repositories publish. Measured, not estimated — and the only figure
+    here that is a number today rather than in two weeks.</span>
+  </div>`
+  }
   <div class="hero-figures">
     <div class="figure"><span class="figure-value num">${watchlist.active}</span><span class="label">Repositories watched</span></div>
     <div class="figure"><span class="figure-value num">5</span><span class="label">Signals read</span></div>
@@ -763,6 +786,63 @@ with none shows no figure rather than a zero. Findings counts every reading ever
 repository in that category, including repositories since retired.</p>`;
 }
 
+const REGISTRY_LABEL: Record<string, string> = {
+  npm: 'npm',
+  pypi: 'PyPI',
+  crates: 'crates.io',
+  brew: 'Homebrew',
+};
+
+const WINDOW_LABEL: Record<string, string> = {
+  week: 'per week',
+  '30d': 'per 30 days',
+  '90d': 'per 90 days',
+};
+
+/**
+ * What is actually being installed.
+ *
+ * The only reading here that is a number today rather than in fourteen days,
+ * and for a long time it was collected and shown to nobody. It is also the only
+ * place this page has real scale in it — a fork count is in the hundreds, a
+ * weekly download count is in the hundreds of millions — so the figures are set
+ * large. That is not decoration; it is the one honest opportunity the page has
+ * to look like something is happening, because something is.
+ */
+function adoptionHtml(index: IndexBundle): string {
+  const { adoption } = index;
+  if (adoption.top.length === 0) return '';
+
+  const rows = adoption.top
+    .map(
+      (reading, rank) => `<tr>
+      <td class="n dim num">${rank + 1}</td>
+      <td>${repoLink(reading.repo)}</td>
+      <td class="dim">${esc(REGISTRY_LABEL[reading.registry] ?? reading.registry)} <span class="dim">${esc(reading.name)}</span></td>
+      <td class="n"><span class="big num">${reading.count.toLocaleString('en')}</span></td>
+      <td class="dim">${esc(WINDOW_LABEL[reading.window] ?? reading.window)}</td>
+    </tr>`,
+    )
+    .join('');
+
+  return `<div class="wrap"><table class="readout readout-adoption">
+  <caption class="label">Installs — ${adoption.measured} packages read${adoption.unread === 0 ? '' : `, ${adoption.unread} not readable this run`}</caption>
+  <thead><tr>
+    <th scope="col" class="n">#</th>
+    <th scope="col">Repository</th>
+    <th scope="col">Package</th>
+    <th scope="col" class="n">Downloads</th>
+    <th scope="col">Window</th>
+  </tr></thead>
+  <tbody>${rows}</tbody>
+</table></div>
+<p class="basis label">Counts come from each registry's own public figures and are never added across
+registries with different windows: the combined weekly total above covers npm and PyPI only, which
+both report a rolling week. Homebrew reports a month and crates.io ninety days, so they are listed
+here with their own window and folded into no total. A package that could not be read keeps its last
+known count and is excluded from the sample.</p>`;
+}
+
 /**
  * What the token is, stated before anyone has to ask.
  *
@@ -833,6 +913,7 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     meta,
     body: `${heroHtml(index, meta)}
 ${band('Ask', askHtml(), 'Answered from the readings below and from nothing else. Any figure not in the record is discarded rather than smoothed over.')}
+${band('Installs', adoptionHtml(index), 'What is actually being downloaded. A star can be bought and a fork can be manufactured; a hundred million installs a week cannot.')}
 ${band('Readings', lensesHtml(index), 'What each of the five readings answers, and how many findings each has on record.')}
 ${band('Today', `${table}${formingNotice}`, 'Everything detected since midnight UTC. Empty is the ordinary state and is reported as such.')}
 ${band(

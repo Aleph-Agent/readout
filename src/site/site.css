@@ -58,21 +58,28 @@
 /* ----------------------------------------------------------------- tokens */
 
 :root {
-  /* One neutral ramp, near-black with a faint olive cast.
+  /* One ramp, olive-tinted at the bottom and neutral at the top.
 
-     The cast is a few degrees of hue, not a colour: enough that #ccff00 sits on
-     it as though it belongs there rather than being pasted over a grey, and not
-     enough to read as green. A loud accent on a ground that shares none of its
-     hue always looks stuck on. */
-  --ink-000: #0c0f08;
-  --ink-025: #12160c;
-  --ink-050: #171c10;
-  --ink-100: #212717;
-  --ink-200: #2c331f;
-  --ink-300: #4a5338;
-  --ink-500: #8e9683;
-  --ink-700: #c2c8b6;
-  --ink-900: #e6ebda;
+     The tint is a few degrees of hue on the surfaces only: enough that #ccff00
+     sits on them as though it belongs rather than being pasted over a grey, and
+     never on the text, which would make every paragraph read green.
+
+     Widened at the low end, which was the real problem. The first three steps
+     ran #0c0f08, #12160c, #171c10 — about six points of luminance across
+     panel, raised and border, so a table, its container and the page behind it
+     were the same black and the whole thing read flat whatever the accent did.
+     Redesigning the palette four times could not fix that, because the palette
+     was never what was wrong. There is now visible separation between a page, a
+     panel and a raised surface. */
+  --ink-000: #0a0d07;
+  --ink-025: #141810;
+  --ink-050: #1d2317;
+  --ink-100: #2a3122;
+  --ink-200: #3a4230;
+  --ink-300: #5c6450;
+  --ink-500: #929a86;
+  --ink-700: #c4cab8;
+  --ink-900: #e9ecdf;
 
   /* Two status colours. Neither is lime, deliberately.
 

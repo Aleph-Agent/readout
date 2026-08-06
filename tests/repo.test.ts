@@ -70,6 +70,8 @@ function page(over: Partial<RepoPageData>): string {
     series: [],
     baselinePerDay: null,
     baselineDays: 0,
+    health: null,
+    installs: null,
     events: [],
     totalEvents: 0,
     ...over,
@@ -201,6 +203,31 @@ describe('a repository with almost no history', () => {
 });
 
 /* ------------------------------------------------------------------------ */
+
+describe('the readings that are not GitHub', () => {
+  it('shows the scorecard, the advisories and the downloads', () => {
+    // These pages are the largest indexable surface here — 400 of them — and
+    // they were 4.7KB of chrome around a fork count while all three of these
+    // were being collected and shown nowhere. Somebody searching "is X
+    // maintained" is asking exactly what they answer.
+    const html = page({
+      health: { scorecard: 7.4, scoredAt: '2026-08-01', advisories: 22 },
+      installs: 163302198,
+    });
+
+    expect(html).toContain('7.4 of 10');
+    expect(html).toContain('163,302,198');
+    expect(html).toContain('Advisories, all time');
+  });
+
+  it('omits a reading it does not have rather than showing a zero', () => {
+    const html = page({ health: { scorecard: null, scoredAt: null, advisories: null } });
+
+    expect(html).not.toContain('OpenSSF scorecard');
+    expect(html).not.toContain('Advisories, all time');
+    expect(html).not.toContain('Downloads, weekly');
+  });
+});
 
 describe('edge cases', () => {
   it('says plainly when a repository stopped being reachable', () => {

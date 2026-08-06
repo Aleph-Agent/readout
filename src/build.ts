@@ -686,6 +686,8 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
           series,
           baselinePerDay: baseline.perDay,
           baselineDays: baseline.days,
+          health: healthByRepo.get(entry.id) ?? null,
+          installs: adoptionByRepo.get(entry.id) ?? null,
           events: repoEvents.slice(0, MAX_TIMELINE_EVENTS),
           totalEvents: repoEvents.length,
         },
@@ -802,6 +804,11 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   }
 
   copyFileSync(SITE_CSS, join(DIST_DIR, 'site.css'));
+
+  // The share card. Every link to this site posted anywhere rendered as a blank
+  // box until this existed, which is a poor showing for a project whose only
+  // distribution is people posting links to it.
+  copyFileSync(join(ROOT, 'assets', 'brand', 'banner.png'), join(DIST_DIR, 'share.png'));
 
   const fontDir = join(DIST_DIR, 'fonts');
   mkdirSync(fontDir, { recursive: true });

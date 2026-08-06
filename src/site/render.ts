@@ -443,7 +443,11 @@ export function layout(options: PageOptions): string {
 <meta property="og:title" content="${esc(options.title)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(url)}">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="${SITE_ORIGIN}/share.png">
+<meta property="og:image:width" content="1500">
+<meta property="og:image:height" content="500">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${SITE_ORIGIN}/share.png">
 <meta name="twitter:title" content="${esc(options.title)}">
 <meta name="twitter:description" content="${esc(description)}">
 <link rel="alternate" type="application/rss+xml" title="Readout findings" href="/feed.xml">
@@ -1059,16 +1063,16 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
     index,
     meta,
     body: `${heroHtml(index, meta)}
-${band('Ask', askHtml(), 'Answered only from the readings below.')}
 ${band('Installs', adoptionHtml(index), 'Stars can be bought. Installs cannot.')}
 ${band('Health', healthHtml(index), 'OpenSSF and OSV. Not judged here.')}
-${band('Readings', lensesHtml(index), 'What each signal answers.')}
-${band('Today', `${table}${formingNotice}`, 'Since midnight UTC. Empty is the ordinary state.')}
+${band('Ask', askHtml(), 'Answered only from the readings here.')}
 ${band(
   'Watchlist',
   `${stripSvg(index.strip, releasedToday)}${coverageHtml(index)}${watchlistReadout(index.strip)}`,
   'Curated and partial. A category is why a repository was added, not a fact about it.',
 )}
+${band('Today', `${table}${formingNotice}`, 'Since midnight UTC. Empty is the ordinary state.')}
+${band('Signals', lensesHtml(index), 'Five detectors. Most need fourteen days of history before they can say anything.')}
 ${band(
   'Our record',
   `${scorecardHtml(index)}${calibrationHtml(index)}`,

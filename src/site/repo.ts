@@ -39,6 +39,18 @@ export interface RepoPageData {
   series: RepoSeriesPoint[];
   baselinePerDay: number | null;
   baselineDays: number;
+  /**
+   * The readings that are not GitHub's.
+   *
+   * These pages were 4.7KB of chrome around a fork count, and they are the
+   * largest indexable surface this site has — 400 of them. Somebody searching
+   * "is vitejs/vite maintained" is asking exactly what the scorecard, the
+   * advisory count and the download trend answer, and all three were already
+   * being collected and shown nowhere.
+   */
+  health: { scorecard: number | null; scoredAt: string | null; advisories: number | null } | null;
+  /** Weekly downloads, largest across the packages this repository publishes. */
+  installs: number | null;
   /** Newest first, capped so a long-lived page stays bounded. */
   events: EventRecord[];
   /** How many exist in total, so truncation is disclosed rather than silent. */
@@ -169,6 +181,22 @@ export function renderRepoPage(
         This repository is on the watchlist but has not been collected. It will appear after the
         next pulse.</div>`
       : `<div class="finding-metrics">
+        ${
+          data.installs === null
+            ? ''
+            : reading('Downloads, weekly', data.installs.toLocaleString('en'))
+        }
+        ${
+          data.health?.scorecard == null
+            ? ''
+            : reading('OpenSSF scorecard', `${data.health.scorecard.toFixed(1)} of 10`)
+        }
+        ${
+          data.health?.advisories == null
+            ? ''
+            : reading('Advisories, all time', String(data.health.advisories))
+        }
+        ${reading('Licence', state.license ?? 'unidentified')}
         ${reading('Forks', String(state.forks))}
         ${reading('Stars', String(state.stars))}
         ${reading('Open issues', String(state.openIssues))}

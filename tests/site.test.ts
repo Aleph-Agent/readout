@@ -351,11 +351,30 @@ describe('telling a first-time visitor what this is', () => {
     // and the next began. Every section carries its name in the same rail, and
     // a missing one is a section a reader cannot place.
     const html = renderIndex(
-      index({ strip: [mark({ delta: 60, multiplier: 24, state: 'confirmed' })] }),
+      index({
+        strip: [mark({ delta: 60, multiplier: 24, state: 'confirmed' })],
+        adoption: {
+          measured: 1,
+          unread: 0,
+          weekly: 800,
+          weeklyPackages: 1,
+          top: [{ repo: 'a/one', registry: 'npm', name: 'one', count: 800, window: 'week' }],
+        },
+        health: {
+          scored: 1,
+          unscored: 0,
+          median: 7,
+          advisories: 2,
+          weakest: [{ repo: 'a/one', scorecard: 7, scoredAt: '2026-08-01', advisories: 2 }],
+        },
+      }),
       meta(),
     );
 
-    for (const name of ['Ask', 'Readings', 'Today', 'Watchlist', 'Our record', 'The token']) {
+    // Ordered by how much each band actually has to say. Installs is the only
+    // one with no empty cell in it and it used to sit third, behind two bands
+    // that were mostly em-dashes.
+    for (const name of ['Installs', 'Ask', 'Watchlist', 'Today', 'Signals', 'Our record', 'The token']) {
       expect(html).toContain(`<h2 class="band-name">${name}</h2>`);
     }
 

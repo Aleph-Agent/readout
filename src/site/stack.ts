@@ -72,27 +72,75 @@ if (stackForm) {
     catch { out.innerHTML = '<p class="notice">The index could not be loaded.</p>'; return; }
 
     const wanted = names(text);
-    const matched = [];
+
+    // Advisories for everything, not only for what this project happens to
+    // track. OSV answers 150 packages in one request and allows the call from a
+    // browser, so coverage here is the whole manifest rather than the 158
+    // packages on the watchlist. A tool that says "not covered" for half of
+    // somebody's dependencies does not get used twice.
+    let osv = new Map();
+    try { osv = await advisories(wanted); } catch { /* leave it unknown, never zero */ }
+
+    const rows = [];
     for (const [key, shown] of wanted) {
-      const hit = data.packages[key];
-      if (hit) matched.push({ name: shown, ...hit });
+      const tracked = data.packages[key];
+      rows.push({
+        name: shown,
+        tracked: Boolean(tracked),
+        advisories: osv.has(key) ? osv.get(key) : (tracked ? tracked.advisories : null),
+        ...(tracked || {}),
+      });
     }
 
-    render(wanted.size, matched, data.benchmark);
+    render(rows, data.benchmark, osv.size > 0);
   });
+
+  const OSV_ECOSYSTEM = { npm: 'npm', pypi: 'PyPI', crates: 'crates.io' };
+
+  async function advisories(wanted) {
+    const keys = [...wanted.keys()];
+    const found = new Map();
+
+    // Batched at 100. Verified: OSV answers 150 in one call, but a manifest can
+    // be any size and one oversized request failing loses the lot.
+    for (let i = 0; i < keys.length; i += 100) {
+      const slice = keys.slice(i, i + 100);
+      const res = await fetch('https://api.osv.dev/v1/querybatch', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          queries: slice.map((key) => {
+            const cut = key.indexOf(':');
+            return {
+              package: {
+                name: key.slice(cut + 1),
+                ecosystem: OSV_ECOSYSTEM[key.slice(0, cut)],
+              },
+            };
+          }),
+        }),
+      });
+      if (!res.ok) continue;
+      const body = await res.json();
+      (body.results || []).forEach((result, index) => {
+        found.set(slice[index], (result.vulns || []).length);
+      });
+    }
+
+    return found;
+  }
 
   const AGE_DAYS = (iso) =>
     iso ? Math.round((Date.now() - Date.parse(iso)) / 86400000) : null;
 
-  function render(total, rows, benchmark) {
+  function render(rows, benchmark, osvWorked) {
     if (!rows.length) {
-      out.innerHTML = '<p class="notice"><strong>No overlap</strong> ' + total +
-        ' dependencies were read and none is on the watchlist, so there is nothing measured to ' +
-        'report. This covers ' + benchmark.repositories + ' curated projects, not every package ' +
-        'that exists — a miss here says nothing about your dependency.</p>';
+      out.innerHTML = '<p class="notice"><strong>Nothing read</strong> No dependency names were ' +
+        'found in that. Paste a package.json, requirements.txt or Cargo.toml.</p>';
       return;
     }
 
+    const tracked = rows.filter((r) => r.tracked);
     const scored = rows.filter((r) => typeof r.scorecard === 'number');
     const median = scored.length
       ? scored.map((r) => r.scorecard).sort((a, b) => a - b)[Math.floor(scored.length / 2)]
@@ -114,12 +162,12 @@ if (stackForm) {
 
     out.innerHTML =
       '<div class="hero-figures">' +
-        fig(rows.length + ' of ' + total, 'Dependencies with readings') +
+        fig(rows.length, 'Dependencies read') +
+        fig(rows.reduce((t, r) => t + (r.advisories || 0), 0).toLocaleString('en'),
+            osvWorked ? 'Advisories, all of them' : 'Advisories, tracked only') +
         fig(median === null ? '—' : median.toFixed(1), 'Median scorecard, yours') +
         fig(benchmark.medianScorecard === null ? '—' : benchmark.medianScorecard.toFixed(1),
             'Median across ' + benchmark.scored + ' tracked') +
-        fig(rows.reduce((t, r) => t + (r.advisories || 0), 0).toLocaleString('en'),
-            'Advisories, all time') +
       '</div>' +
       (flags ? '<ul class="stack-flags">' + flags + '</ul>' : '') +
       '<div class="wrap"><table class="readout"><thead><tr>' +
@@ -131,7 +179,7 @@ if (stackForm) {
         const age = AGE_DAYS(r.pushedAt);
         return '<tr>' +
           '<td>' + r.name + '</td>' +
-          '<td>' + link('/repo/' + r.repo, r.repo) + '</td>' +
+          '<td>' + (r.tracked ? link('/repo/' + r.repo, r.repo) : '<span class="dim">not tracked</span>') + '</td>' +
           '<td class="n num">' + (typeof r.scorecard === 'number' ? r.scorecard.toFixed(1) : '<span class="dim">—</span>') + '</td>' +
           '<td class="n num">' + (r.advisories === null ? '<span class="dim">—</span>' : r.advisories) + '</td>' +
           '<td class="dim">' + (r.license || '<span class="dim">—</span>') + '</td>' +
@@ -139,10 +187,9 @@ if (stackForm) {
         '</tr>';
       }).join('') +
       '</tbody></table></div>' +
-      '<p class="basis label">Scorecards are OpenSSF\\u2019s and advisories are OSV\\u2019s, neither ' +
-      'computed here. Advisory counts are all time, so a mature well-patched project carries more ' +
-      'than a young one and a high count is not a warning on its own. Only dependencies that are ' +
-      'on this watchlist can be read; the rest are not judged, they are simply not covered.</p>';
+      '<p class="basis label">Advisories from OSV for every dependency. Scorecard, licence and ' +
+      'last push for the ' + tracked.length + ' on this watchlist. Counts are all time — a mature ' +
+      'project carries more than a young one. <a href="/method">How</a></p>';
   }
 
   // Built rather than written inline: the build's dead-link guard scans emitted

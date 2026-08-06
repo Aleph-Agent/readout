@@ -1321,14 +1321,12 @@ export function renderStack(index: IndexBundle, meta: MetaRecord): string {
   <h1 class="hero-thesis">Point it at your own project.</h1>
   <p class="hero-sub">
     Paste a <code>package.json</code>, <code>requirements.txt</code> or <code>Cargo.toml</code>.
-    You get back what is archived, what has relicensed, what carries advisories, what has not been
-    pushed to in a year, and how the whole stack sits against
-    ${index.watchlist.active} tracked projects. Checking that by hand is tedious enough that nobody
-    does it, which is the only reason it is worth automating.
+    Every dependency is checked for advisories. The ones tracked here also get a security
+    scorecard, a licence and a last-push date.
   </p>
   <p class="hero-follow">
-    <strong>Your manifest never leaves the browser.</strong> Parsing and lookup happen on this page
-    against <a href="/data/stack-index.json">a static file</a> — there is nothing to send it to.
+    <strong>Your manifest never leaves the browser.</strong> Package names go to
+    <a href="https://osv.dev">OSV</a> for advisories; nothing else is sent anywhere.
   </p>
 </section>
 
@@ -1342,7 +1340,7 @@ ${band(
   <div id="stack-out" hidden></div>
   <noscript><p class="notice">This runs entirely in the browser, so it needs scripting. The index it
   reads is at <a href="/data/stack-index.json">/data/stack-index.json</a>.</p></noscript>`,
-  'Only dependencies on this watchlist can be read. A dependency that is not covered is not being judged — it is simply not one of the projects tracked here, and the readout says so rather than scoring it.',
+  'Advisories are checked for every dependency. Scorecard and licence only for the ones tracked here.',
 )}`,
   });
 }

@@ -42,6 +42,17 @@ export type EventKind =
   | 'demand-cluster'
   | 'dependency-shift'
   | 'lineage'
+  /**
+   * The repository changed its licence.
+   *
+   * The only kind here that needs no threshold and has no false-positive mode:
+   * an SPDX field either changed between two readings or it did not. Rare, and
+   * the rarest thing that actually changes what a team does — every recent
+   * open-to-source-available move forked its project within weeks.
+   */
+  | 'licence'
+  /** The repository went read-only. Also a field diff, also unfalsifiable. */
+  | 'archived'
   /** Supersedes an earlier event that turned out to be wrong. Never a delete. */
   | 'correction';
 

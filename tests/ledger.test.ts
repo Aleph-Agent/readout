@@ -40,6 +40,8 @@ function stateRow(id: string, forks: number, etag: string | null = null): LiveSt
     openIssues: 4,
     language: null,
     pushedAt: '2026-08-04T00:00:00Z',
+    license: null,
+    archived: false,
     latestReleaseTag: null,
     latestReleaseAt: null,
     etag,

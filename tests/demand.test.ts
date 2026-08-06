@@ -155,6 +155,8 @@ describe('topByDemandSurface', () => {
     openIssues,
     language: null,
     pushedAt: null,
+    license: null,
+    archived: false,
     latestReleaseTag: null,
     latestReleaseAt: null,
     etag: null,

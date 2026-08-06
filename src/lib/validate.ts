@@ -115,6 +115,21 @@ export function templatedSentence(event: EventRecord): string | null {
       : `${event.repo} published ${tag}${when}, following ${previous}.`;
   }
 
+  if (event.kind === 'licence') {
+    const from = metricString(metrics, 'from');
+    const to = metricString(metrics, 'to');
+    if (from === null || to === null) return null;
+
+    // States the whole fact. No model is involved and none could add anything
+    // except the chance of being wrong about the one signal here that cannot
+    // otherwise be wrong.
+    return `${event.repo} changed its licence from ${from} to ${to}.`;
+  }
+
+  if (event.kind === 'archived') {
+    return `${event.repo} was archived and is now read-only.`;
+  }
+
   if (event.kind === 'lineage') {
     const base = metricString(metrics, 'baseModel');
     const added = metricNumber(metrics, 'newDescendants');

@@ -40,6 +40,14 @@ function rowFromPayload(
     openIssues: payload.open_issues_count,
     language: payload.language,
     pushedAt: payload.pushed_at,
+    // GitHub reports NOASSERTION when it finds a licence file it cannot
+    // identify. That is "unknown", not a licence, and storing the literal
+    // string would make a project look like it had relicensed to it.
+    license:
+      payload.license?.spdx_id == null || payload.license.spdx_id === 'NOASSERTION'
+        ? null
+        : payload.license.spdx_id,
+    archived: payload.archived === true,
     // Release fields belong to the releases collector. Carrying them forward
     // keeps one collector from erasing another's output.
     latestReleaseTag: previous?.latestReleaseTag ?? null,
@@ -59,6 +67,8 @@ function inactiveRow(entry: WatchlistEntry, previous: LiveStateRow | undefined):
     openIssues: previous?.openIssues ?? 0,
     language: previous?.language ?? null,
     pushedAt: previous?.pushedAt ?? null,
+    license: previous?.license ?? null,
+    archived: previous?.archived ?? false,
     latestReleaseTag: previous?.latestReleaseTag ?? null,
     latestReleaseAt: previous?.latestReleaseAt ?? null,
     // Both validators are dropped: whatever they referred to is gone.

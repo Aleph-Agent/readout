@@ -37,6 +37,15 @@ export interface LiveStateRow {
   language: string | null;
   /** ISO 8601 UTC of the repository's last push, straight from GitHub. */
   pushedAt: string | null;
+  /**
+   * SPDX licence identifier, or null when GitHub cannot determine one.
+   *
+   * Stored so the next pulse can diff it. A change here is the one signal in
+   * this project that needs no threshold and has no false-positive mode.
+   */
+  license: string | null;
+  /** GitHub's read-only flag. A project going archived is news on its own. */
+  archived: boolean;
   /** Tag name of the most recent release, or null if it has never released. */
   latestReleaseTag: string | null;
   /** ISO 8601 UTC the most recent release was published. */
@@ -69,6 +78,8 @@ export const LIVE_STATE_KEYS = [
   'openIssues',
   'language',
   'pushedAt',
+  'license',
+  'archived',
   'latestReleaseTag',
   'latestReleaseAt',
   'etag',

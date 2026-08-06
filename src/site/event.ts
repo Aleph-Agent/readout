@@ -25,6 +25,8 @@ const KIND_LABEL: Record<EventRecord['kind'], string> = {
   'demand-cluster': 'Demand',
   'dependency-shift': 'Dependency change',
   lineage: 'Lineage',
+  licence: 'Licence change',
+  archived: 'Archived',
   correction: 'Correction',
 };
 

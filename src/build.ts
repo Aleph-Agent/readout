@@ -21,6 +21,7 @@ import { lastDetectionByRepo } from './lib/confidence.ts';
 import { buildCoverage } from './lib/coverage.ts';
 import { summariseAdoption } from './lib/adoption-summary.ts';
 import { summariseHealth } from './lib/health-summary.ts';
+import { renderBadge } from './site/badge.ts';
 import { summariseWindow, type CalibrationSummary } from './lib/calibration.ts';
 
 /** Detectors whose reachability is published. Order is display order. */
@@ -697,6 +698,20 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
 
   pages.set('method.html', renderMethod(index, previous));
   pages.set('compare.html', renderCompare(index, previous));
+
+  // One badge per watched repository. A maintainer who embeds one puts a
+  // permanent link back in a README that may be read more in a week than this
+  // site is read in a year, and it costs a static file each.
+  for (const mark of strip) {
+    pages.set(
+      `badge/${assertSafeRepoId(mark.id)}.svg`,
+      renderBadge({
+        repo: mark.name,
+        health: healthByRepo.get(mark.id),
+        installs: adoptionByRepo.get(mark.id) ?? null,
+      }),
+    );
+  }
 
   const sitemapPaths = [
     '/',

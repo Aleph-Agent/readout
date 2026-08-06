@@ -1,4 +1,5 @@
 import { collectBase } from '../collectors/base.ts';
+import { collectLicences } from '../collectors/licences.ts';
 import { collectReleases } from '../collectors/releases.ts';
 import { createGitHubClient, type GitHubClient } from '../lib/github.ts';
 import {
@@ -104,6 +105,17 @@ export async function runPulse(options: PulseOptions = {}): Promise<MetaRecord> 
 
   writeLiveState(rows);
 
+  // Licence and archival changes, diffed against the previous pulse. Costs no
+  // requests: both fields arrive in the repository payload already fetched, and
+  // both were discarded until now. They are also the only two signals here that
+  // need no threshold and cannot produce a false positive.
+  const fieldChanges = collectLicences(rows, previousState, {
+    now: nowIso,
+    today,
+    seen: new Set(readEvents(month).map((event) => event.id)),
+  });
+  if (fieldChanges.length > 0) appendEvents(month, fieldChanges);
+
   const windowRows = new Map(readWindow().map((row) => [row.id, row]));
   const nextWindow: WindowRow[] = [];
   for (const row of rows) {
@@ -114,6 +126,7 @@ export async function runPulse(options: PulseOptions = {}): Promise<MetaRecord> 
   writeWindow(nextWindow);
 
   if (releases.events.length > 0) appendEvents(month, releases.events);
+  const eventsDetected = releases.events.length + fieldChanges.length;
 
   const stats = client.stats();
   const errors = [...base.errors, ...releases.errors];
@@ -132,7 +145,7 @@ export async function runPulse(options: PulseOptions = {}): Promise<MetaRecord> 
     rateLimitRemaining: stats.rateLimitRemaining,
     reposChecked: entries.length,
     requestsUnchanged: stats.unchanged,
-    eventsDetected: releases.events.length,
+    eventsDetected,
     collectorsErrored: errors,
   };
 

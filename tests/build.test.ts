@@ -44,6 +44,8 @@ function stateRow(id: string, forks: number): LiveStateRow {
     openIssues: 2,
     language: 'TypeScript',
     pushedAt: '2026-08-04T00:00:00Z',
+    license: null,
+    archived: false,
     latestReleaseTag: 'v1.0.0',
     latestReleaseAt: '2026-08-01T00:00:00Z',
     etag: null,

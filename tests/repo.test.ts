@@ -42,6 +42,8 @@ function state(id: string, over: Partial<LiveStateRow> = {}): LiveStateRow {
     openIssues: 310,
     language: 'Python',
     pushedAt: '2026-08-04T02:00:00Z',
+    license: null,
+    archived: false,
     latestReleaseTag: 'v2.9.0',
     latestReleaseAt: '2026-08-03T18:00:00Z',
     etag: null,

@@ -236,6 +236,20 @@ export interface RepoPayload {
   open_issues_count: number;
   language: string | null;
   pushed_at: string | null;
+  /**
+   * SPDX identifier, already in the response this project pays for six times a
+   * day and discarded until now.
+   *
+   * Relicensing is the rarest signal here and the one that most changes what a
+   * team does: HashiCorp, Redis, Elastic, MongoDB, Sentry and Terraform each
+   * moved off an open licence and each time it dominated developer discussion
+   * for weeks and forked the project. Nobody aggregates it. It needs no
+   * threshold and cannot produce a false positive — the field either changed or
+   * it did not.
+   */
+  license: { spdx_id?: string | null } | null;
+  /** True once a repository is read-only. Also free, also never read before. */
+  archived: boolean;
 }
 
 /** Shape of `GET /repos/{owner}/{repo}/releases/latest`, narrowed. */

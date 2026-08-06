@@ -17,6 +17,8 @@ export const SIGNAL_LABEL: Record<EventKind, string> = {
   'demand-cluster': 'Demand',
   'dependency-shift': 'Dependency change',
   lineage: 'Lineage',
+  licence: 'Licence change',
+  archived: 'Archived',
   correction: 'Correction',
 };
 

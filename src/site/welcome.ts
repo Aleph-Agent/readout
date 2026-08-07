@@ -24,7 +24,7 @@ import type { MetaRecord } from '../types/meta.ts';
 export function renderWelcome(index: IndexBundle, meta: MetaRecord): string {
   const lead = findingsFrom(index)[0];
 
-  const { watchlist, disclosure, adoption, incidents, lifecycle, contributors } = index;
+  const { watchlist, disclosure, adoption, incidents, lifecycle, contributors, staleness, names } = index;
 
   /** Four things this measures that a repository page cannot tell you. */
   const answers: readonly { question: string; answer: string; href: string }[] = [
@@ -76,9 +76,10 @@ export function renderWelcome(index: IndexBundle, meta: MetaRecord): string {
   <h1 class="hero-thesis">Take the reading, and check it.</h1>
   <p class="hero-sub">
     Most answers about a dependency come from a chart nobody can audit or a model that read the
-    internet a year ago. This measures ${watchlist.active} open-source projects every
-    ${disclosure.cadenceHours} hours, publishes every figure as a file, and commits the whole
-    history — so any number here can be traced back to the run that produced it.
+    internet a year ago. This reads ${watchlist.active} repositories, ${incidents.providers} status
+    feeds, ${lifecycle.products} runtimes, ${adoption.measured} packages and
+    ${contributors.measured} commit histories — every ${disclosure.cadenceHours} hours, published as
+    files, and committed in full so any figure can be traced back to the run that produced it.
   </p>
   <p class="hero-follow">
     Free, no account, nothing to install. There is an
@@ -107,11 +108,12 @@ ${band(
 ${band(
   'What is behind it',
   `<div class="hero-figures">
-    <div class="figure"><span class="figure-value num">${watchlist.active}</span><span class="label">Repositories watched</span></div>
-    <div class="figure"><span class="figure-value num">${adoption.measured}</span><span class="label">Packages read daily</span></div>
-    <div class="figure"><span class="figure-value num">${incidents.providers}</span><span class="label">Status feeds kept</span></div>
-    <div class="figure"><span class="figure-value num">${lifecycle.products}</span><span class="label">Runtimes on the clock</span></div>
-    <div class="figure"><span class="figure-value num">${contributors.measured}</span><span class="label">Commit histories read</span></div>
+    <div class="figure"><span class="figure-value num">${watchlist.active}</span><span class="label">Repositories</span></div>
+    <div class="figure"><span class="figure-value num">${incidents.total.toLocaleString('en')}</span><span class="label">Incidents kept after the feeds dropped them</span></div>
+    <div class="figure"><span class="figure-value num">${lifecycle.dated}</span><span class="label">Release lines on the end-of-life clock</span></div>
+    <div class="figure"><span class="figure-value num">${contributors.measured}</span><span class="label">Commit histories, for the bus factor</span></div>
+    <div class="figure"><span class="figure-value num">${staleness.measured}</span><span class="label">Packages, by real ship date</span></div>
+    <div class="figure"><span class="figure-value num">${names.found}</span><span class="label">Names one keystroke from a real package</span></div>
   </div>
   <p class="band-note">The watchlist is curated and partial — chosen by hand, not a survey of open
   source. It says so on every page that counts from it.</p>

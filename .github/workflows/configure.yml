@@ -49,6 +49,24 @@ jobs:
           printf '%s' "${GROQ_API_KEY}" \
             | npx --yes wrangler@4 pages secret put GROQ_API_KEY --project-name=readout
 
+      - name: Put the Blockscout key in the Pages project
+        # Both public JSON-RPC endpoints answer 429 from a Worker, consistently
+        # — Workers egress from addresses shared with millions of sites and a
+        # public RPC limits by address, so the quota is gone before this project
+        # asks. A key moves the limit from the address to the key.
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BLOCKSCOUT_API_KEY: ${{ secrets.BLOCKSCOUT_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BLOCKSCOUT_API_KEY:-}" ]; then
+            echo "BLOCKSCOUT_API_KEY is not set. Nothing to configure." >&2
+            exit 1
+          fi
+          printf '%s' "${BLOCKSCOUT_API_KEY}" \
+            | npx --yes wrangler@4 pages secret put BLOCKSCOUT_API_KEY --project-name=readout
+
       - run: npm ci
 
       - name: Build

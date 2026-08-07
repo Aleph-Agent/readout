@@ -31,6 +31,22 @@ const ENDPOINTS = [
   'https://robinhoodchain.blockscout.com/api/eth-rpc',
 ] as const;
 
+/**
+ * Blockscout's REST reader, and the reason it exists.
+ *
+ * Both public JSON-RPC endpoints answer 429 from here — consistently, three
+ * probes apart. That is not an outage: Workers egress from addresses shared
+ * with millions of other sites, and a public RPC rate-limits by address, so the
+ * quota is spent by strangers before this project asks for anything. It will
+ * not improve.
+ *
+ * A key moves the limit from the address to the key. The free tier is 5 requests
+ * a second and 100,000 credits a day, against the two calls a payment needs.
+ *
+ * Read-only, and the key is never returned in a response.
+ */
+const BLOCKSCOUT = 'https://api.blockscout.com/4663/api/v2';
+
 /** Robinhood Chain. Anything else means a misconfigured endpoint. */
 const EXPECTED_CHAIN_ID = 4663;
 
@@ -93,10 +109,67 @@ async function probe(endpoint: string): Promise<Probe> {
   }
 }
 
-export async function onRequestGet(): Promise<Response> {
-  // Both at once. Sequentially, a hanging endpoint would make the healthy one
-  // look slow, and the point is to compare them.
-  const probes = await Promise.all(ENDPOINTS.map((endpoint) => probe(endpoint)));
+/**
+ * Blockscout's own reader, which needs a key and therefore actually answers.
+ *
+ * Reports a block height like the RPC probes do, so the two are comparable in
+ * the same table. The chain id is not on this endpoint; it is fixed in the URL
+ * and asserted by construction rather than read back.
+ */
+async function probeBlockscout(key: string | undefined): Promise<Probe> {
+  const started = Date.now();
+  const endpoint = `${BLOCKSCOUT}/blocks?type=block`;
+
+  if (key === undefined || key === '') {
+    return {
+      endpoint,
+      reachable: false,
+      chainId: null,
+      blockNumber: null,
+      ms: null,
+      error: 'BLOCKSCOUT_API_KEY is not set on this deployment',
+    };
+  }
+
+  try {
+    const response = await fetch(endpoint, { headers: { authorization: `Bearer ${key}` } });
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`.trim());
+
+    const body = (await response.json()) as { items?: { height?: number }[] };
+    const height = body.items?.[0]?.height;
+    if (typeof height !== 'number') throw new Error('no block height in the response');
+
+    return {
+      endpoint,
+      reachable: true,
+      chainId: EXPECTED_CHAIN_ID,
+      blockNumber: height,
+      ms: Date.now() - started,
+      error: null,
+    };
+  } catch (error) {
+    return {
+      endpoint,
+      reachable: false,
+      chainId: null,
+      blockNumber: null,
+      ms: Date.now() - started,
+      // The key is never in the message. An error that quotes its own
+      // credentials is a credential in a log somebody else can read.
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+export async function onRequestGet(context: {
+  env: { BLOCKSCOUT_API_KEY?: string };
+}): Promise<Response> {
+  // All of them at once. Sequentially, a hanging endpoint would make the
+  // healthy one look slow, and the point is to compare them.
+  const probes = await Promise.all([
+    ...ENDPOINTS.map((endpoint) => probe(endpoint)),
+    probeBlockscout(context.env.BLOCKSCOUT_API_KEY),
+  ]);
   const usable = probes.filter(
     (result) => result.reachable && result.chainId === EXPECTED_CHAIN_ID,
   );

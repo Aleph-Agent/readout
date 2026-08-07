@@ -21,7 +21,7 @@ import type { QuestionRow } from '../types/questions.ts';
 import { sleep } from '../lib/registries.ts';
 
 const API = 'https://api.stackexchange.com/2.3';
-const USER_AGENT = 'readout-agent (+https://github.com/kaitzyy-dev/readout)';
+const USER_AGENT = 'sighttrue-agent (+https://github.com/kaitzyy-dev/sighttrue)';
 
 export const DELAY_MS = 300;
 

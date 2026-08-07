@@ -292,7 +292,7 @@ describe('the pull request comment', () => {
   });
 
   it('leaves a real finding standing when the readings go down', async () => {
-    comments = [{ id: 101, body: `${MARKER}\n### Readout\n\nleft-pad is archived.` }];
+    comments = [{ id: 101, body: `${MARKER}\n### Sighttrue\n\nleft-pad is archived.` }];
     readingsFail = true;
 
     const result = await run({ READOUT_TOKEN: 'stub' }, MANIFEST);

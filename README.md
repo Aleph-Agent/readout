@@ -1,6 +1,6 @@
-# Readout
+# Sighttrue
 
-**[readout-7pt.pages.dev](https://readout-7pt.pages.dev)** · [your stack](https://readout-7pt.pages.dev/stack) · [compare](https://readout-7pt.pages.dev/compare) · [method](https://readout-7pt.pages.dev/method) · [feed](https://readout-7pt.pages.dev/feed.xml)
+**[sighttrue.com](https://sighttrue.com)** · [your stack](https://sighttrue.com/stack) · [compare](https://sighttrue.com/compare) · [method](https://sighttrue.com/method) · [feed](https://sighttrue.com/feed.xml)
 
 ## Check your dependencies in CI
 
@@ -10,7 +10,7 @@ permissions:
 
 steps:
   - uses: actions/checkout@v4
-  - uses: kaitzyy-dev/readout@v1
+  - uses: kaitzyy-dev/sighttrue@v1
     with:
       manifest: package.json
       fail-on: archived,relicensed
@@ -47,7 +47,7 @@ dependency healthy" from a measurement taken today rather than from training
 data a year old.
 
 ```json
-{ "mcpServers": { "readout": { "url": "https://readout-7pt.pages.dev/api/mcp" } } }
+{ "mcpServers": { "readout": { "url": "https://sighttrue.com/api/mcp" } } }
 ```
 
 Seven tools: `check_package`, `check_stack`, `check_eol`, `check_provider`,

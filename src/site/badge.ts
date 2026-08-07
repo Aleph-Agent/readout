@@ -81,7 +81,7 @@ export function renderBadge(input: BadgeInput): string {
   // No gradient, no bevel, no rounded pill. The site's own two colours and its
   // own flat geometry, so a badge in the wild still looks like the instrument.
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(label)}: ${esc(value)}">
-  <title>${esc(input.repo)} — ${esc(label)} ${esc(value)}, measured by Readout</title>
+  <title>${esc(input.repo)} — ${esc(label)} ${esc(value)}, measured by Sighttrue</title>
   <rect width="${width}" height="${height}" fill="#0c0f08"/>
   <rect x="${labelWidth}" width="${valueWidth}" height="${height}" fill="#171c10"/>
   <rect x="${labelWidth}" width="2" height="${height}" fill="#ccff00"/>

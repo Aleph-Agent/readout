@@ -182,7 +182,7 @@ function timelineEntry(event: EventRecord, previous: EventRecord | undefined): s
  * things a maintainer might want and neither was reachable from this page.
  */
 function embedHtml(id: string): string {
-  const markdown = `[![Readout](${SITE_ORIGIN}/badge/${id}.svg)](${SITE_ORIGIN}/repo/${id})`;
+  const markdown = `[![Sighttrue](${SITE_ORIGIN}/badge/${id}.svg)](${SITE_ORIGIN}/repo/${id})`;
   const target = `embed-${id.replace('/', '-')}`;
 
   return `<section class="band">
@@ -190,7 +190,7 @@ function embedHtml(id: string): string {
   <div class="band-body">
     <p class="band-note">The figure updates on its own. It is read every four hours and served as a
     static file, so nothing calls back to you and there is nothing to install.</p>
-    <p><img src="/badge/${esc(id)}.svg" alt="Readout badge for ${esc(id)}" width="150" height="20"></p>
+    <p><img src="/badge/${esc(id)}.svg" alt="Sighttrue badge for ${esc(id)}" width="150" height="20"></p>
     <pre class="method-code" id="${esc(target)}">${esc(markdown)}</pre>
     <p class="repo-facts">
       <button class="label" type="button" data-copy="${esc(target)}">Copy the markdown</button>
@@ -294,14 +294,14 @@ ${timeline}
 ${embedHtml(entry.id)}`;
 
   return layout({
-    title: `${entry.id} — Readout`,
+    title: `${entry.id} — Sighttrue`,
     current: '',
     index,
     meta,
     // This repository's own feed, not the site's. Handing somebody four hundred
     // projects when they asked to follow one is how a feed link gets clicked
     // once and never again.
-    feed: { href: `/repo/${entry.id}.xml`, title: `Readout — ${entry.id}` },
+    feed: { href: `/repo/${entry.id}.xml`, title: `Sighttrue — ${entry.id}` },
     body,
   });
 }

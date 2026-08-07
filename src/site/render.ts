@@ -245,7 +245,7 @@ function chromeHtml(current: string, meta: MetaRecord, index: IndexBundle): stri
 
   return `<header class="chrome">
   <div class="shell chrome-bar">
-    <a class="wordmark" href="/">Readout</a>
+    <a class="wordmark" href="/">Sighttrue</a>
     <div class="reading-age">
       <span><span class="label">Last reading</span> ${reading}</span>
       ${age}
@@ -378,7 +378,7 @@ function colophonHtml(index: IndexBundle, meta: MetaRecord): string {
 }
 
 /** Absolute origin, needed because link previews reject relative URLs. */
-export const SITE_ORIGIN = process.env['SITE_ORIGIN'] ?? 'https://readout-7pt.pages.dev';
+export const SITE_ORIGIN = process.env['SITE_ORIGIN'] ?? 'https://sighttrue.com';
 
 /**
  * Cloudflare Web Analytics beacon tag.
@@ -539,7 +539,7 @@ export function layout(options: PageOptions): string {
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(url)}">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Readout">
+<meta property="og:site_name" content="Sighttrue">
 <meta property="og:title" content="${esc(options.title)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(url)}">
@@ -550,7 +550,7 @@ export function layout(options: PageOptions): string {
 <meta name="twitter:image" content="${SITE_ORIGIN}/share.png">
 <meta name="twitter:title" content="${esc(options.title)}">
 <meta name="twitter:description" content="${esc(description)}">
-<link rel="alternate" type="application/rss+xml" title="${esc(options.feed?.title ?? 'Readout findings')}" href="${esc(options.feed?.href ?? '/feed.xml')}">
+<link rel="alternate" type="application/rss+xml" title="${esc(options.feed?.title ?? 'Sighttrue findings')}" href="${esc(options.feed?.href ?? '/feed.xml')}">
 <link rel="stylesheet" href="/site.css">
 <script>${THEME_BOOT}</script>
 </head>
@@ -1211,7 +1211,7 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
       Their counts are shown raw; no multiplier is computed for them and none is implied.</div>`;
 
   return layout({
-    title: 'Readout — developer activity readings',
+    title: 'Sighttrue — developer activity readings',
     current: '/',
     index,
     meta,
@@ -1255,7 +1255,7 @@ export function renderMethod(index: IndexBundle, meta: MetaRecord): string {
       : Math.round((crypto.repositories / watchlist.active) * 100);
 
   return layout({
-    title: 'Method — Readout',
+    title: 'Method — Sighttrue',
     description:
       'How these readings are taken, what they cannot support, and who pays for the instrument.',
     current: '/method',
@@ -1439,7 +1439,7 @@ ${band(
  */
 export function renderCompare(index: IndexBundle, meta: MetaRecord): string {
   return layout({
-    title: 'Compare — Readout',
+    title: 'Compare — Sighttrue',
     description:
       'Hold two open-source projects against each other across downloads, security scorecard, advisories and repository activity.',
     current: '/compare',
@@ -1498,7 +1498,7 @@ ${band(
  */
 export function renderStack(index: IndexBundle, meta: MetaRecord): string {
   return layout({
-    title: 'Your stack — Readout',
+    title: 'Your stack — Sighttrue',
     description:
       'Paste a manifest and get a readout of your own dependencies: what is archived, what relicensed, what carries advisories, and how the stack sits against a tracked corpus.',
     current: '/stack',

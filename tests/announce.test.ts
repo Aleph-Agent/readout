@@ -102,7 +102,7 @@ describe('OAuth 1.0a signing', () => {
 
 describe('post length', () => {
   it('counts a link as X counts it, not as characters', () => {
-    const long = 'https://readout-7pt.pages.dev/e/a-very-long-slug-that-keeps-going-and-going';
+    const long = 'https://sighttrue.com/e/a-very-long-slug-that-keeps-going-and-going';
     expect(postLength(long)).toBe(23);
   });
 });

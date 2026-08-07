@@ -43,7 +43,7 @@ jobs:
         # that finds it into a failure. One request settles it.
         run: |
           set -euo pipefail
-          response=$(curl -sS -X POST https://readout-7pt.pages.dev/api/mcp \
+          response=$(curl -sS -X POST https://sighttrue.com/api/mcp \
             -H 'content-type: application/json' \
             -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}')
           echo "${response}" | grep -q '"tools"' || {
@@ -80,6 +80,6 @@ jobs:
           set -euo pipefail
           sleep 5
           curl -sS "https://registry.modelcontextprotocol.io/v0/servers?search=readout" \
-            | grep -q 'io.github.kaitzyy-dev/readout' \
+            | grep -q 'io.github.kaitzyy-dev/sighttrue' \
             && echo "Listed." \
             || echo "Published, but not yet readable from the search index."

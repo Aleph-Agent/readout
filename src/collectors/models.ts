@@ -29,7 +29,7 @@ import type { ModelRow, ModelSample } from '../types/models.ts';
 
 const CATALOGUE = 'https://openrouter.ai/api/v1/models';
 
-const USER_AGENT = 'readout-agent (+https://github.com/kaitzyy-dev/readout)';
+const USER_AGENT = 'sighttrue-agent (+https://github.com/kaitzyy-dev/sighttrue)';
 
 /** Enough to see a price move and settle. Bounded so the file cannot run away. */
 export const TREND_DAYS = 35;

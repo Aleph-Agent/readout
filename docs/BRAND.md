@@ -12,22 +12,36 @@ Nothing here is decided by taste alone. Every colour is a measured value from
 
 ## Name
 
-**depcanary** · `depcanary.com` · `github.com/depcanary`
+**Sighttrue** · `sighttrue.com` · `github.com/kaitzyy-dev/sighttrue` · token **$SGHT**
 
-A canary in a coal mine is a warning system that fails before you do. That is
-the product: it notices a dependency has gone bad — archived, relicensed,
-unpatched, unmaintained, out of support — before it costs you anything.
+To sight true is a surveyor's phrase: take the bearing, and get a reading that
+holds against the reference. Not "we watch your dependencies" — we take the
+measurement, and the measurement is correct.
 
-The metaphor survives translation, the word is spellable on the first attempt,
-and a bird silhouette is legible at 32 pixels, which is not true of most marks.
+That is the thesis rather than a description of features. Every figure on the
+site links to its evidence and every reading is committed publicly; the whole
+credibility argument is that anything here can be checked by the reader. The
+name says it before anybody opens a page.
 
-**Runner-up:** `depassay.com`. To assay is to test a substance for composition
-and purity, which is more precise and less understood. Kept on record in case
-the first is ever lost.
+The mark follows from it: crosshairs, two lines meeting. Legible at 32 pixels,
+which is not true of most marks.
 
-**Previously:** Readout. Changing costs a migration — `SITE_ORIGIN`, 331
-per-repository feeds, 388 badges, the MCP registry manifest, the README. Cheap
-now, expensive in six months.
+**Checked on every surface before it was chosen** — domain, GitHub, X, the
+Virtuals launchpad and CoinGecko. The only candidate of thirty-five that was
+clear on all five.
+
+The ticker was checked separately and mattered more, because a ticker cannot be
+changed after a token is minted. **$SIGHT is taken** by Empire of Sight and
+**$TRUE** by a token ranked around 2,000 — both were shortlisted before being
+checked, and both would have been collisions. `$SGHT` drops the vowels the way
+`$MKR` and `$CRV` do, reads as "sight" without being explained, and was clear on
+both CoinGecko and the launchpad.
+
+**Runner-up:** `plumbwire.com`. Clear on the domain, GitHub and both token
+registries, but the X handle was gone. Kept on record.
+
+**Previously:** Readout, on `readout-7pt.pages.dev`. That address stays alive
+permanently, so nothing already linked to it breaks.
 
 ---
 
@@ -56,7 +70,7 @@ Written once. Longer versions add detail; none of them adds a claim.
 
 > Most "is this maintained?" answers read a repository's last push. That is the
 > wrong field: a push is what a maintainer does for themselves, a release is
-> what reaches the projects depending on them. depcanary reads what actually
+> what reaches the projects depending on them. Sighttrue reads what actually
 > changed — the licence, the archive flag, the advisory count, the end-of-life
 > date, the date something last shipped, and how many people write it. Every
 > four hours, published as static files, and committed to a public repository
@@ -76,12 +90,17 @@ Written once. Longer versions add detail; none of them adds a claim.
 
 ## Mark
 
-A canary, drawn as a schematic rather than a mascot.
+Crosshairs. Two lines meeting, drawn as an instrument reticle rather than a
+logo.
 
-Think of a bird in a field manual or on a warning plate: one stroke weight, flat
-fill, no gradient, no highlight in the eye, no personality. The product's whole
-voice is measurement, and a cartoon would be the one thing on screen asking to
-be liked.
+Think of the graticule etched into a surveyor's scope or a rifle sight: single
+stroke weight, no gradient, no glow, no personality. The product's whole voice
+is measurement, and anything asking to be liked would be the one thing on screen
+doing that.
+
+The lines do not meet at the centre of the canvas. On a real reticle the
+crosshair sits where the instrument is pointed, and offsetting it slightly makes
+the mark read as an instrument in use rather than as a plus sign.
 
 **Specification**
 
@@ -93,9 +112,9 @@ be liked.
 | Fill | `--mag-5` on `--ink-000`. One colour, no second. |
 | Padding | 12% of the canvas on every side. Avatars get cropped to circles. |
 
-**The 32-pixel test.** If the silhouette is unreadable at 32, the drawing is
-wrong — not the size. Legs, beak detail and feather lines all disappear first;
-the body and head shape must carry it alone.
+**The 32-pixel test.** Two crossed lines survive it, which is why this mark was
+chosen over a bird — at 32 pixels a silhouette loses its legs, its beak and its
+outline, and what is left could be anything.
 
 ---
 
@@ -115,12 +134,12 @@ design tool.
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                                                              │
-│  ▌ DEPCANARY                                                 │
+│  ▌ SIGHTTRUE                                                 │
 │    Watches your dependencies and tells you when one goes bad │
 │                                                              │
 │  ▁▁▂▁▁▃▁▁▁▂▁▁█▁▁▂▁▁▁▁▃▁▁▂▁▁▁▁▁▂▁▁▁▄▁▁▁▂▁▁▁▁▁▂▁▁▁▁▃▁▁▁▁▂▁▁▁  │
 │                                                              │
-│                       readings every 4h · depcanary.com      │
+│                       readings every 4h · sighttrue.com      │
 └──────────────────────────────────────────────────────────────┘
 ```
 

@@ -21,7 +21,7 @@ import type { AdoptionRow } from '../types/adoption.ts';
 import type { TyposquatRow } from '../types/typosquat.ts';
 import { sleep } from '../lib/registries.ts';
 
-const USER_AGENT = 'readout-agent (+https://github.com/kaitzyy-dev/readout)';
+const USER_AGENT = 'sighttrue-agent (+https://github.com/kaitzyy-dev/sighttrue)';
 
 export const DELAY_MS = 250;
 

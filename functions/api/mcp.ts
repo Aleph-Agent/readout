@@ -24,7 +24,7 @@
 /** Versions this server implements, newest first. */
 const PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'] as const;
 
-const SERVER = { name: 'readout', version: '1.0.0' } as const;
+const SERVER = { name: 'sighttrue', version: '1.0.0' } as const;
 
 /** Beyond this an argument is not a package name, it is an attack. */
 const MAX_NAME = 200;
@@ -311,7 +311,7 @@ function describe(name: string, entry: StackEntry): Record<string, unknown> {
     licenseIsSourceAvailable: entry.license !== null && SOURCE_AVAILABLE.test(entry.license),
     archived: entry.archived,
     daysSinceLastPush: age,
-    url: `https://readout-7pt.pages.dev/repo/${entry.repo}`,
+    url: `https://sighttrue.com/repo/${entry.repo}`,
   };
 }
 

@@ -33,7 +33,7 @@ import { collectContributors } from './contributors.ts';
 import { sleep } from '../lib/registries.ts';
 
 const API = 'https://api.ossinsight.io/v1/trends/repos/';
-const USER_AGENT = 'readout-agent (+https://github.com/kaitzyy-dev/readout)';
+const USER_AGENT = 'sighttrue-agent (+https://github.com/kaitzyy-dev/sighttrue)';
 
 export const DELAY_MS = 400;
 

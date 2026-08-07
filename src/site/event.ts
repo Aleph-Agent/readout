@@ -124,7 +124,7 @@ ${proseHtml(event)}
 </div>`;
 
   return layout({
-    title: `${event.repo} — ${KIND_LABEL[event.kind]} — Readout`,
+    title: `${event.repo} — ${KIND_LABEL[event.kind]} — Sighttrue`,
     current: '',
     index,
     meta,
@@ -168,7 +168,7 @@ export function renderFeed(
     .join('\n');
 
   const title =
-    scope === undefined ? 'Readout — confirmed findings' : `Readout — ${scope.repo}`;
+    scope === undefined ? 'Sighttrue — confirmed findings' : `Sighttrue — ${scope.repo}`;
   const description =
     scope === undefined
       ? 'Release, fork, demand and dependency readings across watched open-source repositories. Confirmed findings only.'

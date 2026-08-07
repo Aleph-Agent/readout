@@ -1,18 +1,18 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.kaitzyy-dev/readout",
-  "title": "Readout",
+  "name": "io.github.kaitzyy-dev/sighttrue",
+  "title": "Sighttrue",
   "description": "Measured readings on open-source dependencies: health, end-of-life, model prices, incidents.",
   "version": "1.0.0",
   "repository": {
-    "url": "https://github.com/kaitzyy-dev/readout",
+    "url": "https://github.com/kaitzyy-dev/sighttrue",
     "source": "github"
   },
-  "websiteUrl": "https://readout-7pt.pages.dev",
+  "websiteUrl": "https://sighttrue.com",
   "remotes": [
     {
       "type": "streamable-http",
-      "url": "https://readout-7pt.pages.dev/api/mcp"
+      "url": "https://sighttrue.com/api/mcp"
     }
   ]
 }

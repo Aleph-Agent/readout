@@ -46,7 +46,7 @@ export function renderArchive(
 </div>`;
 
   return layout({
-    title: `${heading} — ${month} — Readout`,
+    title: `${heading} — ${month} — Sighttrue`,
     current: `/${lens}`,
     index,
     meta,

@@ -19,7 +19,7 @@ import type { LifecycleRow } from '../types/lifecycle.ts';
 import { eventId } from '../lib/ledger.ts';
 import { sleep } from '../lib/registries.ts';
 
-const USER_AGENT = 'readout-agent (+https://github.com/kaitzyy-dev/readout)';
+const USER_AGENT = 'sighttrue-agent (+https://github.com/kaitzyy-dev/sighttrue)';
 
 /**
  * Curated, like the watchlist, and for the same reason.

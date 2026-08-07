@@ -24,7 +24,7 @@
 import type { AdoptionRegistry, AdoptionWindow } from '../types/adoption.ts';
 
 /** Identifies the agent, and crates.io requires one. */
-const USER_AGENT = 'readout-agent (+https://github.com/kaitzyy-dev/readout)';
+const USER_AGENT = 'sighttrue-agent (+https://github.com/kaitzyy-dev/sighttrue)';
 
 /** Verified: 128 succeeds, 129 does not. */
 export const NPM_BATCH = 128;

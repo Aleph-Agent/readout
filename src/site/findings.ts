@@ -231,7 +231,7 @@ ${body}
   <a href="/data/ecosystem.json">ecosystem.json</a>,
   <a href="/data/incidents.json">incidents.json</a> and
   <a href="/data/eol.json">eol.json</a>. The whole reading history is committed at
-  <a href="https://github.com/kaitzyy-dev/readout">the agent’s own repository</a>, one commit per
+  <a href="https://github.com/kaitzyy-dev/sighttrue">the agent’s own repository</a>, one commit per
   run, which is the part that makes any of this checkable rather than merely stated.
 </div>`,
   });

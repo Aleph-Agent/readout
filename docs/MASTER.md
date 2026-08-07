@@ -1,5 +1,5 @@
 # MASTER BUILD FILE
-## Readout — Unified Developer Signal Agent for Robinhood Chain
+## Sighttrue — Unified Developer Signal Agent for Robinhood Chain
 
 Single source of truth. Contains the project brief, architecture, the complete
 skill layer, the repository library map, and copy-paste build prompts for every

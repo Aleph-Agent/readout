@@ -24,7 +24,7 @@
 import { readFileSync, appendFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-const endpoint = (process.env.READOUT_ENDPOINT || 'https://readout-7pt.pages.dev').replace(/\/$/, '');
+const endpoint = (process.env.READOUT_ENDPOINT || 'https://sighttrue.com').replace(/\/$/, '');
 const manifestPath = process.env.READOUT_MANIFEST || 'package.json';
 const failOn = new Set(
   (process.env.READOUT_FAIL_ON || '')
@@ -218,13 +218,13 @@ async function main() {
   try {
     text = readFileSync(manifestPath, 'utf8');
   } catch {
-    summary([`### Readout`, ``, `No manifest at \`${manifestPath}\`. Nothing checked.`]);
+    summary([`### Sighttrue`, ``, `No manifest at \`${manifestPath}\`. Nothing checked.`]);
     return;
   }
 
   const packages = names(text, registry);
   if (packages.length === 0) {
-    summary([`### Readout`, ``, `No dependencies found in \`${manifestPath}\`.`]);
+    summary([`### Sighttrue`, ``, `No dependencies found in \`${manifestPath}\`.`]);
     return;
   }
 
@@ -240,7 +240,7 @@ async function main() {
     // Deliberately does not touch the pull request comment. Rewriting it here
     // would replace yesterday's "three archived" with "readings unavailable"
     // and quietly retract a true finding because of an unrelated outage.
-    summary([`### Readout`, ``, `Readings unavailable (${error.message}). Nothing failed.`]);
+    summary([`### Sighttrue`, ``, `Readings unavailable (${error.message}). Nothing failed.`]);
     return;
   }
 
@@ -284,7 +284,7 @@ async function main() {
   }
 
   const lines = [
-    `### Readout`,
+    `### Sighttrue`,
     ``,
     `${packages.length} ${registry} ${packages.length === 1 ? 'dependency' : 'dependencies'} read, ${tracked} with full readings.`,
     ``,
@@ -318,7 +318,7 @@ async function main() {
     [
       ...lines,
       ``,
-      `<sub>Readings taken by [Readout](${endpoint}), every four hours. This comment is`,
+      `<sub>Readings taken by [Sighttrue](${endpoint}), every four hours. This comment is`,
       `rewritten in place on each push rather than added to.</sub>`,
     ].join('\n'),
   );

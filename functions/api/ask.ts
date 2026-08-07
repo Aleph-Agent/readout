@@ -61,7 +61,7 @@ const ANSWER_TTL_SECONDS = 900;
 /** Groq is not allowed to hold the request open indefinitely. */
 const UPSTREAM_TIMEOUT_MS = 12_000;
 
-const SYSTEM_PROMPT = `You answer questions about a measurement instrument called Readout, using only the JSON record you are given.
+const SYSTEM_PROMPT = `You answer questions about a measurement instrument called Sighttrue, using only the JSON record you are given.
 
 The record contains every finding this instrument has published, the repositories it watches, and its own stated limits.
 

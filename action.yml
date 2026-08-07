@@ -1,9 +1,9 @@
-name: 'Readout dependency check'
+name: 'Sighttrue dependency check'
 description: >-
   Fail a build when a dependency is archived, has relicensed to a
   source-available licence, or carries security advisories. Reads published
   measurements; no key, no account, no service to sign up to.
-author: 'Readout'
+author: 'Sighttrue'
 
 branding:
   icon: 'activity'
@@ -39,9 +39,9 @@ inputs:
     required: false
     default: ${{ github.token }}
   endpoint:
-    description: 'Override the Readout origin. For testing this action itself.'
+    description: 'Override the Sighttrue origin. For testing this action itself.'
     required: false
-    default: 'https://readout-7pt.pages.dev'
+    default: 'https://sighttrue.com'
 
 outputs:
   archived:

@@ -87,9 +87,11 @@ export function renderWelcome(index: IndexBundle, meta: MetaRecord): string {
        the bar at the size of a navigation label. Big, and in the space to the
        right of the sentence that was empty on every screen wider than a phone. -->
   <aside class="hero-follow-us">
-    <span class="label">Follow the readings</span>
+    <span class="hero-x-label">The only account</span>
     <a class="hero-x" href="https://x.com/Sighttruehq" rel="me">@Sighttruehq</a>
-    <span class="hero-x-note">One or two a day. Every post carries the figure it is making a claim about.</span>
+    <span class="hero-x-note"><b>Anything else on X is not us.</b> This page is served from
+    sighttrue.com, which is the one address nobody else can publish from — so this is the list to
+    check against, not a profile that looks right.</span>
   </aside>
 </section>
 

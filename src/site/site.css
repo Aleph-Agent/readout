@@ -2164,17 +2164,30 @@ a.lens-cell:hover {
    that is what it is. */
 .hero-follow-us {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   align-content: start;
-  padding-left: 30px;
-  border-left: 1px solid var(--ink-100);
-  max-width: 30ch;
+  padding: 22px 26px 24px;
+  /* A framed panel rather than a link with a rule beside it. Impersonation is
+     the risk a token launch brings, and the defence is that the real account is
+     stated somewhere a cloner cannot serve from — so it has to look like a
+     statement, not like a footer link that happens to be larger. */
+  border: 2px solid var(--ink-200);
+  max-width: 34ch;
+}
+
+.hero-x-label {
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-small);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--alert);
 }
 
 .hero-x {
   font-family: var(--face-label);
   font-weight: 600;
-  font-size: clamp(30px, 4.4vw, 52px);
+  font-size: clamp(32px, 5.2vw, 64px);
   letter-spacing: -0.01em;
   color: var(--ink-900);
   text-decoration: none;
@@ -2187,8 +2200,14 @@ a.lens-cell:hover {
 
 .hero-x-note {
   font-family: var(--face-prose);
-  font-size: var(--t-mid);
+  font-size: var(--t-small);
+  line-height: 1.5;
   color: var(--ink-500);
+}
+
+.hero-x-note b {
+  color: var(--ink-900);
+  font-weight: 400;
 }
 
 /* Two columns from the width where the sentence stops filling the line. Below

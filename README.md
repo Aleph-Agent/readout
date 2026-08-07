@@ -10,7 +10,7 @@ permissions:
 
 steps:
   - uses: actions/checkout@v4
-  - uses: kaitzyy-dev/readout@main
+  - uses: kaitzyy-dev/readout@v1
     with:
       manifest: package.json
       fail-on: archived,relicensed

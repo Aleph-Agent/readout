@@ -9,7 +9,7 @@ a task implying a split is wrong.
 
 1. **$0 infrastructure.** Cloudflare Pages, GitHub Actions, Groq free tier.
 2. **Static-first.** Every page and bundle is a file. One exception, `/api/ask`
-   — overruled by the maintainer, scoped in MASTER.md Part 9. No page may
+   — overruled by the maintainer, scoped in docs/MASTER.md Part 9. No page may
    depend on it.
 3. **Public agent repository.** Free Actions minutes; the commit log is the credibility argument.
 4. **Never Vercel.** Its free tier forbids commercial use and this is commercial.
@@ -57,5 +57,5 @@ data/
 ```
 
 Sorted output with fixed key order keeps git diffs line-level. Everything below
-`state` was added during the build; MASTER.md Parts 2 and 9 say why, along with
+`state` was added during the build; docs/MASTER.md Parts 2 and 9 say why, along with
 the brief, architecture, skills, build prompts, and known failure modes.

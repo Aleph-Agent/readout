@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
 import { renderIndex, renderLens, renderMethod, stripSvg } from '../src/site/render.ts';
@@ -503,5 +506,61 @@ describe('navigation', () => {
   it('marks the current lens without the extension', () => {
     const html = renderLens(lens(), index(), meta(), COPY);
     expect(html).toContain('href="/forks" aria-current="page"');
+  });
+});
+
+describe('the chrome', () => {
+  it('applies a stored theme before the first paint', () => {
+    // Deferred, this repaints the page from dark to light in front of somebody
+    // who chose light. A flash of the wrong theme on every navigation is worse
+    // than not offering the choice, so it is the one inline script here.
+    const html = renderIndex(index(), meta());
+    const head = html.slice(0, html.indexOf('</head>'));
+
+    expect(head).toContain("localStorage.getItem('readout-theme')");
+    expect(head).toContain('document.documentElement.dataset.theme');
+  });
+
+  it('offers no theme switch until scripting can work it', () => {
+    // A control that does nothing is worse than no control. Without scripting
+    // the system preference still decides, through `color-scheme: light dark`.
+    const html = renderIndex(index(), meta());
+
+    expect(html).toContain('data-theme-switch');
+    expect(/<button[^>]*data-theme-switch[^>]*\shidden/.test(html)).toBe(true);
+  });
+
+  it('names the switch for a reader who cannot see its position', () => {
+    expect(renderIndex(index(), meta())).toContain('aria-label="Switch between the dark and light');
+  });
+
+  it('keeps navigation reachable from the foot of a four-hundred-row page', () => {
+    const html = renderIndex(index(), meta());
+    const chrome = html.slice(html.indexOf('<header class="chrome"'));
+
+    // One sticky bar, wordmark and navigation together. Two static blocks meant
+    // the only way to another signal was to scroll back to the top first.
+    expect(chrome).toContain('class="shell chrome-bar"');
+    expect(chrome.indexOf('class="nav shell"')).toBeGreaterThan(0);
+    expect(chrome.indexOf('</header>')).toBeGreaterThan(chrome.indexOf('class="nav shell"'));
+  });
+
+  it('keeps the glass off every surface holding a number', () => {
+    // The material is confined to the layer that floats. A number seen through
+    // frosted glass is a number whose contrast nobody can state.
+    const css = readFileSync(
+      fileURLToPath(new URL('../src/site/site.css', import.meta.url)),
+      'utf8',
+    );
+
+    const rules = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const blurred = [...rules.matchAll(/([^{}]+)\{[^{}]*backdrop-filter:[^{}]*\}/g)].map((match) =>
+      (match[1] as string).trim(),
+    );
+
+    expect(blurred.length).toBeGreaterThan(0);
+    for (const selector of blurred) {
+      expect(selector, `${selector} blurs what is behind it`).toMatch(/^\.chrome$/);
+    }
   });
 });

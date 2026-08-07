@@ -3,7 +3,7 @@ import { REACHABLE_SHARE } from '../lib/calibration.ts';
 import { MIN_INSTALLS } from '../lib/divergence.ts';
 import { COMPARE_SCRIPT } from './compare.ts';
 import { STACK_SCRIPT } from './stack.ts';
-import type { Disclosure, IndexBundle, LensBundle, LensName, StripMark } from '../types/bundles.ts';
+import type { IndexBundle, LensBundle, LensName, StripMark } from '../types/bundles.ts';
 import { isRepositorySubject, type EventRecord } from '../types/events.ts';
 import type { MetaRecord } from '../types/meta.ts';
 
@@ -213,9 +213,20 @@ function navHtml(current: string, lenses: IndexBundle['lenses']): string {
   return `<nav aria-label="Signals"><ul class="nav shell">${items}</ul></nav>`;
 }
 
-function mastheadHtml(meta: MetaRecord, disclosure: Disclosure): string {
+/**
+ * The chrome: wordmark, reading age, theme switch, navigation.
+ *
+ * One sticky bar rather than two static blocks. The navigation used to scroll
+ * away on a page of four hundred rows, which meant the only way back to another
+ * signal was to scroll to the top first.
+ *
+ * It is also the only place in the product allowed the glass material — see
+ * `.chrome` in the stylesheet for why, and why nothing holding a number may
+ * follow it there.
+ */
+function chromeHtml(current: string, meta: MetaRecord, index: IndexBundle): string {
   const at = meta.lastSuccessfulRunAt;
-  const staleAfter = disclosure.cadenceHours * 2 * 60;
+  const staleAfter = index.disclosure.cadenceHours * 2 * 60;
 
   const reading =
     at === null
@@ -227,12 +238,20 @@ function mastheadHtml(meta: MetaRecord, disclosure: Disclosure): string {
       ? ''
       : `<span data-at="${esc(at)}" data-stale-after="${staleAfter}">age unavailable without scripting</span>`;
 
-  return `<header class="masthead shell">
-  <a class="wordmark" href="/">Readout</a>
-  <div class="reading-age">
-    <span><span class="label">Last reading</span> ${reading}</span>
-    ${age}
+  return `<header class="chrome">
+  <div class="shell chrome-bar">
+    <a class="wordmark" href="/">Readout</a>
+    <div class="reading-age">
+      <span><span class="label">Last reading</span> ${reading}</span>
+      ${age}
+    </div>
+    <button class="theme-switch" type="button" data-theme-switch hidden
+      aria-label="Switch between the dark and light theme">
+      <span class="theme-track" aria-hidden="true"><span class="theme-thumb"></span></span>
+      <span data-theme-name>Dark</span>
+    </button>
   </div>
+  ${navHtml(current, index.lenses)}
 </header>`;
 }
 
@@ -378,6 +397,22 @@ function analyticsHtml(): string {
   return `\n<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"${esc(BEACON_TOKEN)}"}'></script>`;
 }
 
+/**
+ * Runs before the first paint, which is the whole reason it is inline.
+ *
+ * Deferred, this would repaint the page from dark to light in front of somebody
+ * who chose light, and a flash of the wrong theme on every navigation is worse
+ * than not offering the choice. Nothing else in the product blocks rendering.
+ *
+ * Only a stored choice is applied here. With nothing stored the attribute stays
+ * off and `color-scheme: light dark` lets the system decide, so a visitor who
+ * has never touched the switch gets their own preference with no script
+ * involved at all.
+ */
+const THEME_BOOT =
+  "try{var t=localStorage.getItem('readout-theme');" +
+  "if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}";
+
 export interface PageOptions {
   title: string;
   current: string;
@@ -417,7 +452,57 @@ export function eventSlug(id: string): string {
  * absolute UTC, the headline figure is already its final value, and the two
  * tools say plainly that they need scripting.
  */
+/**
+ * The theme switch.
+ *
+ * The inline boot script has already applied any stored choice, so all this
+ * does is reveal the control, keep its label truthful, and write the choice
+ * down. Revealing it here rather than in the markup means a reader with no
+ * scripting never sees a switch that cannot switch anything — their system
+ * preference is already being honoured by `color-scheme: light dark`, with no
+ * control to mislead them about it.
+ */
+const THEME_SCRIPT = `
+(function () {
+  var button = document.querySelector('[data-theme-switch]');
+  if (!button) return;
+
+  var name = button.querySelector('[data-theme-name]');
+  var root = document.documentElement;
+
+  function current() {
+    if (root.dataset.theme === 'light' || root.dataset.theme === 'dark') return root.dataset.theme;
+    return matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+
+  function show() {
+    var theme = current();
+    if (name) name.textContent = theme === 'light' ? 'Light' : 'Dark';
+    button.setAttribute(
+      'aria-label',
+      'Colour theme: ' + theme + '. Switch to ' + (theme === 'light' ? 'dark' : 'light') + '.'
+    );
+  }
+
+  button.hidden = false;
+  show();
+
+  button.addEventListener('click', function () {
+    var next = current() === 'light' ? 'dark' : 'light';
+    root.dataset.theme = next;
+    show();
+    try { localStorage.setItem('readout-theme', next); } catch (e) {}
+  });
+
+  // Somebody who has never used the switch is following their system, so the
+  // label has to follow it too when it changes under them.
+  matchMedia('(prefers-color-scheme: light)').addEventListener('change', function () {
+    if (!root.dataset.theme) show();
+  });
+})();`;
+
 export const SITE_SCRIPT = [
+  THEME_SCRIPT,
   AGE_SCRIPT,
   COUNT_SCRIPT,
   COPY_SCRIPT,
@@ -454,11 +539,11 @@ export function layout(options: PageOptions): string {
 <meta name="twitter:description" content="${esc(description)}">
 <link rel="alternate" type="application/rss+xml" title="Readout findings" href="/feed.xml">
 <link rel="stylesheet" href="/site.css">
+<script>${THEME_BOOT}</script>
 </head>
 <body>
 <div class="backdrop" aria-hidden="true"></div>
-${mastheadHtml(options.meta, options.index.disclosure)}
-${navHtml(options.current, options.index.lenses)}
+${chromeHtml(options.current, options.meta, options.index)}
 <main class="shell">
 ${options.body}
 </main>

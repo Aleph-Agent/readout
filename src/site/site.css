@@ -133,6 +133,85 @@
   --pad: 20px;
   --rail: 150px;
   --rule: 1px solid var(--ink-100);
+
+  /* The one translucent surface in the product. See `.chrome` for why it is
+     allowed to exist at all, and why nothing below it may use these. */
+  --glass: rgb(16 20 12 / 0.55);
+  --glass-edge: rgb(233 236 223 / 0.12);
+  --glass-sheen: rgb(255 255 255 / 0.08);
+  --glass-cast: rgb(0 0 0 / 0.55);
+  --glass-solid: #12160e;
+
+  /* The backdrop's two washes, as channels so their alpha can vary in place. */
+  --sweep-rgb: 204 255 0;
+  --floor-rgb: 12 15 8;
+}
+
+/* ------------------------------------------------------------ light theme
+
+   Both themes, as of 2026-08-07. Dark stays the default and keeps the block
+   above unchanged — it carries the reasoning for every value in it, and a light
+   counterpart is not a reason to rewrite that history.
+
+   `light-dark()` resolves against the used `color-scheme`, so one declaration
+   states both values and the system preference is honoured with no script at
+   all. The toggle then does nothing cleverer than pin `color-scheme` to one
+   side of it. Wrapped in `@supports` because a browser without the function
+   would drop these declarations at computed-value time and render a page with
+   no colours whatsoever — worse than rendering it dark.
+
+   The ramp's semantics do not change: 000 is always the ground and 900 is
+   always the strongest ink. Only the direction of travel flips, which is why
+   every rule in this file works in both themes without being touched.
+
+   Values are measured, not chosen by eye. On white: ink-500 5.66:1, ink-700
+   13.66:1, ink-900 18.88:1, alert 6.38:1, nominal 5.93:1. The magnitude ramp
+   runs 3.48:1 to 8.73:1, ordered by lightness with no step out of sequence, and
+   it inverts direction — on a light ground darker reads as more, which is the
+   opposite of what it means on a dark one. The two signal colours separate at
+   deltaE 75.9 under protanopia, the worst of the three simulations. */
+
+@supports (color: light-dark(#fff, #000)) {
+  :root {
+    color-scheme: light dark;
+
+    --ink-000: light-dark(#ffffff, #0a0d07);
+    --ink-025: light-dark(#f6f7f2, #141810);
+    --ink-050: light-dark(#eceee4, #1d2317);
+    --ink-100: light-dark(#dcdfd2, #2a3122);
+    --ink-200: light-dark(#c3c8b7, #3a4230);
+    --ink-300: light-dark(#8b917d, #5c6450);
+    --ink-500: light-dark(#64695a, #929a86);
+    --ink-700: light-dark(#2b2f26, #c4cab8);
+    --ink-900: light-dark(#111111, #e9ecdf);
+
+    --alert: light-dark(#b32d00, #f0883e);
+    --nominal: light-dark(#0369a1, #38bdf8);
+
+    --mag-1: light-dark(#7d9150, #5c7a00);
+    --mag-2: light-dark(#6b8038, #7a9f00);
+    --mag-3: light-dark(#5a7020, #96c400);
+    --mag-4: light-dark(#4b6110, #b3e400);
+    --mag-5: light-dark(#3d5200, #ccff00);
+
+    --glass: light-dark(rgb(255 255 255 / 0.62), rgb(16 20 12 / 0.55));
+    --glass-edge: light-dark(rgb(17 17 17 / 0.12), rgb(233 236 223 / 0.12));
+    --glass-sheen: light-dark(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.08));
+    --glass-cast: light-dark(rgb(17 17 17 / 0.16), rgb(0 0 0 / 0.55));
+    --glass-solid: light-dark(#fbfbf8, #12160e);
+
+    --sweep-rgb: light-dark(61 82 0, 204 255 0);
+    --floor-rgb: light-dark(255 255 255, 12 15 8);
+  }
+
+  /* An explicit choice pins the scheme; without one the system decides. */
+  :root[data-theme='light'] {
+    color-scheme: light;
+  }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+  }
 }
 
 /* -------------------------------------------------------- ambient backdrop
@@ -173,9 +252,9 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(204, 255, 0, 0.02) 45%,
-    rgba(204, 255, 0, 0.06) 80%,
-    rgba(204, 255, 0, 0.11) 96%,
+    rgb(var(--sweep-rgb) / 0.02) 45%,
+    rgb(var(--sweep-rgb) / 0.06) 80%,
+    rgb(var(--sweep-rgb) / 0.11) 96%,
     transparent
   );
   /* Slow on purpose. A fast pass behind a table of numbers reads as a loading
@@ -201,9 +280,9 @@
   inset: 0;
   background: radial-gradient(
     150% 110% at 50% 0%,
-    rgba(12, 15, 8, 0) 0%,
-    rgba(12, 15, 8, 0.5) 55%,
-    rgba(12, 15, 8, 0.85) 100%
+    rgb(var(--floor-rgb) / 0) 0%,
+    rgb(var(--floor-rgb) / 0.5) 55%,
+    rgb(var(--floor-rgb) / 0.85) 100%
   );
 }
 
@@ -223,6 +302,11 @@
 
 html {
   background: var(--ink-000);
+  /* The chrome is sticky, so an in-page anchor would land underneath it. Clears
+     the bar plus a line, rather than dropping the reader onto a hidden heading. */
+  scroll-padding-top: 96px;
+  /* Overridden by the `:root` rules in the light-theme block above, which are
+     more specific. Kept as the floor for browsers that skipped that block. */
   color-scheme: dark;
 }
 
@@ -289,16 +373,58 @@ a:hover {
   padding: 0 var(--pad);
 }
 
-/* ----------------------------------------------------------------- header */
+/* ----------------------------------------------------------------- header
 
-.masthead {
-  border-bottom: var(--rule);
-  padding: 16px 0 14px;
+   The chrome, and the only translucent surface in the product.
+
+   `instrument-ui` bans glassmorphism outright, and it is right to: frosted
+   panels over a dark ground are the most recognisable machine-generated UI
+   pattern there is. The maintainer asked for the iOS 26 material anyway, which
+   is theirs to ask for, and the ban is honoured where it matters by confining
+   the material to the layer that floats.
+
+   That confinement is the whole argument. Translucency here is not decoration;
+   it is the one thing on screen that is *above* the data, and it says so by
+   letting the data pass under it. Every surface holding a reading — every
+   table, row, band and figure — stays opaque. A number seen through frosted
+   glass is a number whose contrast nobody can state, and this product's claim
+   is that its numbers can be checked.
+
+   The material is blur plus saturation plus a specular rim, in that order. The
+   rim is what separates the 2026 material from the 2021 one: real glass catches
+   light along its edge, and a flat translucent rectangle does not. */
+
+.chrome {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--glass);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  border-bottom: 1px solid var(--glass-edge);
+  box-shadow:
+    inset 0 1px 0 var(--glass-sheen),
+    0 10px 30px -22px var(--glass-cast);
+}
+
+/* Without the filter the surface is see-through with nothing to soften it, and
+   the navigation sits unreadable on top of a table. Opaque instead. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .chrome {
+    background: var(--glass-solid);
+  }
+}
+
+/* Longhand, not shorthand: `.shell` is on the same element and supplies the
+   horizontal padding that keeps the bar aligned with the content under it. */
+.chrome-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px var(--pad);
-  align-items: baseline;
+  gap: 8px var(--pad);
+  align-items: center;
   justify-content: space-between;
+  padding-top: 11px;
+  padding-bottom: 3px;
 }
 
 .wordmark {
@@ -332,11 +458,78 @@ a:hover {
   padding-left: 8px;
 }
 
+/* --------------------------------------------------------- the theme switch
+
+   A two-position switch that shows its position, the way a control on a panel
+   does. Not an icon that has to be decoded, and not an emoji — a label and a
+   travelling thumb.
+
+   Hidden until scripting confirms it can do anything. A dead control is worse
+   than an absent one, and with no script the system preference still decides
+   the theme through `color-scheme: light dark`. */
+
+.theme-switch[hidden] {
+  display: none;
+}
+
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 9px 4px 4px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 999px;
+  background: var(--glass-sheen);
+  color: var(--ink-500);
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.theme-switch:hover {
+  color: var(--ink-900);
+}
+
+.theme-track {
+  position: relative;
+  display: block;
+  width: 26px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--ink-100);
+  box-shadow: inset 0 1px 2px var(--glass-cast);
+}
+
+.theme-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink-700);
+  /* The one exception to data-driven motion: this animates a control the
+     reader just operated, which is feedback rather than decoration. */
+  transition: transform 160ms ease;
+}
+
+:root[data-theme='light'] .theme-thumb {
+  transform: translateX(12px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-thumb {
+    transition: none;
+  }
+}
+
 .nav {
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
-  border-bottom: var(--rule);
   padding: 0;
   margin: 0;
   list-style: none;

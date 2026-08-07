@@ -1,18 +1,16 @@
 {
-  "lastRunAt": "2026-08-07T04:49:56.222Z",
-  "lastSuccessfulRunAt": "2026-08-07T04:12:09.518Z",
+  "lastRunAt": "2026-08-07T04:52:46.680Z",
+  "lastSuccessfulRunAt": "2026-08-07T04:52:46.680Z",
   "job": "weekly",
-  "partial": true,
+  "partial": false,
   "requestsConsumed": 106,
   "rateLimitRemaining": 4769,
   "reposChecked": 12,
   "requestsUnchanged": 445,
-  "eventsDetected": 2,
-  "collectorsErrored": [
-    "contributors: createGitHubClient: token is empty; unauthenticated calls are not permitted"
-  ],
+  "eventsDetected": 0,
+  "collectorsErrored": [],
   "summariesGenerated": 10,
   "insufficientRate": 0,
-  "bundleHash": "20fd375c3284cab125967ecfbcc60ec14bb2d6094c7b67691b3a711a73393259",
+  "bundleHash": "05ca07e005556b53f59ebf49ee886e8e5fab85728984352941b7d9257468b30c",
   "deploySkipped": false
 }

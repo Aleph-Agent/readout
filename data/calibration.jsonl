@@ -8,3 +8,4 @@
 {"date":"2026-08-07","collector":"demand","metric":"engagement across repositories","threshold":60,"measured":0,"crossed":0,"max":null,"p50":null,"p90":null,"p99":null,"unbounded":0}
 {"date":"2026-08-07","collector":"fork-outlier","metric":"ratio to category median","threshold":8,"measured":8,"crossed":8,"max":64,"p50":29,"p90":64,"p99":64,"unbounded":0}
 {"date":"2026-08-07","collector":"lineage","metric":"new descendants this week","threshold":2,"measured":12,"crossed":2,"max":2,"p50":1,"p90":2,"p99":2,"unbounded":0}
+{"date":"2026-08-07","collector":"lineage","metric":"new descendants this week","threshold":2,"measured":12,"crossed":0,"max":0,"p50":0,"p90":0,"p99":0,"unbounded":0}

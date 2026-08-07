@@ -56,23 +56,44 @@ limits of what it can support, because an agent will paste these figures into a
 code review and a scorecard quoted without "measures declared practices, not
 whether the project is safe" is a claim this project does not make.
 
-One agent watches ~400 open-source repositories and reports five signals about
-them. It runs every four hours on GitHub Actions, commits what it reads to this
-repository, and publishes a static site. Every page and every bundle is a file;
-the single dynamic route is `/api/ask`, and no page depends on it.
+One agent watches 388 open-source repositories and takes eleven readings, most
+of which never touch GitHub: 441 provider incidents kept after their own status
+pages dropped them, 518 release lines on the end-of-life clock, 395 model prices
+across 58 providers, 247 packages by real ship date, 387 commit histories for
+the bus factor. It runs every four hours on GitHub Actions, commits what it
+reads to this repository, and publishes a static site.
+
+Every page and every bundle is a file. There are four dynamic routes and no page
+depends on any of them: `/api/ask`, `/api/mcp`, `/api/chain`, and the sign-in
+and watchlist endpoints under `/api/auth` and `/api/watchlist`. Signing in with
+GitHub saves a watchlist and nothing else — the readings on a signed-in page are
+the same published bundle anyone can download.
 
 The commit history of `data/` is the point. It is an audit trail: every reading
 is timestamped, append-only, and checkable against GitHub directly.
 
 ## What it reports
 
-| Lens | Question |
-|---|---|
-| Ships | What released a new version? |
-| Forks | What is being copied faster than its own baseline? |
-| Demand | What are developers asking for, across more than one project? |
-| Stack | What dependencies are moving? |
-| Lineage | Which models say they were built on which? |
+Eleven readings, each named by the question it answers rather than by the
+collector that produces it. The same list drives the site's navigation, so the
+two cannot drift — they had, three times over, before it was written down once.
+
+| Reading | Question it answers | Touches GitHub |
+|---|---|---|
+| Live | What changed in the last few hours? | yes |
+| Ships | What released a new version? | yes |
+| Forks | What is being copied faster than its own baseline? | yes |
+| Demand | What are developers asking for, across more than one project? | yes |
+| Dependencies | What is being added, dropped, or jumped a major version? | yes |
+| Lineage | Which models say they were built on which? | no |
+| Model prices | What does a million tokens cost, and when did that change? | no |
+| Outages | Does the thing I depend on go down, and how often? | no |
+| Ecosystem | What do the registries, advisories and forums say? | no |
+| Depended on | What does everything else quietly rely on? | no |
+| This week | What would I have missed looking once a week? | — |
+
+The six that never touch GitHub are the answer to the fair complaint that a
+GitHub summariser is worth only what GitHub already shows you.
 
 Whether each detector's threshold is reachable at all is published too, on the
 index under Our record. A detector nothing has ever come close to is not a quiet
@@ -139,8 +160,13 @@ from growing without bound.
 
 ## Running it
 
-Node 22.18+ or 24. Types are stripped natively, so there is no build step and no
-runtime dependencies.
+Node 24. Types are stripped natively, so there is no build step and no runtime
+dependencies.
+
+It said 22.18+ until the D1 schema arrived. The tests load `migrations/` into
+`node:sqlite`, which is stable in 24 and behind a flag in 22 — so on 22 the
+suite fails on an import rather than on an assertion, which is a confusing way
+to learn a version requirement.
 
 ```sh
 npm install          # dev dependencies only: typescript, vitest, fonts

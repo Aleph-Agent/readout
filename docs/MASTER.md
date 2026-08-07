@@ -27,8 +27,12 @@ disk in that layout before they take effect.
 
 ## What this is
 
-One web product that watches ~400 open-source repositories and reports five
-signals about them:
+One web product that watches 388 open-source repositories and takes eleven
+readings. Five of them are the original lenses, below. The other six — provider
+outages, end-of-life dates, model prices, registry health, packages by real ship
+date, commit histories for the bus factor — never touch GitHub, and are the
+answer to the fair complaint that a GitHub summariser is only worth what GitHub
+already shows you.
 
 | Lens | Question it answers |
 |---|---|

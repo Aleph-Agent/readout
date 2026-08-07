@@ -1,0 +1,78 @@
+# Publish the MCP server to the official registry.
+#
+# The server has been live and unlisted for a while, which is the same as not
+# existing: an agent finds a tool through a registry, not by somebody happening
+# to read a README. This is the canonical route and it costs nothing.
+#
+# No secret. GitHub's OIDC token proves this workflow runs in the repository
+# that owns the `io.github.kaitzyy-dev` namespace, which is exactly the claim
+# the registry needs and the only one it needs. Nothing to rotate, nothing to
+# leak, and a fork cannot use it.
+#
+# Manual and on release rather than on every push. The registry holds one
+# version per publish and a version that moves six times a day is noise to
+# everybody consuming it.
+
+name: Publish MCP server
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # The whole authentication story. Without it the OIDC login has nothing to
+  # present and the publish is refused.
+  id-token: write
+
+concurrency:
+  group: publish-mcp
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check the server answers before announcing it
+        # Publishing a listing for an endpoint that is down sends every agent
+        # that finds it into a failure. One request settles it.
+        run: |
+          set -euo pipefail
+          response=$(curl -sS -X POST https://readout-7pt.pages.dev/api/mcp \
+            -H 'content-type: application/json' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}')
+          echo "${response}" | grep -q '"tools"' || {
+            echo "The server did not return a tool list. Not publishing."
+            echo "${response}" | head -c 400
+            exit 1
+          }
+          echo "Server answered with $(echo "${response}" | grep -o '"name"' | wc -l) tools."
+
+      - name: Install the publisher
+        run: |
+          set -euo pipefail
+          tag=$(curl -sS https://api.github.com/repos/modelcontextprotocol/registry/releases/latest \
+            | grep -o '"tag_name": *"[^"]*"' | head -1 | cut -d'"' -f4)
+          curl -sSL "https://github.com/modelcontextprotocol/registry/releases/download/${tag}/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz mcp-publisher
+          ./mcp-publisher --version
+
+      - name: Publish
+        run: |
+          set -euo pipefail
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
+
+      - name: Confirm the listing is readable
+        run: |
+          set -euo pipefail
+          sleep 5
+          curl -sS "https://registry.modelcontextprotocol.io/v0/servers?search=readout" \
+            | grep -q 'io.github.kaitzyy-dev/readout' \
+            && echo "Listed." \
+            || echo "Published, but not yet readable from the search index."

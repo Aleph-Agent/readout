@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.kaitzyy-dev/readout",
+  "title": "Readout",
+  "description": "Measured readings about open-source dependencies, taken every four hours and published as static files. Package health, end-of-life dates, model prices, and provider incident history. No key, no account, no quota.",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/kaitzyy-dev/readout",
+    "source": "github"
+  },
+  "websiteUrl": "https://readout-7pt.pages.dev",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://readout-7pt.pages.dev/api/mcp"
+    }
+  ]
+}

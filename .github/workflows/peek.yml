@@ -1,0 +1,33 @@
+name: Inspect the database
+
+# Row counts, on demand.
+#
+# Counts only, deliberately. No login, no token hash, no invoice amount —
+# nothing that identifies a person belongs in a workflow log that anybody with
+# read access to this repository can page through.
+#
+# It exists because "somebody authorised on GitHub and the site still showed
+# them signed out" is two different bugs depending on whether a row was written,
+# and guessing which costs more than asking.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  peek:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/d1-peek.mjs

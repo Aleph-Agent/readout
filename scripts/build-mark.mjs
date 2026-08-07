@@ -1,48 +1,39 @@
 /**
- * The mark.
+ * The mark: a plumb bob that is also a bird's head.
  *
  *   node scripts/build-mark.mjs
  *
- * A geometric S sitting on a datum line.
+ * ## Drawn against a reference
  *
- * ## How it got here
+ * Six marks were made and rejected before this one, and every one failed the
+ * same way: thin. Single stroke weight, hairlines, shapes outlined rather than
+ * filled. Conceptually defensible and visually unfinished — a wireframe, not a
+ * logo.
  *
- * Three rejected marks, each one instructive, and the record is kept because
- * the reasons are the brief.
+ * The reference the user finally supplied settled it. A logofolio of about
+ * eighty marks, and they share four properties without exception:
  *
- * **Crosshairs.** The icon every monitoring product and half the shooting
- * ranges already use. It said "we look at things", which is not a claim, and at
- * 48 pixels it was a plus sign in a circle.
+ *   1. Solid fill. No outlines anywhere, no stroke weights to get wrong.
+ *   2. Heavy. Every one survives being printed at the size of a fingernail.
+ *   3. One flat colour. Black on paper, and nothing depends on a second.
+ *   4. Negative space does a job. The counter is not leftover — it is where the
+ *      second reading lives, and it is what separates a logo from a pictogram.
  *
- * **A graduated dial.** Thirty-six thin ticks inside a ring. It carried the
- * meaning exactly and read as a wristwatch — fine hairlines on a circle is a
- * watch face, and irregular tick lengths do not overcome that at a glance,
- * which is the only look a mark gets.
+ * ## The shape
  *
- * **An aperture.** Six solid blades, one closed further. Bold enough, held at
- * 16px, and still an abstract icon: it needed a paragraph to explain, and a
- * mark that needs explaining is doing the wordmark's job badly.
+ * A single solid form, wide and round at the top, tapering to a point.
  *
- * ## Why a letterform
+ * Read one way it is a plumb bob: the oldest instrument for establishing what is
+ * true by measuring it, and the phrase masons still use — plumb and true — is
+ * the name of this product. It hangs, and the point either meets the datum or
+ * it does not. That is a reading rather than an opinion.
  *
- * The name is the asset. An abstract instrument icon has to earn recognition
- * from nothing; a letter arrives already carrying it, and after three attempts
- * at abstraction that is the honest conclusion.
+ * Read the other way the punched circle is an eye and the whole form is the head
+ * of a bird of prey, which is the other half of the name. Nothing in nature
+ * sights better.
  *
- * Two arcs, one grid, no tapering and no optical corrections beyond the
- * overshoot below — geometric rather than drawn, because the rest of this
- * product is a measuring instrument and a hand-lettered S would be the only
- * thing in it pretending to be made by hand.
- *
- * ## The datum
- *
- * Two short rules either side of the letter, at its waist, in the alert colour.
- * That is the whole of the meaning and it is worth the two lines: a reference
- * the letter is measured against, which is the "true" in the name.
- *
- * They stop short of the S rather than crossing it. A line through a letter is
- * a strikethrough, and a mark that reads as its own name crossed out is a
- * failure of a specific and embarrassing kind.
+ * One object, two readings, and the second one lives in the hole. That is the
+ * move the reference makes on nearly every mark in it.
  */
 
 import { writeFileSync } from 'node:fs';
@@ -50,74 +41,98 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
-/** Stroke of the letter. Heavy: weight is what reads as considered at any size. */
-const W = 9;
-
-/** The two bowls. Equal radii, stacked, meeting at the waist. */
-const R = 10.5;
-const TOP = { x: 32, y: 21.5 };
-const BOTTOM = { x: 32, y: 42.5 };
+const X = 32;
 
 /**
- * Where each bowl's stroke ends, measured from the horizontal.
+ * The cord and its collar, and why the mark would be worthless without them.
  *
- * Six degrees, so the terminals are cut very nearly vertical — the classic
- * geometric cut, and the only one that stays clean here.
+ * The first solid version was a round cap tapering to a point with a circle
+ * punched in the middle. That is the Google Maps pin — the single most
+ * recognised glyph on the internet — and it says "location", which is not what
+ * this product does.
  *
- * It was 42 first, which put the terminal only 48 degrees from where the same
- * bowl ends at the waist. At this stroke weight the two overlapped and left a
- * wedge poking into the counter, which reads as a drawing error rather than a
- * letter. The fix is distance, not a smaller stroke: the bowl sweeps nearly a
- * full turn and its two ends have to be far enough apart to stay apart.
+ * A pin is dropped. A bob hangs. The cord is the whole difference, and it is
+ * also the honest one: a plumb bob without a line is not an instrument, it is a
+ * weight. So the line goes in, with a turned collar where it seats, and the cap
+ * flattens so the silhouette stops being a circle with a tail.
  */
-const TERMINAL = 6;
+const CORD_TOP = 3;
+const CORD_W = 4.2;
+const COLLAR_Y = 12;
+const COLLAR_H = 4.4;
+const COLLAR_HALF = 9;
 
-const rad = (deg) => (deg * Math.PI) / 180;
-const round = (n) => Number(n.toFixed(2));
-const on = (c, deg, r = R) =>
-  `${round(c.x + Math.cos(rad(deg)) * r)} ${round(c.y + Math.sin(rad(deg)) * r)}`;
+/** Where the shoulder sits. Everything above it is the cap. */
+const SHOULDER = 30;
+/** Half-width. Deliberately fat — this is the property every reference mark shares. */
+const HALF = 17.5;
+/** The point. Short of the frame so the silhouette has air beneath it. */
+const TIP = 57;
 
 /**
- * The letter, as one path.
+ * The eye.
  *
- * Upper bowl swept anticlockwise from its lower-right terminal all the way
- * round to the waist; lower bowl clockwise from the waist round to its
- * upper-left terminal. Two arcs, one continuous stroke, no join to align.
+ * Above the shoulder and slightly high in the cap, where an eye sits on a bird
+ * rather than in the middle of a face. Centred it read as a washer with a hole
+ * in it; three units up and it reads as looking at you.
+ *
+ * Large. A small counter closes up at 16px and the second reading disappears
+ * exactly where a mark needs it most.
  */
-const S = [
-  `M ${on(TOP, TERMINAL)}`,
-  `A ${R} ${R} 0 1 0 ${on(TOP, 90)}`,
-  `A ${R} ${R} 0 1 1 ${on(BOTTOM, 180 - TERMINAL)}`,
+const EYE = { y: 28, r: 6.2 };
+
+const r = (n) => Number(n.toFixed(2));
+
+/**
+ * The body and the eye as one path, with `evenodd` punching the hole.
+ *
+ * One path rather than a shape plus a background-coloured circle on top. A
+ * circle painted in the page colour stops being a hole the moment the mark is
+ * placed on anything else — a sticker, somebody's slide, a dark timeline — and
+ * that is the most common way a logo breaks in the wild.
+ */
+const BODY = [
+  // A flattened cap rather than a half circle: a bob is turned on a lathe and
+  // is wider than it is tall at the shoulder. The half circle is what made the
+  // first version a pin.
+  `M ${r(X - HALF)} ${SHOULDER}`,
+  `A ${HALF} ${r(HALF * 0.78)} 0 0 1 ${r(X + HALF)} ${SHOULDER}`,
+  `L ${X} ${TIP}`,
+  'Z',
+  `M ${X} ${r(EYE.y - EYE.r)}`,
+  `a ${EYE.r} ${EYE.r} 0 1 0 0.01 0`,
+  'Z',
 ].join(' ');
 
-/** The waist, where the datum sits. */
-const WAIST = 32;
-/** How far the rules stop short of the letter. Enough to read as a gap at 32px. */
-const CLEAR = 4;
-
-function mark({ ink, alert, title }) {
-  const left = `M 2 ${WAIST} H ${round(TOP.x - R - W / 2 - CLEAR)}`;
-  const right = `M ${round(TOP.x + R + W / 2 + CLEAR)} ${WAIST} H 62`;
-
+function mark({ ink, alert, title, datum = true }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="${title}">
   <title>${title}</title>
 
   <!--
-    A geometric S on a datum line. Generated by scripts/build-mark.mjs, which
-    records the three marks this replaced and why each failed.
+    A plumb bob that is also the head of a bird of prey. Generated by
+    scripts/build-mark.mjs, which records the six marks this replaced and the
+    single property they all lacked: weight.
 
-    The rules either side are the reference the letter is measured against — the
-    "true" in the name. They stop short of the S rather than crossing it,
-    because a line through a letter is a strikethrough and a mark that reads as
-    its own name crossed out fails in a specific and embarrassing way.
+    Solid fill, one flat colour, and the eye is a real hole rather than a circle
+    painted in the background colour — a painted counter stops being a hole the
+    moment the mark is placed on anything else.
   -->
 
-  <path d="${S}" fill="none" stroke="${ink}" stroke-width="${W}" stroke-linecap="butt" />
-
-  <g stroke="${alert}" stroke-width="3.4" stroke-linecap="butt">
-    <path d="${left}" />
-    <path d="${right}" />
+  <g fill="${ink}">
+    <!-- The cord and the collar it seats in. Without these the silhouette is a
+         map pin, which says location and not measurement. -->
+    <rect x="${r(X - CORD_W / 2)}" y="${CORD_TOP}" width="${CORD_W}" height="${r(COLLAR_Y - CORD_TOP + 1)}" />
+    <rect x="${r(X - COLLAR_HALF)}" y="${COLLAR_Y}" width="${r(COLLAR_HALF * 2)}" height="${COLLAR_H}" />
+    <path d="${BODY}" fill-rule="evenodd" />
   </g>
+${
+  datum
+    ? `
+  <!-- The datum the point is measured against. The only element carrying a
+       judgement, so the only one in the alert colour. -->
+  <rect x="8" y="61" width="48" height="3" fill="${alert}" />`
+    : ''
+}
 </svg>
 `;
 }
@@ -129,8 +144,8 @@ writeFileSync(
 );
 
 /**
- * The tab icon carries its own colours: a favicon is drawn against whatever
- * chrome the browser has and can inherit nothing.
+ * The favicon and the avatar carry their own colours: neither inherits anything
+ * from a page, and both are drawn against chrome this project does not control.
  */
 writeFileSync(
   `${ROOT}src/site/favicon.svg`,
@@ -150,4 +165,11 @@ writeFileSync(
   'utf8',
 );
 
-console.log('mark.svg, mark-dark.svg, mark-light.svg and favicon.svg written');
+/** Silhouette only, for the avatar tile and anywhere the datum would crowd it. */
+writeFileSync(
+  `${ROOT}assets/brand/mark-solo.svg`,
+  mark({ ink: '#d2e2f4', alert: '#f2857c', title: 'Sighttrue', datum: false }),
+  'utf8',
+);
+
+console.log('mark.svg, mark-dark.svg, mark-light.svg, mark-solo.svg and favicon.svg written');

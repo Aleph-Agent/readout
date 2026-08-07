@@ -154,7 +154,7 @@ function card({ eyebrow, figure, unit, say }) {
     <div class="proof"><b>${figure}</b> <span>${unit}</span></div>
   </div>
   <div class="foot">
-    <span class="mark">${wordmark({ size: 30 })} <span style="margin-left:4px">${HANDLE}</span></span>
+    <span class="mark">${mark.replace('width="64" height="64"', 'width="26" height="26"')} ${wordmark({ size: 28 })} <span style="margin-left:6px">${HANDLE}</span></span>
     <span>sighttrue.com</span>
   </div>
 </body></html>`;
@@ -307,28 +307,22 @@ const film = `<!doctype html><html lang="en"><head>${HEAD}
 writeFileSync(`${ROOT}assets/brand/film.html`, film, 'utf8');
 
 /**
- * The avatar: the wordmark's own `s`, in a solid tile.
+ * The avatar: the bob alone, in a solid tile.
  *
- * The one place that genuinely needs a square, so it gets the letter the
- * wordmark already uses rather than a symbol drawn separately — which is how
- * four rejected marks happened. Nothing here has to be kept in step with
- * anything, because it is the same letterform at a different size.
+ * No wordmark. At 40 pixels in a timeline a name is unreadable and an object is
+ * not, which is the whole reason Robinhood puts a feather there and not the
+ * word Robinhood.
  *
- * A filled tile rather than a letter floating on the page colour: at 48px in a
- * timeline, a shape with an edge holds and a glyph on a dark field dissolves
- * into the dark field beside it.
+ * Filled tile rather than the mark floating on the page colour: a shape with an
+ * edge holds against whatever background X puts behind it, and a glyph on dark
+ * dissolves into the dark beside it.
  */
 writeFileSync(
   `${ROOT}assets/brand/avatar.html`,
-  `<!doctype html><html><head><meta charset="utf-8"><style>
-${HEAD.slice(HEAD.indexOf('<style>') + 7, HEAD.lastIndexOf('</style>'))}
-html,body{margin:0;padding:0}
-body{width:400px;height:400px;background:#121212;display:grid;place-items:center}
-.tile{width:400px;height:400px;background:#1c1c1c;display:grid;place-items:center;position:relative}
-.tile .wm{font-size:300px;color:#e8e8e8}
-</style></head><body><div class="tile">
-<span class="wm" style="font-size:300px;color:#e8e8e8">s<i style="position:absolute;left:50%;transform:translateX(-50%);width:190px;height:14px;background:#f2857c;top:214px;display:block"></i></span>
-</div></body></html>`,
+  `<!doctype html><meta charset="utf-8">
+<style>html,body{margin:0;padding:0}
+body{width:400px;height:400px;background:#1c1c1c;display:grid;place-items:center}</style>
+${mark.replace('width="64" height="64"', 'width="330" height="330"')}`,
   'utf8',
 );
 

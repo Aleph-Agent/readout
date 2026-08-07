@@ -2187,7 +2187,7 @@ a.lens-cell:hover {
 .hero-x {
   font-family: var(--face-label);
   font-weight: 600;
-  font-size: clamp(32px, 5.2vw, 64px);
+  font-size: clamp(34px, 6vw, 80px);
   letter-spacing: -0.01em;
   color: var(--ink-900);
   text-decoration: none;
@@ -2213,20 +2213,28 @@ a.lens-cell:hover {
 /* Two columns from the width where the sentence stops filling the line. Below
    it the link stacks under the text rather than squeezing beside it. */
 @media (min-width: 900px) {
+  /* The panel takes the whole right column, level with the headline rather
+     than tucked under it. That column is empty on every desktop screen, and
+     the account is the one thing on this page somebody has to be able to find
+     without hunting for it. */
   .hero {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    column-gap: 54px;
+    grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
+    column-gap: 60px;
     align-items: start;
   }
 
-  .hero-thesis {
-    grid-column: 1 / -1;
+  .hero-thesis,
+  .hero-sub,
+  .hero-follow {
+    grid-column: 1;
   }
 
   .hero-follow-us {
-    grid-row: 2;
     grid-column: 2;
+    grid-row: 1 / span 4;
+    max-width: none;
+    padding: 30px 32px 34px;
   }
 }
 

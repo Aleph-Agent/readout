@@ -103,6 +103,10 @@ describe('bundle emission', () => {
       // Every model, flat, for the endpoint that answers "cheapest with 200k
       // context" — a question an agent asks several times a session.
       'models.json',
+      // Who this project actually is, as a file. The pages say it too, but the
+      // claim that matters most is the one a reader should not have to trust
+      // the page for.
+      'official.json',
       'ships.json',
       'stack-index.json',
       'stack.json',
@@ -248,8 +252,22 @@ describe('output hygiene', () => {
 
   it('rebuilds from scratch so a removed file cannot linger', () => {
     const result = runBuild({ now: NOW });
-    const jsonFiles = result.files.filter((f) => f.name.endsWith('.json'));
-    expect(readdirSync(DIST_DATA).sort()).toEqual(jsonFiles.map((f) => f.name).sort());
+
+    // Bundles are written straight into dist/data and are reported by bare
+    // name; official.json goes through the pages map so the deploy gate hashes
+    // it, and is reported as `data/official.json`. Both land in the same
+    // directory, so the comparison is on where the file ends up rather than on
+    // which mechanism put it there.
+    const inData = result.files
+      .filter((f) => f.name.endsWith('.json') && !f.name.includes('/'))
+      .map((f) => f.name)
+      .concat(
+        result.files
+          .filter((f) => f.name.startsWith('data/') && f.name.endsWith('.json'))
+          .map((f) => f.name.slice('data/'.length)),
+      );
+
+    expect(readdirSync(DIST_DATA).sort()).toEqual(inData.sort());
   });
 
   it('emits a page per lens alongside the bundles', () => {

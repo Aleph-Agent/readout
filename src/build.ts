@@ -65,6 +65,7 @@ import {
   renderModels,
   renderStack,
   SITE_SCRIPT,
+  OFFICIAL,
 } from './site/render.ts';
 import {
   eventPath,
@@ -987,6 +988,20 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   pages.set('feed.xml', renderFeed(addressable, previous.lastSuccessfulRunAt ?? now.toISOString()));
   pages.set('sitemap.xml', renderSitemap(sitemapPaths));
   pages.set('robots.txt', renderRobots());
+
+  // The canonical channel list, as a file. The site says who it is; this lets
+  // anybody — or any agent — check that without trusting the page it is printed
+  // on, which is the same argument every other figure here rests on.
+  //
+  // Through the pages map rather than a direct write, so it is hashed by the
+  // deploy gate like everything else served. Written directly first, and it
+  // never appeared in dist — a file the build thinks it emitted and does not is
+  // exactly the failure this project keeps finding.
+  pages.set(
+    'data/official.json',
+    `${JSON.stringify({ ...OFFICIAL, note: 'Anything not listed here is not us.' }, null, 2)}
+`,
+  );
 
   // Owed since the audit and deferred while the site was read-only. Sign-in
   // ended the deferral: there is now a session cookie worth stealing.

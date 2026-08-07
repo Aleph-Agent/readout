@@ -33,6 +33,16 @@ const mark = readFileSync(`${ROOT}assets/brand/mark-dark.svg`, 'utf8');
 
 const n = (value) => value.toLocaleString('en');
 
+/**
+ * The official account, in one place.
+ *
+ * Stated as a constant and pushed into every asset rather than typed per file.
+ * A token launch attracts impersonators, and the only defence that works is
+ * that every artefact this project emits names the same handle and the same
+ * domain — a cloner can forge one surface, not all of them at once.
+ */
+const HANDLE = '@Sighttruehq';
+
 /** Shared head: the site's own fonts and tokens, so the account cannot drift from the product. */
 const HEAD = `<meta charset="utf-8">
 <style>
@@ -93,7 +103,7 @@ function card({ eyebrow, figure, unit, say }) {
     <p class="say">${say}</p>
   </div>
   <div class="foot">
-    <span class="mark">${mark.replace('width="64" height="64"', 'width="30" height="30"')} Sighttrue</span>
+    <span class="mark">${mark.replace('width="64" height="64"', 'width="30" height="30"')} ${HANDLE}</span>
     <span>sighttrue.com</span>
   </div>
 </body></html>`;
@@ -177,7 +187,11 @@ const film = `<!doctype html><html lang="en"><head>${HEAD}
   .row b { font-weight: 400; font-size: 46px; font-variant-numeric: tabular-nums; color: #d2e2f4; }
   .url { font-family: 'Plex Condensed', sans-serif; font-weight: 600; font-size: 30px;
          letter-spacing: 0.2em; text-transform: uppercase; color: #9e9e9e; }
-  .col { display: grid; gap: 40px; place-items: center; }
+  /* The handle sits under the domain, quieter. The domain is the thing that
+     cannot be forged; the handle is how to find the account that points at it. */
+  .handle { font-family: 'Plex Mono', monospace; font-size: 22px; color: #6b6b6b;
+            margin-top: -22px; }
+  .col { display: grid; gap: 38px; place-items: center; }
 </style></head>
 <body>
   <div class="stage" id="stage"></div>
@@ -233,7 +247,8 @@ const film = `<!doctype html><html lang="en"><head>${HEAD}
       '<div class="col" style="opacity:' + p + '">' +
       mark +
       '<p class="line">Take the reading, and check it.</p>' +
-      '<span class="url">sighttrue.com</span></div>';
+      '<span class="url">sighttrue.com</span>' +
+      '<span class="handle">' + ${JSON.stringify('HANDLE_PLACEHOLDER')}.replace('HANDLE_PLACEHOLDER', ${JSON.stringify('@Sighttruehq')}) + '</span></div>';
   }
 </script>
 </body></html>`;

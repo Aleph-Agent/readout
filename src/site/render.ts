@@ -389,6 +389,42 @@ function calibrationHtml(index: IndexBundle): string {
 instrument, not in the repositories. <a href="/method">How</a></p>`;
 }
 
+/**
+ * The only official channels, on every page.
+ *
+ * A token launch attracts impersonators, and a copied site is trivial to make —
+ * a cloner will take the pretty front page and the big link with it. What a
+ * cloner cannot take is the domain, so the defence is that the domain publishes
+ * the canonical list and everything else points back at it.
+ *
+ * On every page rather than only the front one. Most people arrive on a
+ * repository page from a search result and never see the front door, so any
+ * page somebody lands on has to be enough to check who this is.
+ *
+ * Published as a file too, at /data/official.json. This site's whole argument
+ * is that its claims can be checked without trusting the page they are printed
+ * on, and the list of official accounts is the claim where that matters most.
+ */
+export const OFFICIAL = {
+  domain: 'sighttrue.com',
+  x: 'Sighttruehq',
+  github: 'kaitzyy-dev/sighttrue',
+} as const;
+
+function officialHtml(): string {
+  return `<section class="official shell">
+  <h2 class="official-head">The only official channels</h2>
+  <ul class="official-list">
+    <li><span class="label">Site</span> <b>sighttrue.com</b></li>
+    <li><span class="label">X</span> <b><a href="https://x.com/${esc(OFFICIAL.x)}" rel="me">@${esc(OFFICIAL.x)}</a></b></li>
+    <li><span class="label">Code</span> <b><a href="https://github.com/${esc(OFFICIAL.github)}">github.com/${esc(OFFICIAL.github)}</a></b></li>
+  </ul>
+  <p class="official-note">Anything not on this list is not us. This list is served from
+  sighttrue.com, which is the one address nobody else can publish from, and it is also a file:
+  <a href="/data/official.json">/data/official.json</a>.</p>
+</section>`;
+}
+
 function colophonHtml(index: IndexBundle, meta: MetaRecord): string {
   const { disclosure, watchlist } = index;
 
@@ -406,6 +442,7 @@ function colophonHtml(index: IndexBundle, meta: MetaRecord): string {
   <p>This data is not real-time. Every figure links to its source so it can be checked directly.
   The underlying bundles are published at <a href="/data/index.json">/data/index.json</a>.</p>
   ${partial}
+${officialHtml()}
 </footer>`;
 }
 

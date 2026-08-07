@@ -1,5 +1,10 @@
 # Posts
 
+The account is **@Sighttruehq**, display name **Sighttrue**. Every asset here
+carries both the handle and the domain, and the site publishes the same pair at
+/data/official.json — a cloner can forge one surface, not all of them at once.
+
+
 Six posts, one or two a day. The video first; the cards in the order below.
 
 ## Voice
@@ -115,6 +120,19 @@ fastest way to lose the only thing this product is selling.
 > because a detector nothing has crossed is a broken one, not a quiet one.
 >
 > github.com/kaitzyy-dev/sighttrue
+
+## If somebody accuses you of being a clone, or you find one
+
+> The only official channels are listed on the site itself, at the bottom of
+> every page, and published as a file: sighttrue.com/data/official.json
+>
+> Site sighttrue.com · X @Sighttruehq · Code github.com/kaitzyy-dev/sighttrue
+>
+> Anything else is not us.
+
+Do not argue past that. The list is served from a domain nobody else can publish
+from, which is the whole of the proof; a longer reply just gives an impersonator
+a thread to appear in.
 
 ## If somebody asks what it costs
 

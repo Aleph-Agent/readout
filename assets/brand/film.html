@@ -46,7 +46,11 @@
   .row b { font-weight: 400; font-size: 46px; font-variant-numeric: tabular-nums; color: #d2e2f4; }
   .url { font-family: 'Plex Condensed', sans-serif; font-weight: 600; font-size: 30px;
          letter-spacing: 0.2em; text-transform: uppercase; color: #9e9e9e; }
-  .col { display: grid; gap: 40px; place-items: center; }
+  /* The handle sits under the domain, quieter. The domain is the thing that
+     cannot be forged; the handle is how to find the account that points at it. */
+  .handle { font-family: 'Plex Mono', monospace; font-size: 22px; color: #6b6b6b;
+            margin-top: -22px; }
+  .col { display: grid; gap: 38px; place-items: center; }
 </style></head>
 <body>
   <div class="stage" id="stage"></div>
@@ -97,7 +101,8 @@
       '<div class="col" style="opacity:' + p + '">' +
       mark +
       '<p class="line">Take the reading, and check it.</p>' +
-      '<span class="url">sighttrue.com</span></div>';
+      '<span class="url">sighttrue.com</span>' +
+      '<span class="handle">' + "HANDLE_PLACEHOLDER".replace('HANDLE_PLACEHOLDER', "@Sighttruehq") + '</span></div>';
   }
 </script>
 </body></html>

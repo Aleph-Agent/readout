@@ -2098,3 +2098,53 @@ a.lens-cell:hover {
   color: var(--ink-700);
   max-width: 46ch;
 }
+
+/* The canonical channel list. A cloner can copy this page; it cannot serve it
+   from this domain, which is why the list says where it is being served from
+   rather than just listing the accounts. Set quietly — a loud anti-fraud banner
+   on every page reads as a project that has already been cloned. */
+.official {
+  margin-top: 34px;
+  padding-top: 22px;
+  border-top: 1px solid var(--ink-100);
+}
+
+.official-head {
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-900);
+  margin: 0 0 12px;
+}
+
+.official-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 34px;
+}
+
+.official-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.official-list b {
+  font-family: var(--face-data);
+  font-weight: 400;
+  font-size: var(--t-small);
+  color: var(--ink-900);
+}
+
+.official-note {
+  font-family: var(--face-prose);
+  font-size: var(--t-small);
+  color: var(--ink-500);
+  max-width: 66ch;
+  margin: 0;
+}

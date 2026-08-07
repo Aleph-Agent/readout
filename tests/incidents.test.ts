@@ -238,3 +238,34 @@ describe('summariseIncidents', () => {
     expect(summary.byProvider.every((entry) => entry.count === 0)).toBe(true);
   });
 });
+
+describe('Atom feeds', () => {
+  // Heroku was dropped for answering `/history.rss` with HTML. It publishes a
+  // perfectly good Atom feed at `/feed`; nobody looked past the URL that failed.
+  const atom = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Heroku Status</title>
+  <entry>
+    <id>tag:status-api.heroku.com,2005:Incident/2960</id>
+    <published>2026-08-06T16:17:48Z</published>
+    <link rel="alternate" type="text/html" href="https://status.heroku.com/incidents/2960"/>
+    <title>Elevated error rates</title>
+  </entry>
+</feed>`;
+
+  it('reads an entry the way it reads an item', () => {
+    const rows = parseFeed(atom, 'heroku');
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      provider: 'heroku',
+      id: 'tag:status-api.heroku.com,2005:Incident/2960',
+      title: 'Elevated error rates',
+      startedAt: '2026-08-06T16:17:48.000Z',
+    });
+  });
+
+  it('takes the link from the attribute Atom puts it in', () => {
+    expect(parseFeed(atom, 'heroku')[0]?.url).toBe('https://status.heroku.com/incidents/2960');
+  });
+});

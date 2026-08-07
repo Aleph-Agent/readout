@@ -50,18 +50,20 @@ export const PROVIDERS: readonly { slug: string; name: string; feed: string }[] 
   { slug: 'discord', name: 'Discord', feed: 'https://discordstatus.com/history.rss' },
   { slug: 'sentry', name: 'Sentry', feed: 'https://status.sentry.io/history.rss' },
   { slug: 'groq', name: 'Groq', feed: 'https://groqstatus.com/history.rss' },
+  { slug: 'heroku', name: 'Heroku', feed: 'https://status.heroku.com/feed' },
   { slug: 'datadog', name: 'Datadog', feed: 'https://status.datadoghq.com/history.rss' },
   { slug: 'atlassian', name: 'Atlassian', feed: 'https://status.atlassian.com/history.rss' },
 ];
 
 /**
- * Heroku and Railway are absent on purpose.
+ * Railway is absent, and Heroku nearly was.
  *
- * Both answer `/history.rss` with 200 and a page of HTML — they do not run
- * Statuspage, and neither publishes an equivalent feed. Keeping them on the
- * list would spend a request a day to log the same parse failure forever, and
- * an error that is always expected is an error nobody reads. Their absence is a
- * gap in coverage rather than a statement about either service.
+ * Both answer `/history.rss` with 200 and a page of HTML, and both were dropped
+ * on that basis — which was the wrong call for one of them. Heroku publishes a
+ * perfectly good Atom feed at `/feed`; nobody looked past the URL that failed.
+ * Railway's status page is Instatus rather than Statuspage and publishes only
+ * its current state, with no incident history in any format, so that one stays
+ * a genuine gap in coverage rather than a statement about the service.
  */
 
 /** How long an incident stays on record here after the feed drops it. */
@@ -119,18 +121,30 @@ function tag(item: string, name: string): string | null {
 export function parseFeed(xml: string, provider: string): IncidentRow[] {
   const rows: IncidentRow[] = [];
 
-  for (const match of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
+  // RSS `<item>` and Atom `<entry>` in one pass. Statuspage emits the first and
+  // Heroku the second, and the difference is three element names — worth
+  // reading rather than dropping a provider over.
+  const entries = [
+    ...xml.matchAll(/<item>([\s\S]*?)<\/item>/g),
+    ...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g),
+  ];
+
+  for (const match of entries) {
     const item = match[1] as string;
 
     const title = tag(item, 'title');
-    const link = tag(item, 'link');
-    const published = tag(item, 'pubDate');
+    // Atom puts the URL in an attribute rather than in the element's text.
+    const link = tag(item, 'link') ?? /<link[^>]*href="([^"]+)"/.exec(item)?.[1] ?? null;
+    const published = tag(item, 'pubDate') ?? tag(item, 'published');
     if (title === null || published === null) continue;
 
     const at = new Date(published);
     if (Number.isNaN(at.getTime())) continue;
 
-    const id = tag(item, 'guid') ?? link;
+    // RSS calls it a guid and Atom calls it an id. Either is more stable than
+    // the link, which providers rewrite when they reorganise their status site
+    // — and a changed key would file the same incident a second time.
+    const id = tag(item, 'guid') ?? tag(item, 'id') ?? link;
     if (id === null) continue;
 
     rows.push({

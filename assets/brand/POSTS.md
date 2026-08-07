@@ -7,6 +7,23 @@ carries both the handle and the domain, and the site publishes the same pair at
 
 Six posts, one or two a day. The video first; the cards in the order below.
 
+## The X profile
+
+**Name** Sighttrue &middot; **Handle** @Sighttruehq &middot; **URL** sighttrue.com
+
+**Bio** (153 characters, inside the 160 limit):
+
+> Your dependencies change without telling you. Licences, end-of-life dates,
+> outages, releases — measured every four hours and published as files.
+
+No repository count, deliberately. Every earlier draft opened with "an
+instrument pointed at 388 open-source repositories", which tells a reader what
+our backlog looks like rather than what they get, and reads as a GitHub summary
+in the one line where that impression is hardest to undo. The count was in the
+banner footer too and is gone from there for the same reason — a reader takes
+the whole image at once, so rewriting the headline while leaving the number
+underneath it achieved nothing.
+
 ## Voice
 
 No adjectives, no emoji, no "excited to announce". The whole argument of this

@@ -98,7 +98,12 @@ const banner = `<!doctype html>
   </div>
   <div class="foot">
     <span>sighttrue.com &middot; @Sighttruehq</span>
-    <span>${watched} repositories &middot; read every 4 hours</span>
+    <!-- No repository count. It was here in the footer while the headline was
+         being rewritten to stop sounding like a GitHub summary, which made the
+         rewrite pointless — a reader takes the whole image at once. Cadence is
+         a promise about the product; a repo count is a fact about our backlog,
+         and nobody outside this project has a reason to care about it. -->
+    <span>read every 4 hours</span>
   </div>
 </body></html>
 `;

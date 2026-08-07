@@ -199,20 +199,20 @@ describe('where somebody lands afterwards', () => {
   it('refuses to become an open redirect', () => {
     // The sign-in link is on this domain, so a phishing page reached through it
     // inherits the trust of the domain that sent them there.
-    expect(safeNext('https://evil.example')).toBe('/account');
-    expect(safeNext('http://evil.example')).toBe('/account');
+    expect(safeNext('https://evil.example')).toBe('/stack');
+    expect(safeNext('http://evil.example')).toBe('/stack');
   });
 
   it('refuses the protocol-relative form a naive check waves through', () => {
     // `//evil.example` starts with a slash and is a fully qualified URL. Any
     // check that is only `startsWith('/')` accepts it.
-    expect(safeNext('//evil.example')).toBe('/account');
-    expect(safeNext('/\\evil.example')).toBe('/account');
+    expect(safeNext('//evil.example')).toBe('/stack');
+    expect(safeNext('/\\evil.example')).toBe('/stack');
   });
 
   it('falls back when nothing was asked for', () => {
-    expect(safeNext(null)).toBe('/account');
-    expect(safeNext('')).toBe('/account');
+    expect(safeNext(null)).toBe('/stack');
+    expect(safeNext('')).toBe('/stack');
   });
 });
 

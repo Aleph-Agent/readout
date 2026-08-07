@@ -225,7 +225,7 @@ export function callbackUrl(requestUrl: string): string {
  * `//evil.example` is the case a naive `startsWith('/')` check waves through,
  * so it is rejected by name.
  */
-export function safeNext(next: string | null, fallback = '/account'): string {
+export function safeNext(next: string | null, fallback = '/stack'): string {
   if (next === null || next === '') return fallback;
   if (!next.startsWith('/')) return fallback;
   if (next.startsWith('//') || next.startsWith('/\\')) return fallback;

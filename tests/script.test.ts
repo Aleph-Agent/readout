@@ -80,8 +80,10 @@ describe('sign-in is reachable and never silent', () => {
     }
   });
 
-  it('gives the account page somewhere to report a failure', () => {
-    const account = readFileSync(join(DIST, 'account.html'), 'utf8');
+  it('gives the stack page somewhere to report a failure', () => {
+    // On /stack, not a page of its own. Two pages both titled "Your stack" was
+    // the confusion the navigation rewrite removed.
+    const account = readFileSync(join(DIST, 'stack.html'), 'utf8');
 
     expect(account).toContain('id="account-gate-note"');
     // Hidden until there is something to say. A permanently visible warning is

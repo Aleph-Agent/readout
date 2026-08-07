@@ -261,10 +261,6 @@ describe('output hygiene', () => {
       )
       .map((f) => f.name);
     expect(pages.sort()).toEqual([
-      // The only page about one reader rather than the watchlist, and still a
-      // file on the CDN: the names arrive from an endpoint, the readings from
-      // the same published bundle every other page reads.
-      'account.html',
       // The one page here that is a tool rather than a reading.
       'compare.html',
       'demand.html',
@@ -288,6 +284,9 @@ describe('output hygiene', () => {
       // What models cost. The first page here with nothing to do with a
       // repository.
       'models.html',
+      // The channel list: every reading and the question it answers, on one
+      // screen. Fifteen one-word navigation labels never said any of it.
+      'readings.html',
       'ships.html',
       'stack.html',
       // Everything the ledger already holds, arranged for somebody who was away.

@@ -49,7 +49,7 @@ export const CHROME_ACCOUNT_SCRIPT = `
 
   window.sighttrueMe.then((me) => {
     if (me.account) {
-      slot.innerHTML = '<a class="label" href="/account">' + text(me.account.login) + '</a>' +
+      slot.innerHTML = '<a class="label" href="/stack">' + text(me.account.login) + '</a>' +
         '<button class="chrome-signout" type="button">Sign out</button>';
       slot.querySelector('.chrome-signout').addEventListener('click', async () => {
         // POST, not a link. A GET that ends a session can be fired by an image
@@ -257,8 +257,4 @@ if (accountOut) {
     } catch (error) { button.disabled = false; say('Could not remove that.', true); }
   });
 
-  document.getElementById('watch-signout').addEventListener('click', async () => {
-    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); } catch (e) {}
-    location.reload();
-  });
 }`.trim();

@@ -4,6 +4,8 @@ import { MIN_INSTALLS } from '../lib/divergence.ts';
 import { COMPARE_SCRIPT } from './compare.ts';
 import { STACK_SCRIPT } from './stack.ts';
 import { ACCOUNT_SCRIPT, CHROME_ACCOUNT_SCRIPT } from './account-script.ts';
+import { DOORS, doorFor, READINGS } from './readings.ts';
+import { watchlistBands } from './account.ts';
 import type { IndexBundle, LensBundle, LensName, StripMark } from '../types/bundles.ts';
 import { isRepositorySubject, type EventRecord } from '../types/events.ts';
 import type { MetaRecord } from '../types/meta.ts';
@@ -34,31 +36,6 @@ export function esc(value: string): string {
  * names — that is what Pages resolves against — but nothing links to them that
  * way.
  */
-const NAV: { href: string; label: string; lens: LensName | null }[] = [
-  { href: '/live', label: 'Live', lens: null },
-  { href: '/ships', label: 'Ships', lens: 'ships' },
-  { href: '/forks', label: 'Forks', lens: 'forks' },
-  { href: '/demand', label: 'Demand', lens: 'demand' },
-  { href: '/stack', label: 'Stack', lens: 'stack' },
-  { href: '/lineage', label: 'Lineage', lens: 'lineage' },
-  // How it works, what it cannot do, and who is paying. It was all in the
-  // commit log, which is a credibility argument aimed at an audience that does
-  // not read strangers' commit logs.
-  // The tools sit after the readings: a visitor who does not know what this
-  // measures has no use for a tool that measures it.
-  // Pointed at /stack until there was somewhere for it to point. That left two
-  // navigation entries on one href, and the one labelled "Your stack" was the
-  // watchlist's stack rather than the reader's.
-  { href: '/account', label: 'Your stack', lens: null },
-  { href: '/models', label: 'Models', lens: null },
-  { href: '/incidents', label: 'Status', lens: null },
-  { href: '/ecosystem', label: 'Ecosystem', lens: null },
-  { href: '/findings', label: 'Findings', lens: null },
-  { href: '/week', label: 'This week', lens: null },
-  { href: '/depends', label: 'Depended on', lens: null },
-  { href: '/compare', label: 'Compare', lens: null },
-  { href: '/method', label: 'Method', lens: null },
-];
 
 /**
  * Reads a timestamp's age into the page.
@@ -206,21 +183,65 @@ function askHtml(): string {
   page and in <a href="/data/ask-context.json">the record it reads</a>.</p></noscript>`;
 }
 
+/**
+ * Two rows, and only when the second one is useful.
+ *
+ * The first is four doors, grouped by what a reader wants rather than by what a
+ * collector produces. Fifteen equally-weighted one-word labels in a flat row —
+ * Live, Ships, Forks, Demand, Stack, Lineage, Your stack, Models, Status,
+ * Ecosystem, Findings, This week, Depended on, Compare, Method — is an
+ * inventory of the software's parts presented as a menu. Each label is exact
+ * once you know the product and meaningless before that, and fifteen equal
+ * choices is the same as no navigation at all.
+ *
+ * The second row is the reading list, and it appears only behind the Readings
+ * door. Somewhere to go next matters once you are looking at a measurement;
+ * before that it is ten more words competing with the four that matter.
+ */
 function navHtml(current: string, lenses: IndexBundle['lenses']): string {
-  const items = NAV.map((item) => {
-    const pending = item.lens !== null && lenses[item.lens].status === 'pending';
+  const here = doorFor(current);
+
+  const doors = DOORS.map((door) => {
     const attrs = [
-      `href="${item.href}"`,
-      item.href === current ? 'aria-current="page"' : '',
-      pending ? 'data-pending="true" title="No collector for this signal yet"' : '',
+      `href="${door.href}"`,
+      door.href === here ? 'aria-current="page"' : '',
     ]
       .filter(Boolean)
       .join(' ');
-    return `<li><a ${attrs}>${esc(item.label)}</a></li>`;
+    return `<li><a ${attrs}>${esc(door.label)}</a></li>`;
   }).join('');
 
-  return `<nav aria-label="Signals"><ul class="nav shell">${items}</ul></nav>`;
+  const primary = `<nav aria-label="Sections"><ul class="nav shell">${doors}</ul></nav>`;
+  if (here !== '/readings') return primary;
+
+  const channels = READINGS.map((reading) => {
+    const lens = LENS_BY_HREF[reading.href];
+    const pending = lens !== undefined && lenses[lens].status === 'pending';
+    const attrs = [
+      `href="${reading.href}"`,
+      reading.href === current ? 'aria-current="page"' : '',
+      pending ? 'data-pending="true" title="No collector for this signal yet"' : '',
+      // The question, on hover and to a screen reader. The label alone is a
+      // noun; the question is what tells somebody whether to click it.
+      `title="${esc(reading.question)}"`,
+    ]
+      .filter(Boolean)
+      .join(' ');
+    return `<li><a ${attrs}>${esc(reading.label)}</a></li>`;
+  }).join('');
+
+  return `${primary}
+<nav aria-label="Readings"><ul class="nav nav-channels shell">${channels}</ul></nav>`;
 }
+
+/** Which reading pages are lens-backed, so a pending collector can still say so. */
+const LENS_BY_HREF: Record<string, LensName | undefined> = {
+  '/ships': 'ships',
+  '/forks': 'forks',
+  '/demand': 'demand',
+  '/stack': 'stack',
+  '/lineage': 'lineage',
+};
 
 /**
  * The chrome: wordmark, reading age, theme switch, navigation.
@@ -851,14 +872,6 @@ ${inner}
 </section>`;
 }
 
-/** What each lens answers. The navigation named them and nothing explained them. */
-const LENS_QUESTION: Record<LensName, string> = {
-  ships: 'What released a new version?',
-  forks: 'What is being copied faster than it usually is?',
-  demand: 'What are developers asking for in more than one place?',
-  stack: 'What dependencies are being added, dropped, or jumped?',
-  lineage: 'Which models say they were built on which?',
-};
 
 function heroHtml(index: IndexBundle, meta: MetaRecord): string {
   const { watchlist, disclosure } = index;
@@ -914,13 +927,16 @@ function heroHtml(index: IndexBundle, meta: MetaRecord): string {
 }
 
 function lensesHtml(index: IndexBundle): string {
-  const cells = NAV.filter((item) => item.lens !== null)
-    .map((item) => {
-      const lens = item.lens as LensName;
+  // Driven by the reading list rather than by a second table of its own. The
+  // five lens pages appeared in three places with three sets of labels before
+  // this, and they had already drifted apart once.
+  const cells = READINGS.filter((reading) => LENS_BY_HREF[reading.href] !== undefined)
+    .map((reading) => {
+      const lens = LENS_BY_HREF[reading.href] as LensName;
       const { status, count } = index.lenses[lens];
-      return `<a class="lens-cell" href="${item.href}">
-      <span class="lens-name">${esc(item.label)}</span>
-      <span class="lens-question">${esc(LENS_QUESTION[lens])}</span>
+      return `<a class="lens-cell" href="${reading.href}">
+      <span class="lens-name">${esc(reading.label)}</span>
+      <span class="lens-question">${esc(reading.question)}</span>
       <span class="lens-count">${
         status === 'pending'
           ? 'not measured yet'
@@ -1546,6 +1562,8 @@ ${band(
   reads is at <a href="/data/stack-index.json">/data/stack-index.json</a>.</p></noscript>`,
   'Advisories are checked for every dependency. Scorecard and licence only for the ones tracked here.',
 )}
+
+${watchlistBands()}
 
 ${lifecycleHtml(index)}`,
   });

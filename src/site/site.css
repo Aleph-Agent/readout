@@ -2048,3 +2048,42 @@ a.lens-cell:hover {
     max-width: 10ch;
   }
 }
+
+/* The second navigation row: the reading list.
+
+   Subordinate to the four doors above it and it has to look subordinate, or the
+   page has two equally loud menus and the reader is back where they started —
+   which is exactly the state this rewrite replaced. Smaller, lighter, and only
+   rendered behind the Readings door. */
+.nav-channels {
+  border-top: 1px solid var(--ink-050);
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.nav-channels a {
+  padding: 7px 12px 6px;
+  font-weight: 500;
+  letter-spacing: 0.10em;
+  text-transform: none;
+  font-size: var(--t-small);
+  color: var(--ink-300);
+}
+
+.nav-channels a:hover {
+  color: var(--ink-900);
+}
+
+.nav-channels a[aria-current='page'] {
+  color: var(--ink-900);
+  border-bottom-color: var(--ink-500);
+}
+
+/* The question column on the reading list. It carries the meaning the one-word
+   labels never did, so it is set in the prose face — this is language, not a
+   measurement, and the reader should be able to see which is which. */
+.reading-q {
+  font-family: var(--face-prose);
+  color: var(--ink-700);
+  max-width: 46ch;
+}

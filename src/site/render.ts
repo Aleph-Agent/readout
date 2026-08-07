@@ -49,6 +49,7 @@ const NAV: { href: string; label: string; lens: LensName | null }[] = [
   { href: '/models', label: 'Models', lens: null },
   { href: '/incidents', label: 'Status', lens: null },
   { href: '/ecosystem', label: 'Ecosystem', lens: null },
+  { href: '/findings', label: 'Findings', lens: null },
   { href: '/week', label: 'This week', lens: null },
   { href: '/depends', label: 'Depended on', lens: null },
   { href: '/compare', label: 'Compare', lens: null },

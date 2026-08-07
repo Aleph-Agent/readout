@@ -268,6 +268,8 @@ describe('output hygiene', () => {
       'depends.html',
       // The readings that never touch GitHub: registries, OSV, Stack Overflow.
       'ecosystem.html',
+      // The one page that makes a claim rather than showing a reading.
+      'findings.html',
       'forks.html',
       // Who goes down and how often, kept after their own feeds forget.
       'incidents.html',

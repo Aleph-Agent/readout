@@ -1759,3 +1759,59 @@ a.lens-cell:hover {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------------------------------------------------------------- findings
+
+   The one page here that makes a claim rather than showing a reading, so it is
+   the one place a longer measure of type is correct. Everything else is a table
+   because a table is what a measurement wants; a finding wants a sentence.
+
+   Still not a feature article. Each card carries its sample and its link in the
+   same block as the claim, which is the difference between a reading stated
+   plainly and an opinion with a number attached. */
+
+.finding-card {
+  border-top: var(--rule);
+  padding: 26px 0 22px;
+}
+
+.finding-headline {
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-display);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ink-900);
+  margin: 10px 0 12px;
+  max-width: 26ch;
+}
+
+/* Serif, like every other piece of interpretation in the product. The reader
+   has to be able to see where measurement ends and reading-of-it begins. */
+.finding-detail {
+  font-family: var(--face-prose);
+  font-size: var(--t-mid);
+  line-height: 1.6;
+  color: var(--ink-700);
+  margin: 0 0 14px;
+  max-width: 62ch;
+}
+
+.finding-basis {
+  font-size: var(--t-small);
+  line-height: 1.6;
+  color: var(--ink-500);
+  margin: 0 0 6px;
+  max-width: 74ch;
+}
+
+.finding-basis strong {
+  color: var(--ink-700);
+  font-weight: 400;
+}
+
+@media (max-width: 620px) {
+  .finding-headline {
+    font-size: var(--t-large);
+  }
+}

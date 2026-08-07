@@ -73,6 +73,7 @@ import {
 } from './site/event.ts';
 import { archiveNav, archivePath, renderArchive } from './site/archive.ts';
 import { renderEcosystem } from './site/ecosystem.ts';
+import { renderFindings } from './site/findings.ts';
 import { DIGEST_DAYS, renderWeek } from './site/week.ts';
 import { renderDepends, reverseIndex } from './site/depends.ts';
 import { summariseBreaking, summariseCadence } from './lib/releases-summary.ts';
@@ -883,6 +884,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   pages.set('models.html', renderModels(index, previous));
   pages.set('incidents.html', renderIncidents(index, previous));
   pages.set('ecosystem.html', renderEcosystem(index, previous));
+  pages.set('findings.html', renderFindings(index, previous));
   pages.set('depends.html', renderDepends(reverseIndex(readManifests()), index, previous));
 
   // Everything the ledger already holds, arranged for somebody who was away.
@@ -941,6 +943,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     '/models',
     '/incidents',
     '/ecosystem',
+    '/findings',
     '/depends',
     '/week',
     ...LENSES.map((lens) => `/${lens}`),

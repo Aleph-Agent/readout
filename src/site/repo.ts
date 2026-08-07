@@ -1,4 +1,4 @@
-import { basisHtml, esc, eventSlug, layout, proseHtml, stateBadge } from './render.ts';
+import { basisHtml, esc, eventSlug, layout, proseHtml, SITE_ORIGIN, stateBadge } from './render.ts';
 import { readingsOf, SIGNAL_LABEL } from './vocabulary.ts';
 import type { IndexBundle } from '../types/bundles.ts';
 import type { EventRecord } from '../types/events.ts';
@@ -168,6 +168,38 @@ function timelineEntry(event: EventRecord, previous: EventRecord | undefined): s
   </li>`;
 }
 
+/**
+ * The badge, offered rather than merely generated.
+ *
+ * One SVG per watched repository has existed for a while and not one of them is
+ * embedded anywhere, which is what happens when a thing is built and never put
+ * in front of the person who would use it. A badge in a README that gets read
+ * more in a week than this site is read in a year is the only distribution here
+ * that compounds, and it costs a file that already exists.
+ *
+ * Markdown, because that is what a README takes, and a copy button because
+ * nobody retypes a URL. The feed sits beside it for the same reason: both are
+ * things a maintainer might want and neither was reachable from this page.
+ */
+function embedHtml(id: string): string {
+  const markdown = `[![Readout](${SITE_ORIGIN}/badge/${id}.svg)](${SITE_ORIGIN}/repo/${id})`;
+  const target = `embed-${id.replace('/', '-')}`;
+
+  return `<section class="band">
+  <div class="band-rail"><h2 class="band-name">Put this in your README</h2></div>
+  <div class="band-body">
+    <p class="band-note">The figure updates on its own. It is read every four hours and served as a
+    static file, so nothing calls back to you and there is nothing to install.</p>
+    <p><img src="/badge/${esc(id)}.svg" alt="Readout badge for ${esc(id)}" width="150" height="20"></p>
+    <pre class="method-code" id="${esc(target)}">${esc(markdown)}</pre>
+    <p class="repo-facts">
+      <button class="label" type="button" data-copy="${esc(target)}">Copy the markdown</button>
+      <a class="label" href="/repo/${esc(id)}.xml">Follow this repository by feed</a>
+    </p>
+  </div>
+</section>`;
+}
+
 export function renderRepoPage(
   data: RepoPageData,
   index: IndexBundle,
@@ -258,7 +290,8 @@ ${inactive}
 ${readings}
 ${sparkline(data.series, data.baselinePerDay)}
 <h2 class="label" style="padding:26px 0 2px">Timeline — ${data.totalEvents} recorded ${data.totalEvents === 1 ? 'signal' : 'signals'}, newest first</h2>
-${timeline}`;
+${timeline}
+${embedHtml(entry.id)}`;
 
   return layout({
     title: `${entry.id} — Readout`,

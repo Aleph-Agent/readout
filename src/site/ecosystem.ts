@@ -10,11 +10,11 @@ import type { MetaRecord } from '../types/meta.ts';
  * from Stack Overflow, and each says something a repository cannot.
  *
  * A project can have commits this week and a package nobody has shipped in two
- * years. An ecosystem can carry five times the advisory load of its neighbour.
- * A tag can go a month with nobody asking anything about it.
+ * years. A base image can weigh two hundred times its lightest sibling. A name
+ * one keystroke from something you install every day can already be taken.
  */
 export function renderEcosystem(index: IndexBundle, meta: MetaRecord): string {
-  const { staleness, advisories, questions } = index;
+  const { staleness, advisories, questions, images, names } = index;
 
   const signed = (value: number, suffix = ''): string =>
     `${value > 0 ? '+' : '−'}${Math.abs(value).toFixed(1)}${suffix}`;
@@ -123,6 +123,88 @@ export function renderEcosystem(index: IndexBundle, meta: MetaRecord): string {
           `Volume has fallen across nearly every tag on Stack Overflow since assistants started answering these questions instead, so a tag falling is the baseline rather than the finding — the median tag here moved ${questions.medianChange ?? 0}%. What survives that is the last column: how a tag moved against the rest over the same window. Under 25 questions in the earlier window there is no percentage at all, because four to two is a fifty percent collapse and means nothing.`,
         );
 
+  const weight =
+    images.tags === 0
+      ? ''
+      : band(
+          'What the first line of your Dockerfile costs',
+          `<div class="hero-figures">
+    <div class="figure"><span class="figure-value num">${images.tags}</span><span class="label">Tags read</span></div>
+    <div class="figure"><span class="figure-value num">${images.images}</span><span class="label">Official images</span></div>
+    <div class="figure"><span class="figure-value num">${images.stalestDays ?? '—'}</span><span class="label">Days since the stalest rebuild</span></div>
+  </div>
+  <div class="wrap"><table class="readout">
+  <caption class="label">Heaviest tags, against the lightest tag of the same image</caption>
+  <thead><tr>
+    <th scope="col">Tag</th>
+    <th scope="col" class="n">Size</th>
+    <th scope="col" class="n">Over its lightest sibling</th>
+    <th scope="col" class="n">Days since rebuild</th>
+  </tr></thead>
+  <tbody>${images.heaviest
+    .map(
+      (row) => `<tr>
+      <td class="num">${esc(row.image)}:${esc(row.tag)}</td>
+      <td class="n"><span class="big num">${Math.round(row.bytes / 1e6)} MB</span></td>
+      <td class="n num">${row.overLightest === null ? '<span class="dim">lightest</span>' : `+${row.overLightest} MB`}</td>
+      <td class="n num">${row.staleDays}</td>
+    </tr>`,
+    )
+    .join('')}</tbody>
+</table></div>
+  <div class="wrap"><table class="readout">
+  <caption class="label">Longest since the image behind the tag was rebuilt</caption>
+  <thead><tr>
+    <th scope="col">Tag</th>
+    <th scope="col" class="n">Days since rebuild</th>
+    <th scope="col" class="n">Size</th>
+  </tr></thead>
+  <tbody>${images.stalest
+    .slice(0, 6)
+    .map(
+      (row) => `<tr>
+      <td class="num">${esc(row.image)}:${esc(row.tag)}</td>
+      <td class="n"><span class="big num">${row.staleDays}</span></td>
+      <td class="n num">${Math.round(row.bytes / 1e6)} MB</td>
+    </tr>`,
+    )
+    .join('')}</tbody>
+</table></div>`,
+          'A tag is a moving target — the image behind it today is not the one behind it last month. That is why the rebuild date is here: a tag nobody has rebuilt in months is shipping months of unpatched distribution packages, and it looks identical to one built this morning. Sizes are what Docker Hub reports for the compressed image.',
+        );
+
+  const nearMiss =
+    names.found === 0
+      ? ''
+      : band(
+          'Names one keystroke away',
+          `<div class="hero-figures">
+    <div class="figure"><span class="figure-value num">${names.found}</span><span class="label">Neighbouring names that exist</span></div>
+    <div class="figure"><span class="figure-value num">${names.swept}</span><span class="label">Packages swept</span></div>
+  </div>
+  <div class="wrap"><table class="readout">
+  <caption class="label">Real package, and the names on npm one edit from it</caption>
+  <thead><tr>
+    <th scope="col">Package</th>
+    <th scope="col" class="n">Neighbours</th>
+    <th scope="col">Names that exist</th>
+  </tr></thead>
+  <tbody>${names.byPackage
+    .map(
+      (row) => `<tr>
+      <td class="num">${esc(row.canonical)}</td>
+      <td class="n"><span class="big num">${row.neighbours.length}</span></td>
+      <td class="num dim">${row.neighbours
+        .slice(0, 8)
+        .map((neighbour) => esc(neighbour.name))
+        .join(', ')}</td>
+    </tr>`,
+    )
+    .join('')}</tbody>
+</table></div>`,
+          'These names exist on npm and are one edit from a package people install. That is the entire claim. None of them is being called malicious, and none should be read that way — near names are routinely forks, ports, translations, or somebody’s abandoned first attempt. Only deletions and transpositions are swept, so this finds fewer than exist and never claims to be a complete list.',
+        );
+
   return layout({
     title: 'Ecosystem — readings that are not GitHub',
     description:
@@ -132,15 +214,18 @@ export function renderEcosystem(index: IndexBundle, meta: MetaRecord): string {
     index,
     meta,
     body: `<section class="hero">
-  <h1 class="hero-thesis">Three things a repository cannot tell you.</h1>
+  <h1 class="hero-thesis">Five things a repository cannot tell you.</h1>
   <p class="hero-sub">
-    A project can have commits this week and a package nobody has shipped in two years. An
-    ecosystem can carry five times the advisory load of its neighbour. A tag can go a month with
-    nobody asking about it. Read from the package registries, from OSV, and from Stack Overflow.
+    A project can have commits this week and a package nobody has shipped in two years. A base
+    image can weigh two hundred times its lightest sibling. A name one keystroke from something
+    you install every day can already be taken. Read from the package registries, Docker Hub,
+    OSV and Stack Overflow.
   </p>
 </section>
 
 ${shipped}
+${weight}
+${nearMiss}
 ${load}
 ${asking}`,
   });

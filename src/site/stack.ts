@@ -59,6 +59,26 @@ if (stackForm) {
     return found;
   }
 
+  // A reading nobody can send to a colleague is a reading that stops at one
+  // person. The names go in the fragment rather than the query string, so they
+  // are never sent to the server — the page's promise is that a pasted manifest
+  // does not leave the browser, and a query string would quietly break it.
+  const share = (names) => {
+    try {
+      const hash = names.length ? '#deps=' + names.map(encodeURIComponent).join(',') : '';
+      history.replaceState(null, '', location.pathname + hash);
+    } catch (e) {}
+  };
+
+  // A shared link arrives with names in the fragment. Filled in and read at
+  // once, because a link that lands on an empty box has not shared anything.
+  const shared = /^#deps=(.+)$/.exec(location.hash);
+  if (shared) {
+    field.value = shared[1].split(',').map(decodeURIComponent).join('
+');
+    requestAnimationFrame(() => stackForm.requestSubmit());
+  }
+
   stackForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const text = field.value.trim();
@@ -72,6 +92,7 @@ if (stackForm) {
     catch { out.innerHTML = '<p class="notice">The index could not be loaded.</p>'; return; }
 
     const wanted = names(text);
+    share([...wanted.values()]);
 
     // Advisories for everything, not only for what this project happens to
     // track. OSV answers 150 packages in one request and allows the call from a

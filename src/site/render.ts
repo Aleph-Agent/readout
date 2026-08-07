@@ -49,6 +49,8 @@ const NAV: { href: string; label: string; lens: LensName | null }[] = [
   { href: '/models', label: 'Models', lens: null },
   { href: '/incidents', label: 'Status', lens: null },
   { href: '/ecosystem', label: 'Ecosystem', lens: null },
+  { href: '/week', label: 'This week', lens: null },
+  { href: '/depends', label: 'Depended on', lens: null },
   { href: '/compare', label: 'Compare', lens: null },
   { href: '/method', label: 'Method', lens: null },
 ];
@@ -417,6 +419,14 @@ const THEME_BOOT =
 
 export interface PageOptions {
   title: string;
+  /**
+   * Feed this page belongs to. Defaults to the site-wide one.
+   *
+   * A repository page pointing at the site feed hands a reader four hundred
+   * projects when they asked to follow one, which is how a feed link gets
+   * clicked once and never again.
+   */
+  feed?: { href: string; title: string };
   current: string;
   index: IndexBundle;
   meta: MetaRecord;
@@ -539,7 +549,7 @@ export function layout(options: PageOptions): string {
 <meta name="twitter:image" content="${SITE_ORIGIN}/share.png">
 <meta name="twitter:title" content="${esc(options.title)}">
 <meta name="twitter:description" content="${esc(description)}">
-<link rel="alternate" type="application/rss+xml" title="Readout findings" href="/feed.xml">
+<link rel="alternate" type="application/rss+xml" title="${esc(options.feed?.title ?? 'Readout findings')}" href="${esc(options.feed?.href ?? '/feed.xml')}">
 <link rel="stylesheet" href="/site.css">
 <script>${THEME_BOOT}</script>
 </head>

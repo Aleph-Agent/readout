@@ -32,6 +32,7 @@ import { summariseAdoption } from './lib/adoption-summary.ts';
 import { summariseHealth } from './lib/health-summary.ts';
 import { summariseDivergence } from './lib/divergence.ts';
 import { summariseAdvisories } from './lib/advisory-summary.ts';
+import { summariseImages, summariseNames } from './lib/ecosystem-summary.ts';
 import { summariseHiring } from './lib/hiring-summary.ts';
 import { summariseQuestions } from './lib/questions-summary.ts';
 import { summariseStaleness } from './lib/staleness-summary.ts';
@@ -70,6 +71,9 @@ import {
 } from './site/event.ts';
 import { archiveNav, archivePath, renderArchive } from './site/archive.ts';
 import { renderEcosystem } from './site/ecosystem.ts';
+import { DIGEST_DAYS, renderWeek } from './site/week.ts';
+import { renderDepends, reverseIndex } from './site/depends.ts';
+import { summariseBreaking, summariseCadence } from './lib/releases-summary.ts';
 import {
   baselineFromHistory,
   classifySpike,
@@ -538,6 +542,8 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     staleness: summariseStaleness(readStaleness(), today),
     advisories: summariseAdvisories(readAdoption(), readHealth()),
     questions: summariseQuestions(readQuestions()),
+    images: summariseImages(readImages(), today),
+    names: summariseNames(readTyposquats()),
     divergence: summariseDivergence(
       strip.map((mark) => ({
         id: mark.id,
@@ -874,6 +880,41 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   pages.set('models.html', renderModels(index, previous));
   pages.set('incidents.html', renderIncidents(index, previous));
   pages.set('ecosystem.html', renderEcosystem(index, previous));
+  pages.set('depends.html', renderDepends(reverseIndex(readManifests()), index, previous));
+
+  // Everything the ledger already holds, arranged for somebody who was away.
+  // The homepage answers what happened today and each lens answers one signal;
+  // neither answers what a reader who checks weekly actually wants.
+  const weekFrom = utcDate(new Date(now.getTime() - DIGEST_DAYS * 86_400_000));
+  pages.set(
+    'week.html',
+    renderWeek(
+      {
+        events: addressable.filter((event) => event.detectedAt.slice(0, 10) >= weekFrom),
+        cadence: summariseCadence(all, today),
+        breaking: summariseBreaking(all),
+        today,
+      },
+      index,
+      previous,
+    ),
+  );
+
+  // One feed per repository that has anything to say. The site-wide feed is
+  // four hundred projects of noise to somebody who depends on one of them, and
+  // a feed nobody keeps subscribed is a channel this project does not have.
+  for (const [repo, repoEvents] of eventsByRepo) {
+    if (!profiles.has(repo)) continue;
+    if (!repoEvents.some((event) => event.confidence === 'confirmed')) continue;
+    pages.set(
+      `repo/${assertSafeRepoId(repo)}.xml`,
+      renderFeed(
+        [...repoEvents].sort((a, b) => (a.detectedAt < b.detectedAt ? 1 : -1)),
+        previous.lastSuccessfulRunAt ?? now.toISOString(),
+        { repo, path: `/repo/${repo}` },
+      ),
+    );
+  }
 
   // One badge per watched repository. A maintainer who embeds one puts a
   // permanent link back in a README that may be read more in a week than this
@@ -897,6 +938,8 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     '/models',
     '/incidents',
     '/ecosystem',
+    '/depends',
+    '/week',
     ...LENSES.map((lens) => `/${lens}`),
     ...[...profiles.keys()].map((repo) => `/repo/${repo}`),
     ...addressable.map((event) => eventPath(event)),

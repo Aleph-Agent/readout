@@ -265,6 +265,10 @@ ${timeline}`;
     current: '',
     index,
     meta,
+    // This repository's own feed, not the site's. Handing somebody four hundred
+    // projects when they asked to follow one is how a feed link gets clicked
+    // once and never again.
+    feed: { href: `/repo/${entry.id}.xml`, title: `Readout — ${entry.id}` },
     body,
   });
 }

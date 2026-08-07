@@ -264,6 +264,8 @@ describe('output hygiene', () => {
       // The one page here that is a tool rather than a reading.
       'compare.html',
       'demand.html',
+      // The dependency graph read backwards, from manifests rather than a counter.
+      'depends.html',
       // The readings that never touch GitHub: registries, OSV, Stack Overflow.
       'ecosystem.html',
       'forks.html',
@@ -280,6 +282,8 @@ describe('output hygiene', () => {
       'models.html',
       'ships.html',
       'stack.html',
+      // Everything the ledger already holds, arranged for somebody who was away.
+      'week.html',
     ]);
   });
 
@@ -340,7 +344,15 @@ describe('output hygiene', () => {
       .filter((f) => f.name.startsWith('repo/'))
       .map((f) => f.name)
       .sort();
-    expect(profiles).toEqual(['repo/a/one.html', 'repo/b/two.html']);
+    // A page each, and a feed each for the ones with a confirmed finding. The
+    // site-wide feed is four hundred projects of noise to somebody who depends
+    // on one of them.
+    expect(profiles).toEqual([
+      'repo/a/one.html',
+      'repo/a/one.xml',
+      'repo/b/two.html',
+      'repo/b/two.xml',
+    ]);
   });
 
   it('deploys when only the stylesheet changed', () => {

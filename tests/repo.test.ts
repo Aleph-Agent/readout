@@ -23,6 +23,8 @@ const index: IndexBundle = {
   staleness: { measured: 0, unread: 0, medianDays: null, overAYear: 0, quietest: [], byRegistry: [] },
   advisories: { registries: 0, total: 0, byRegistry: [] },
   questions: { windowDays: 0, tags: 0, total: 0, medianChange: null, busiest: [], holding: [], fading: [] },
+  images: { tags: 0, images: 0, stalestDays: null, heaviest: [], stalest: [] },
+  names: { swept: 0, found: 0, byPackage: [] },
   hiring: { month: null, sample: 0, previousMonth: null, previousSample: 0, top: [], rising: [], falling: [] },
   divergence: { compared: 0, median: null, used: [], watched: [] },
   health: { scored: 0, unscored: 0, median: null, advisories: 0, weakest: [] },

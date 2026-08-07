@@ -140,7 +140,18 @@ ${proseHtml(event)}
  * Confirmed findings only. A detection that evaporates tomorrow should not
  * arrive in somebody's reader as news.
  */
-export function renderFeed(events: readonly EventRecord[], generatedAt: string): string {
+export function renderFeed(
+  events: readonly EventRecord[],
+  generatedAt: string,
+  /**
+   * One repository, when this is that repository's own feed.
+   *
+   * The site-wide feed is 400 projects of noise to somebody who depends on one
+   * of them. A per-repository feed is the version a maintainer or a dependent
+   * would actually keep subscribed, and it costs one static file each.
+   */
+  scope?: { repo: string; path: string },
+): string {
   const items = events
     .filter((event) => event.confidence === 'confirmed' && event.kind !== 'correction')
     .slice(0, 50)
@@ -156,12 +167,19 @@ export function renderFeed(events: readonly EventRecord[], generatedAt: string):
     })
     .join('\n');
 
+  const title =
+    scope === undefined ? 'Readout — confirmed findings' : `Readout — ${scope.repo}`;
+  const description =
+    scope === undefined
+      ? 'Release, fork, demand and dependency readings across watched open-source repositories. Confirmed findings only.'
+      : `Confirmed release, fork, demand and dependency readings for ${scope.repo}.`;
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
 <channel>
-  <title>Readout — confirmed findings</title>
-  <link>${SITE_ORIGIN}/</link>
-  <description>Release, fork, demand and dependency readings across watched open-source repositories. Confirmed findings only.</description>
+  <title>${esc(title)}</title>
+  <link>${SITE_ORIGIN}${scope === undefined ? '/' : scope.path}</link>
+  <description>${esc(description)}</description>
   <language>en</language>
   <lastBuildDate>${new Date(generatedAt).toUTCString()}</lastBuildDate>
 ${items}

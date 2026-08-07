@@ -58,11 +58,16 @@
 /* ----------------------------------------------------------------- tokens */
 
 :root {
-  /* One ramp, olive-tinted at the bottom and neutral at the top.
+  /* One neutral ramp, untinted, with elevation carried by tone.
 
-     The tint is a few degrees of hue on the surfaces only: enough that #ccff00
-     sits on them as though it belongs rather than being pasted over a grey, and
-     never on the text, which would make every paragraph read green.
+     Material's rule, and it is the right one for an instrument: a dark surface
+     is not black and a light surface is not white. #000 makes text smear on
+     OLED and turns every border into a hard edge; #fff at full brightness is
+     glare. So the ground is #121212 and #fafafa, and a panel sitting above the
+     page is a lighter surface rather than a shadow.
+
+     Untinted on purpose. The ramp was olive before, a few degrees of hue to
+     help a lime accent sit on it, and the accent it existed for is gone.
 
      Widened at the low end, which was the real problem. The first three steps
      ran #0c0f08, #12160c, #171c10 — about six points of luminance across
@@ -71,29 +76,34 @@
      Redesigning the palette four times could not fix that, because the palette
      was never what was wrong. There is now visible separation between a page, a
      panel and a raised surface. */
-  --ink-000: #0a0d07;
-  --ink-025: #141810;
-  --ink-050: #1d2317;
-  --ink-100: #2a3122;
-  --ink-200: #3a4230;
-  --ink-300: #5c6450;
-  --ink-500: #929a86;
-  --ink-700: #c4cab8;
-  --ink-900: #e9ecdf;
+  --ink-000: #121212;
+  --ink-025: #1a1a1a;
+  --ink-050: #212121;
+  --ink-100: #2c2c2c;
+  --ink-200: #3b3b3b;
+  --ink-300: #6b6b6b;
+  --ink-500: #9e9e9e;
+  --ink-700: #cfcfcf;
+  --ink-900: #e8e8e8;
 
-  /* Two status colours. Neither is lime, deliberately.
+  /* Two status colours, on the warm/cool axis rather than red against green.
 
-     #ccff00 is the loudest thing available on a dark ground, so it is spent on
-     magnitude — the ramp below, and the headline figure — where being loud is
-     the job. If a threshold crossing were lime too, the page would have one
-     colour meaning two different things, which is worse than having no colour.
+     Red and green is the obvious pair and it is the one deuteranopes cannot
+     tell apart, so alert is warm and everything nominal is cool. The pair is
+     validated as a set by tests/palette.test.ts, which computes ΔE under
+     protanopia and deuteranopia as well as normal vision.
 
-     Validated as a set against the ramp's brightest step: worst pair is
-     #f0883e against #ccff00 at ΔE 19.8 for deuteranopia and 30.6 for normal
-     vision, both well clear. Neither is ever the only carrier of meaning —
-     every coloured state still has a glyph and a label. */
-  --alert: #f0883e;
-  --nominal: #38bdf8;
+     Both are desaturated relative to their light-mode selves. A saturated
+     colour on a #121212 ground vibrates; Material desaturates for dark for the
+     same reason, and it is the single change that most makes a dark interface
+     read as considered rather than loud.
+
+     `nominal` is the top step of the ramp below, not a sixth colour. One accent
+     hue used at varying intensity is a palette; two cool hues doing similar
+     jobs is an accident nobody planned. Neither colour is ever the only carrier
+     of meaning — every coloured state still has a glyph and a label. */
+  --alert: #f2857c;
+  --nominal: #d2e2f4;
 
   /* One sequential ramp, for magnitude.
 
@@ -108,14 +118,15 @@
      ordered by lightness and has no confusion pairs by construction. Steps run
      dim to bright: on a dark ground, brighter reads as more.
 
-     The hue is the one the maintainer asked for. Every step clears 3:1 against
-     the ground — the first attempt started at #3a4a06, which measured 2.0:1 and
-     would have been a bar nobody could see. */
-  --mag-1: #5c7a00;
-  --mag-2: #7a9f00;
-  --mag-3: #96c400;
-  --mag-4: #b3e400;
-  --mag-5: #ccff00;
+     Every step clears 3:1 against the ground, in both modes, and the steps were
+     computed rather than picked: the first hand-chosen set came back at 1.96:1
+     and 2.06:1 on the darkest step — a bar nobody could see, in a palette that
+     looked fine on screen. The test caught both. */
+  --mag-1: #6a8eb2;
+  --mag-2: #85a4c4;
+  --mag-3: #9eb8d3;
+  --mag-4: #b7cce3;
+  --mag-5: #d2e2f4;
 
   --face-label: 'Plex Condensed', ui-sans-serif, system-ui, sans-serif;
   --face-data: 'Plex Mono', ui-monospace, monospace;
@@ -140,7 +151,7 @@
   --glass-edge: rgb(233 236 223 / 0.12);
   --glass-sheen: rgb(255 255 255 / 0.08);
   --glass-cast: rgb(0 0 0 / 0.55);
-  --glass-solid: #12160e;
+  --glass-solid: #1a1a1a;
 
   /* The backdrop's two washes, as channels so their alpha can vary in place. */
   --sweep-rgb: 204 255 0;
@@ -175,33 +186,33 @@
   :root {
     color-scheme: light dark;
 
-    --ink-000: light-dark(#ffffff, #0a0d07);
-    --ink-025: light-dark(#f6f7f2, #141810);
-    --ink-050: light-dark(#eceee4, #1d2317);
-    --ink-100: light-dark(#dcdfd2, #2a3122);
-    --ink-200: light-dark(#c3c8b7, #3a4230);
-    --ink-300: light-dark(#8b917d, #5c6450);
-    --ink-500: light-dark(#64695a, #929a86);
-    --ink-700: light-dark(#2b2f26, #c4cab8);
-    --ink-900: light-dark(#111111, #e9ecdf);
+    --ink-000: light-dark(#fafafa, #121212);
+    --ink-025: light-dark(#f3f3f3, #1a1a1a);
+    --ink-050: light-dark(#ececec, #212121);
+    --ink-100: light-dark(#dedede, #2c2c2c);
+    --ink-200: light-dark(#c6c6c6, #3b3b3b);
+    --ink-300: light-dark(#8a8a8a, #6b6b6b);
+    --ink-500: light-dark(#5d5d5d, #9e9e9e);
+    --ink-700: light-dark(#333333, #cfcfcf);
+    --ink-900: light-dark(#1a1a1a, #e8e8e8);
 
-    --alert: light-dark(#b32d00, #f0883e);
-    --nominal: light-dark(#0369a1, #38bdf8);
+    --alert: light-dark(#a3231b, #f2857c);
+    --nominal: light-dark(#0d4377, #d2e2f4);
 
-    --mag-1: light-dark(#7d9150, #5c7a00);
-    --mag-2: light-dark(#6b8038, #7a9f00);
-    --mag-3: light-dark(#5a7020, #96c400);
-    --mag-4: light-dark(#4b6110, #b3e400);
-    --mag-5: light-dark(#3d5200, #ccff00);
+    --mag-1: light-dark(#6489ae, #6a8eb2);
+    --mag-2: light-dark(#4f78a1, #85a4c4);
+    --mag-3: light-dark(#3b6894, #9eb8d3);
+    --mag-4: light-dark(#265787, #b7cce3);
+    --mag-5: light-dark(#0d4377, #d2e2f4);
 
-    --glass: light-dark(rgb(255 255 255 / 0.62), rgb(16 20 12 / 0.55));
-    --glass-edge: light-dark(rgb(17 17 17 / 0.12), rgb(233 236 223 / 0.12));
-    --glass-sheen: light-dark(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.08));
-    --glass-cast: light-dark(rgb(17 17 17 / 0.16), rgb(0 0 0 / 0.55));
-    --glass-solid: light-dark(#fbfbf8, #12160e);
+    --glass: light-dark(rgb(250 250 250 / 0.66), rgb(24 24 24 / 0.60));
+    --glass-edge: light-dark(rgb(26 26 26 / 0.12), rgb(232 232 232 / 0.12));
+    --glass-sheen: light-dark(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.06));
+    --glass-cast: light-dark(rgb(26 26 26 / 0.14), rgb(0 0 0 / 0.60));
+    --glass-solid: light-dark(#fafafa, #1a1a1a);
 
-    --sweep-rgb: light-dark(61 82 0, 204 255 0);
-    --floor-rgb: light-dark(255 255 255, 12 15 8);
+    --sweep-rgb: light-dark(13 67 119, 210 226 244);
+    --floor-rgb: light-dark(250 250 250, 18 18 18);
   }
 
   /* An explicit choice pins the scheme; without one the system decides. */

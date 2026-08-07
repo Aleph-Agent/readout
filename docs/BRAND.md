@@ -164,7 +164,7 @@ stops being ordered.
 | Ground | `#0a0d07` | `#ffffff` | — |
 | Body text | `#c4cab8` | `#2b2f26` | 13.7:1 |
 | Strongest | `#e9ecdf` | `#111111` | 18.9:1 |
-| Signal | `#ccff00` | `#3d5200` | 8.7:1 |
+| Signal | `#d2e2f4` | `#0d4377` | 14.2:1 dark, 9.6:1 light |
 | Alert | `#f0883e` | `#b32d00` | 6.4:1 |
 | Nominal | `#38bdf8` | `#0369a1` | 5.9:1 |
 

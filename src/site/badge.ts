@@ -84,7 +84,7 @@ export function renderBadge(input: BadgeInput): string {
   <title>${esc(input.repo)} — ${esc(label)} ${esc(value)}, measured by Sighttrue</title>
   <rect width="${width}" height="${height}" fill="#0c0f08"/>
   <rect x="${labelWidth}" width="${valueWidth}" height="${height}" fill="#171c10"/>
-  <rect x="${labelWidth}" width="2" height="${height}" fill="#ccff00"/>
+  <rect x="${labelWidth}" width="2" height="${height}" fill="#d2e2f4"/>
   <g font-family="IBM Plex Sans Condensed,DejaVu Sans,Verdana,sans-serif" font-size="11" font-weight="600">
     <text x="${padding}" y="14" fill="#8e9683">${esc(label)}</text>
     <text x="${labelWidth + padding}" y="14" fill="#e6ebda">${esc(value)}</text>

@@ -1,16 +1,21 @@
 {
-  "lastRunAt": "2026-08-07T05:51:42.670Z",
+  "lastRunAt": "2026-08-07T06:24:43.561Z",
   "lastSuccessfulRunAt": "2026-08-07T05:51:42.670Z",
-  "job": "pulse",
-  "partial": false,
+  "job": "weekly",
+  "partial": true,
   "requestsConsumed": 239,
   "rateLimitRemaining": 4682,
-  "reposChecked": 388,
+  "reposChecked": 12,
   "requestsUnchanged": 537,
   "eventsDetected": 0,
-  "collectorsErrored": [],
+  "collectorsErrored": [
+    "trending TypeScript: unavailable",
+    "trending Python: unavailable",
+    "trending Rust: unavailable",
+    "trending Go: unavailable"
+  ],
   "summariesGenerated": 10,
   "insufficientRate": 0,
-  "bundleHash": "fe81b09059492eed1fcfcab20a0719c4c05c2633b51903c317b4914e4b7f4586",
+  "bundleHash": "3539ab5c181d229f1e395d8f5dfb8c59d34b25543c040d980cacec114bcaff5d",
   "deploySkipped": false
 }

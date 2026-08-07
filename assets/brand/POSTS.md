@@ -44,18 +44,23 @@ fastest way to lose the only thing this product is selling.
 
 ## 1 — The film
 
-> Most answers about a dependency come from a chart nobody can audit, or a model
-> that read the internet a year ago.
+> Your dependencies change without telling you.
 >
-> This one reads 388 repositories every four hours and publishes every figure as
-> a file. Committed, so any of them can be traced back to the run that produced
-> it.
+> A licence quietly becomes source-available. A runtime stops getting security
+> fixes. A package that looks busy has not actually shipped in a year.
+>
+> This reads all of it every four hours and publishes every figure as a file —
+> committed, so any of them can be traced back to the run that produced it.
 >
 > sighttrue.com
 
 *Attach `film.mp4`.*
 
----
+The first draft of this opened with "this reads 388 repositories, 20 status
+feeds, 24 runtimes, 247 packages and 387 commit histories". Five counts in one
+sentence is an inventory of our work, and a reader has no way to know whether
+388 is a lot. Three concrete losses land harder than five figures, and the
+figures are still on the cards behind it where each one has a claim attached.
 
 ## 2 — Outages
 

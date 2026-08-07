@@ -3,6 +3,9 @@ import { findingsFrom } from './findings.ts';
 import type { IndexBundle } from '../types/bundles.ts';
 import type { MetaRecord } from '../types/meta.ts';
 
+/** Shown, not linked — a reader copying an address needs to see it whole. */
+const SITE_HOST = 'sighttrue.com';
+
 /**
  * The front door.
  *
@@ -24,7 +27,7 @@ import type { MetaRecord } from '../types/meta.ts';
 export function renderWelcome(index: IndexBundle, meta: MetaRecord): string {
   const lead = findingsFrom(index)[0];
 
-  const { watchlist, disclosure, adoption, incidents, lifecycle, contributors, staleness, names } = index;
+  const { watchlist, disclosure, incidents, lifecycle, contributors, staleness, names } = index;
 
   /** Four things this measures that a repository page cannot tell you. */
   const answers: readonly { question: string; answer: string; href: string }[] = [
@@ -75,16 +78,19 @@ export function renderWelcome(index: IndexBundle, meta: MetaRecord): string {
     body: `<section class="hero">
   <h1 class="hero-thesis">Take the reading, and check it.</h1>
   <p class="hero-sub">
-    Most answers about a dependency come from a chart nobody can audit or a model that read the
-    internet a year ago. This reads ${watchlist.active} repositories, ${incidents.providers} status
-    feeds, ${lifecycle.products} runtimes, ${adoption.measured} packages and
-    ${contributors.measured} commit histories — every ${disclosure.cadenceHours} hours, published as
-    files, and committed in full so any figure can be traced back to the run that produced it.
+    Licences change. Runtimes go unsupported. Packages that look busy have not shipped in a year.
+    This reads all of it every ${disclosure.cadenceHours} hours and publishes every figure as a
+    file you can check.
   </p>
-  <p class="hero-follow">
-    Free, no account, nothing to install. There is an
-    <a href="/method#agents">MCP server</a> if you would rather your coding agent read it than you.
-  </p>
+
+  <!-- The one link a visitor is most likely to want next, and it was buried in
+       the bar at the size of a navigation label. Big, and in the space to the
+       right of the sentence that was empty on every screen wider than a phone. -->
+  <aside class="hero-follow-us">
+    <span class="label">Follow the readings</span>
+    <a class="hero-x" href="https://x.com/Sighttruehq" rel="me">@Sighttruehq</a>
+    <span class="hero-x-note">One or two a day. Every post carries the figure it is making a claim about.</span>
+  </aside>
 </section>
 
 ${
@@ -103,6 +109,33 @@ ${band(
   'What it answers',
   `<div class="doors">${cards}</div>`,
   'Four questions a repository page cannot answer, because the answers are not on GitHub.',
+)}
+
+${band(
+  'Ways in',
+  `<div class="ways">
+    <a class="way" href="/method#agents">
+      <span class="way-kind">MCP server</span>
+      <span class="way-what">Point your coding agent at it. Read-only, no key, no account.</span>
+      <code class="way-addr">${SITE_HOST}/api/mcp</code>
+    </a>
+    <a class="way" href="/stack">
+      <span class="way-kind">Your stack</span>
+      <span class="way-what">Paste a manifest and read your own dependencies. Nothing installed.</span>
+      <code class="way-addr">${SITE_HOST}/stack</code>
+    </a>
+    <a class="way" href="/data/index.json">
+      <span class="way-kind">The files</span>
+      <span class="way-what">Every reading, as published. This is what the pages are drawn from.</span>
+      <code class="way-addr">${SITE_HOST}/data/index.json</code>
+    </a>
+    <a class="way" href="/feed.xml">
+      <span class="way-kind">Feed</span>
+      <span class="way-what">Findings as they are confirmed, in a reader rather than a timeline.</span>
+      <code class="way-addr">${SITE_HOST}/feed.xml</code>
+    </a>
+  </div>`,
+  'Four addresses rather than four words in a menu. A navigation label cannot say that the MCP endpoint needs no key, and that is the fact that decides whether somebody tries it.',
 )}
 
 ${band(

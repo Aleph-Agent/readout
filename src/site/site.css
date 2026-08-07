@@ -2148,3 +2148,108 @@ a.lens-cell:hover {
   max-width: 66ch;
   margin: 0;
 }
+
+/* The account link, beside the hero rather than inside the navigation bar.
+
+   It was a label in the chrome at the same size as every other label, which is
+   the wrong weight for the one link a first-time visitor is most likely to want
+   next. This sits in the space to the right of the opening sentence — empty on
+   every screen wider than a phone — and is set at the size of a heading because
+   that is what it is. */
+.hero-follow-us {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding-left: 30px;
+  border-left: 1px solid var(--ink-100);
+  max-width: 30ch;
+}
+
+.hero-x {
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: clamp(24px, 3.4vw, 38px);
+  letter-spacing: -0.01em;
+  color: var(--ink-900);
+  text-decoration: none;
+  line-height: 1.05;
+}
+
+.hero-x:hover {
+  color: var(--nominal);
+}
+
+.hero-x-note {
+  font-family: var(--face-prose);
+  font-size: var(--t-small);
+  color: var(--ink-500);
+}
+
+/* Two columns from the width where the sentence stops filling the line. Below
+   it the link stacks under the text rather than squeezing beside it. */
+@media (min-width: 900px) {
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 54px;
+    align-items: start;
+  }
+
+  .hero-thesis {
+    grid-column: 1 / -1;
+  }
+
+  .hero-follow-us {
+    grid-row: 2;
+    grid-column: 2;
+  }
+}
+
+/* Ways in. Four addresses rather than four words in a menu.
+
+   The navigation says what a page is called; it cannot say that the MCP
+   endpoint takes no key, and that is the fact that decides whether a developer
+   tries it. Each card carries the address in full because somebody copying it
+   needs to see the whole thing, not a link that hides it. */
+.ways {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1px;
+  background: var(--ink-100);
+  border: 1px solid var(--ink-100);
+}
+
+.way {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  padding: 20px 22px 22px;
+  background: var(--ink-000);
+  text-decoration: none;
+}
+
+.way:hover {
+  background: var(--ink-025);
+}
+
+.way-kind {
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-900);
+}
+
+.way-what {
+  font-family: var(--face-prose);
+  font-size: var(--t-small);
+  color: var(--ink-700);
+}
+
+.way-addr {
+  font-family: var(--face-data);
+  font-size: var(--t-micro);
+  color: var(--ink-500);
+  word-break: break-all;
+}

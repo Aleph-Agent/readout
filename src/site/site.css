@@ -659,7 +659,10 @@ a:hover {
      signage, which is the one voice this product is allowed to raise. */
   font-family: var(--face-label);
   font-weight: 600;
-  font-size: clamp(28px, 4.6vw, 46px);
+  /* Bigger than it was by half. At 46px the opening line read as a page
+     heading; the job of this one is to stop somebody, and a sentence that has
+     to compete with a browser full of tabs cannot do it at heading size. */
+  font-size: clamp(34px, 6.4vw, 72px);
   letter-spacing: -0.005em;
   line-height: 1.1;
   color: var(--ink-900);
@@ -674,7 +677,10 @@ a:hover {
 
 .hero-sub {
   font-family: var(--face-prose);
-  font-size: var(--t-mid);
+  /* Was --t-mid, which is body copy. This is the second thing read on the site
+     and it was set at the size of a paragraph three screens down. */
+  font-size: clamp(19px, 2.1vw, 27px);
+  line-height: 1.5;
   line-height: 1.6;
   color: var(--ink-700);
   margin: 0 0 34px;
@@ -2168,7 +2174,7 @@ a.lens-cell:hover {
 .hero-x {
   font-family: var(--face-label);
   font-weight: 600;
-  font-size: clamp(24px, 3.4vw, 38px);
+  font-size: clamp(30px, 4.4vw, 52px);
   letter-spacing: -0.01em;
   color: var(--ink-900);
   text-decoration: none;
@@ -2181,7 +2187,7 @@ a.lens-cell:hover {
 
 .hero-x-note {
   font-family: var(--face-prose);
-  font-size: var(--t-small);
+  font-size: var(--t-mid);
   color: var(--ink-500);
 }
 

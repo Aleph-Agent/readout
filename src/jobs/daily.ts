@@ -37,6 +37,7 @@ import {
   readWatchlist,
   readWindow,
   writeAdoption,
+  readHealth,
   writeHealth,
   writeModels,
   writeHiring,
@@ -64,6 +65,7 @@ import {
   type PeerObservation,
 } from '../lib/peers.ts';
 import { summariseCalibration } from '../lib/calibration.ts';
+import { keepOrCarry } from '../lib/carry.ts';
 import { DEFAULT_DEMAND_THRESHOLDS } from '../lib/demand.ts';
 import { windowAnchor } from '../lib/window.ts';
 import type { EventRecord } from '../types/events.ts';
@@ -384,7 +386,14 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
     // touching the GitHub budget. Paced, because deps.dev has no batch form and
     // 388 requests fired at once at somebody's free service is rude.
     try {
-      const health = await collectHealth(readWatchlist(), { now: nowIso });
+      // The previous rows go in, or a refused read writes null over a good
+      // score and a single failed OSV batch blanks the advisory count for every
+      // repository in it. Neither looks like a failure: the row is still there
+      // and the figure is a dash, which reads as "never scanned".
+      const health = await collectHealth(readWatchlist(), {
+        now: nowIso,
+        previous: readHealth(),
+      });
       writeHealth(health.rows);
       errors.push(...health.errors);
     } catch (error) {
@@ -430,7 +439,9 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       // dropped — correct for a rename, catastrophic if the whole API moves and
       // every product answers 404 at once. Stale dates are wrong by days; an
       // empty file is wrong about everything and takes the page with it.
-      writeLifecycle(lifecycle.rows.length === 0 ? known : lifecycle.rows);
+      const keptLifecycle = keepOrCarry('lifecycle', lifecycle.rows, known);
+      writeLifecycle(keptLifecycle.rows);
+      if (keptLifecycle.error !== null) errors.push(keptLifecycle.error);
       // Appended here, not through `events`. See the models block above.
       if (lifecycle.events.length > 0) appendEvents(month, lifecycle.events);
       appendedByCollectors += lifecycle.events.length;
@@ -452,7 +463,9 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       });
       // Same rule as the end-of-life ledger. Twenty feeds failing at once is a
       // network problem, not twenty providers that never had an incident.
-      writeIncidents(incidents.rows.length === 0 ? held : incidents.rows);
+      const keptIncidents = keepOrCarry('incidents', incidents.rows, held);
+      writeIncidents(keptIncidents.rows);
+      if (keptIncidents.error !== null) errors.push(keptIncidents.error);
       errors.push(...incidents.errors);
     } catch (error) {
       errors.push(`incidents: ${error instanceof Error ? error.message : String(error)}`);
@@ -467,7 +480,9 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
         ...(options.collectors?.hiring ? { client: options.collectors.hiring } : {}),
         ...(options.delayMs === undefined ? {} : { delayMs: options.delayMs }),
       });
-      writeHiring(hiring.rows.length === 0 ? held : hiring.rows);
+      const keptHiring = keepOrCarry('hiring', hiring.rows, held);
+      writeHiring(keptHiring.rows);
+      if (keptHiring.error !== null) errors.push(keptHiring.error);
       errors.push(...hiring.errors);
     } catch (error) {
       errors.push(`hiring: ${error instanceof Error ? error.message : String(error)}`);
@@ -486,7 +501,9 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
         ...(options.collectors?.staleness ? { client: options.collectors.staleness } : {}),
         ...(options.delayMs === undefined ? {} : { delayMs: options.delayMs }),
       });
-      writeStaleness(staleness.rows.length === 0 ? held : staleness.rows);
+      const keptStaleness = keepOrCarry('staleness', staleness.rows, held);
+      writeStaleness(keptStaleness.rows);
+      if (keptStaleness.error !== null) errors.push(keptStaleness.error);
       errors.push(...staleness.errors);
     } catch (error) {
       errors.push(`staleness: ${error instanceof Error ? error.message : String(error)}`);
@@ -500,7 +517,9 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
         ...(options.collectors?.typosquat ? { client: options.collectors.typosquat } : {}),
         ...(options.delayMs === undefined ? {} : { delayMs: options.delayMs }),
       });
-      writeTyposquats(squats.rows.length === 0 ? held : squats.rows);
+      const keptTyposquats = keepOrCarry('typosquats', squats.rows, held);
+      writeTyposquats(keptTyposquats.rows);
+      if (keptTyposquats.error !== null) errors.push(keptTyposquats.error);
       errors.push(...squats.errors);
     } catch (error) {
       errors.push(`typosquat: ${error instanceof Error ? error.message : String(error)}`);
@@ -513,7 +532,9 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
         ...(options.collectors?.images ? { client: options.collectors.images } : {}),
         ...(options.delayMs === undefined ? {} : { delayMs: options.delayMs }),
       });
-      writeImages(images.rows.length === 0 ? held : images.rows);
+      const keptImages = keepOrCarry('images', images.rows, held);
+      writeImages(keptImages.rows);
+      if (keptImages.error !== null) errors.push(keptImages.error);
       errors.push(...images.errors);
     } catch (error) {
       errors.push(`images: ${error instanceof Error ? error.message : String(error)}`);
@@ -526,7 +547,9 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
         ...(options.collectors?.questions ? { client: options.collectors.questions } : {}),
         ...(options.delayMs === undefined ? {} : { delayMs: options.delayMs }),
       });
-      writeQuestions(questions.rows.length === 0 ? held : questions.rows);
+      const keptQuestions = keepOrCarry('questions', questions.rows, held);
+      writeQuestions(keptQuestions.rows);
+      if (keptQuestions.error !== null) errors.push(keptQuestions.error);
       errors.push(...questions.errors);
     } catch (error) {
       errors.push(`questions: ${error instanceof Error ? error.message : String(error)}`);

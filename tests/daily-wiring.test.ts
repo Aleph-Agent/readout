@@ -87,13 +87,47 @@ describe('the daily job hands each finding to the ledger once', () => {
   });
 
   it('never lets a failed read empty a ledger', () => {
-    // Every one of these writes the previous rows back when the collector
-    // returns nothing. Twenty feeds failing at once is a network problem, not
-    // twenty providers that never had an incident.
-    for (const write of ['writeLifecycle', 'writeIncidents', 'writeHiring']) {
-      expect(CODE, `${write} can be handed an empty set`).toMatch(
-        new RegExp(`${write}\\(\\w+\\.rows\\.length === 0 \\? \\w+ : \\w+\\.rows\\)`),
+    // Every ledger this job overwrites has to survive a bad run. The guard was
+    // written inline as `rows.length === 0 ? held : rows`, which caught total
+    // silence and nothing else: 88 successful reads out of 388 satisfied it,
+    // 300 rows were deleted, and no error was raised anywhere because from the
+    // collector's side 88 successful reads is a successful run.
+    //
+    // `keepOrCarry` refuses on proportion instead. Its behaviour is tested
+    // directly in tests/carry.test.ts; what this checks is that every write
+    // site actually goes through it, which is the part that rots.
+    for (const write of [
+      'writeLifecycle',
+      'writeIncidents',
+      'writeHiring',
+      'writeStaleness',
+      'writeTyposquats',
+      'writeImages',
+      'writeQuestions',
+    ]) {
+      const name = write.slice('write'.length);
+
+      expect(CODE, `${write} writes without the carry guard`).toContain(
+        `const kept${name} = keepOrCarry(`,
+      );
+      expect(CODE, `${write} does not write what the guard returned`).toContain(
+        `${write}(kept${name}.rows)`,
+      );
+      expect(CODE, `${write} discards the guard's error instead of reporting it`).toContain(
+        `if (kept${name}.error !== null) errors.push(kept${name}.error)`,
       );
     }
+  });
+
+  it('hands the health collector what is already recorded', () => {
+    // The one collector with no carry-forward of any kind. It overwrites the
+    // whole ledger, so a refused scorecard wrote null over a good score and a
+    // single failed OSV batch blanked the advisory count for every repository
+    // in it. A null renders as a dash, and a dash on this site means "never
+    // scanned" — so an outage would have published, in the project's own voice,
+    // that hundreds of projects have no scorecard and no known advisories.
+    //
+    // Found by audit. Nothing was failing.
+    expect(CODE).toContain('previous: readHealth()');
   });
 });

@@ -2,6 +2,7 @@ import { collectContributors } from '../collectors/contributors.ts';
 import { collectTrending } from '../collectors/trending.ts';
 import { collectLineage, DEFAULT_LINEAGE_THRESHOLDS } from '../collectors/lineage.ts';
 import { createGitHubClient, type GitHubClient } from '../lib/github.ts';
+import { keepOrCarry } from '../lib/carry.ts';
 import { createHuggingFaceClient, type HuggingFaceClient } from '../lib/huggingface.ts';
 import { summariseCalibration } from '../lib/calibration.ts';
 import {
@@ -95,7 +96,9 @@ export async function runWeekly(options: WeeklyOptions = {}): Promise<MetaRecord
       });
       // Same rule as every other ledger here: a run that read nothing is a
       // network problem, not four hundred projects that lost their history.
-      writeContributors(concentrated.rows.length === 0 ? held : concentrated.rows);
+      const keptContributors = keepOrCarry('contributors', concentrated.rows, held);
+      writeContributors(keptContributors.rows);
+      if (keptContributors.error !== null) result.errors.push(keptContributors.error);
       result.errors.push(...concentrated.errors);
     } catch (error) {
       result.errors.push(

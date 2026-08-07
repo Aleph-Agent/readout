@@ -36,6 +36,12 @@ jobs:
       # Hugging Face only. Costs nothing against the GitHub budget, and public
       # model metadata needs no token.
       - name: Trace descent
+        # Lineage reads Hugging Face and needs no token. The contributor read in
+        # the same job reads GitHub and does — it went out without one, warned,
+        # and skipped itself, which is the guard working and the wiring not.
+        # One request per active repository, once a week.
+        env:
+          GITHUB_PAT: ${{ secrets.SIGNAL_GITHUB_PAT }}
         run: node scripts/weekly.ts
 
       - name: Summarise

@@ -3,42 +3,46 @@
  *
  *   node scripts/build-mark.mjs
  *
- * An aperture: six blades closing on a hexagonal opening, one of them held
- * further in than the rest.
+ * A geometric S sitting on a datum line.
  *
  * ## How it got here
  *
- * Two rejected attempts, both instructive.
+ * Three rejected marks, each one instructive, and the record is kept because
+ * the reasons are the brief.
  *
  * **Crosshairs.** The icon every monitoring product and half the shooting
  * ranges already use. It said "we look at things", which is not a claim, and at
  * 48 pixels it was a plus sign in a circle.
  *
  * **A graduated dial.** Thirty-six thin ticks inside a ring. It carried the
- * meaning — a bar, a population, one reading crossing out — and it read as a
- * wristwatch. Fine hairlines on a circle is a watch face, and no amount of
- * irregular tick lengths overcomes that at a glance, which is the only look a
- * mark gets.
+ * meaning exactly and read as a wristwatch — fine hairlines on a circle is a
+ * watch face, and irregular tick lengths do not overcome that at a glance,
+ * which is the only look a mark gets.
  *
- * The lesson from both: **weight is what reads as professional, not detail.**
- * Thin strokes and many elements look tentative at any size and disappear at
- * small ones. A mark should survive being seen as a solid black silhouette.
+ * **An aperture.** Six solid blades, one closed further. Bold enough, held at
+ * 16px, and still an abstract icon: it needed a paragraph to explain, and a
+ * mark that needs explaining is doing the wordmark's job badly.
  *
- * ## Why an aperture
+ * ## Why a letterform
  *
- * It is the one instrument in the whole vernacular that is literally named
- * "sight". Six solid blades give a silhouette you could recognise filled in
- * with any single colour, and the opening at the centre is a shape rather than
- * an absence.
+ * The name is the asset. An abstract instrument icon has to earn recognition
+ * from nothing; a letter arrives already carrying it, and after three attempts
+ * at abstraction that is the honest conclusion.
  *
- * The meaning is in the odd blade. Five sit at the same stop; one is closed
- * further, in the alert colour. That is the product in a shape — a population
- * measured against the same bar, and one of them somewhere the others are not.
- * It also breaks the six-fold symmetry, which is what stops the mark reading as
- * a wheel.
+ * Two arcs, one grid, no tapering and no optical corrections beyond the
+ * overshoot below — geometric rather than drawn, because the rest of this
+ * product is a measuring instrument and a hand-lettered S would be the only
+ * thing in it pretending to be made by hand.
  *
- * Fixed geometry, not data. A logo generated from today's readings changes when
- * they do, and a mark that is different on Tuesday is not a mark.
+ * ## The datum
+ *
+ * Two short rules either side of the letter, at its waist, in the alert colour.
+ * That is the whole of the meaning and it is worth the two lines: a reference
+ * the letter is measured against, which is the "true" in the name.
+ *
+ * They stop short of the S rather than crossing it. A line through a letter is
+ * a strikethrough, and a mark that reads as its own name crossed out is a
+ * failure of a specific and embarrassing kind.
  */
 
 import { writeFileSync } from 'node:fs';
@@ -46,86 +50,74 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
-const CENTRE = 32;
-/** Outer radius. Two units of margin inside the 64 box, so nothing clips. */
-const R = 30;
-/**
- * How far the five ordinary blades close.
- *
- * They stopped at 11.5 first, which left a small opening and six fat wedges —
- * a pie chart, and the odd blade was the largest slice, so the shape said "one
- * of these dominates" when it means "one of these is elsewhere". A wide opening
- * is what separates an aperture from a pie.
- */
-const STOP = 19.5;
-/** The odd one. Closed further, which is what makes it the finding. */
-const CLOSED = 11.5;
-/**
- * Degrees of daylight between blades.
- *
- * Wide enough to read as six separate objects at 32px, narrow enough that the
- * mark still holds together as one disc rather than six petals.
- */
-const GAP = 4.2;
-/** Which blade is different. Upper left: off both axes, so it cannot read as a pointer. */
-const ODD = 4;
+/** Stroke of the letter. Heavy: weight is what reads as considered at any size. */
+const W = 9;
 
-const rad = (deg) => ((deg - 90) * Math.PI) / 180;
-const at = (deg, radius) => {
-  const a = rad(deg);
-  const round = (n) => Number(n.toFixed(2));
-  return `${round(CENTRE + Math.cos(a) * radius)} ${round(CENTRE + Math.sin(a) * radius)}`;
-};
+/** The two bowls. Equal radii, stacked, meeting at the waist. */
+const R = 10.5;
+const TOP = { x: 32, y: 21.5 };
+const BOTTOM = { x: 32, y: 42.5 };
 
 /**
- * One blade.
+ * Where each bowl's stroke ends, measured from the horizontal.
  *
- * An arc along the outside and a straight chord across the inside. The chord is
- * what makes it an aperture rather than a pie slice: six straight inner edges
- * meet as a hexagonal opening, which is what a real iris does and what a ring
- * of arcs never looks like.
+ * Six degrees, so the terminals are cut very nearly vertical — the classic
+ * geometric cut, and the only one that stays clean here.
+ *
+ * It was 42 first, which put the terminal only 48 degrees from where the same
+ * bowl ends at the waist. At this stroke weight the two overlapped and left a
+ * wedge poking into the counter, which reads as a drawing error rather than a
+ * letter. The fix is distance, not a smaller stroke: the bowl sweeps nearly a
+ * full turn and its two ends have to be far enough apart to stay apart.
  */
-function blade(index, stop) {
-  const from = index * 60 + GAP;
-  const to = index * 60 + 60 - GAP;
+const TERMINAL = 6;
 
-  return [
-    `M ${at(from, R)}`,
-    `A ${R} ${R} 0 0 1 ${at(to, R)}`,
-    `L ${at(to, stop)}`,
-    `L ${at(from, stop)}`,
-    'Z',
-  ].join(' ');
-}
+const rad = (deg) => (deg * Math.PI) / 180;
+const round = (n) => Number(n.toFixed(2));
+const on = (c, deg, r = R) =>
+  `${round(c.x + Math.cos(rad(deg)) * r)} ${round(c.y + Math.sin(rad(deg)) * r)}`;
+
+/**
+ * The letter, as one path.
+ *
+ * Upper bowl swept anticlockwise from its lower-right terminal all the way
+ * round to the waist; lower bowl clockwise from the waist round to its
+ * upper-left terminal. Two arcs, one continuous stroke, no join to align.
+ */
+const S = [
+  `M ${on(TOP, TERMINAL)}`,
+  `A ${R} ${R} 0 1 0 ${on(TOP, 90)}`,
+  `A ${R} ${R} 0 1 1 ${on(BOTTOM, 180 - TERMINAL)}`,
+].join(' ');
+
+/** The waist, where the datum sits. */
+const WAIST = 32;
+/** How far the rules stop short of the letter. Enough to read as a gap at 32px. */
+const CLEAR = 4;
 
 function mark({ ink, alert, title }) {
-  const ordinary = [0, 1, 2, 3, 4, 5]
-    .filter((index) => index !== ODD)
-    .map((index) => `    <path d="${blade(index, STOP)}" />`)
-    .join('\n');
+  const left = `M 2 ${WAIST} H ${round(TOP.x - R - W / 2 - CLEAR)}`;
+  const right = `M ${round(TOP.x + R + W / 2 + CLEAR)} ${WAIST} H 62`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="${title}">
   <title>${title}</title>
 
   <!--
-    An aperture. Generated by scripts/build-mark.mjs, which states every
-    decision in it and the two marks this replaced.
+    A geometric S on a datum line. Generated by scripts/build-mark.mjs, which
+    records the three marks this replaced and why each failed.
 
-    Five blades at one stop and one closed further: a population measured
-    against the same bar, and one of them somewhere the others are not. The odd
-    blade also breaks the six-fold symmetry, which is what stops this reading as
-    a wheel.
-
-    Solid shapes, no strokes, no gradient, no glow. A mark has to survive being
-    seen as a single-colour silhouette, and hairlines do not.
+    The rules either side are the reference the letter is measured against — the
+    "true" in the name. They stop short of the S rather than crossing it,
+    because a line through a letter is a strikethrough and a mark that reads as
+    its own name crossed out fails in a specific and embarrassing way.
   -->
 
-  <g fill="${ink}">
-${ordinary}
-  </g>
+  <path d="${S}" fill="none" stroke="${ink}" stroke-width="${W}" stroke-linecap="butt" />
 
-  <!-- The one that is different. -->
-  <path d="${blade(ODD, CLOSED)}" fill="${alert}" />
+  <g stroke="${alert}" stroke-width="3.4" stroke-linecap="butt">
+    <path d="${left}" />
+    <path d="${right}" />
+  </g>
 </svg>
 `;
 }
@@ -139,10 +131,6 @@ writeFileSync(
 /**
  * The tab icon carries its own colours: a favicon is drawn against whatever
  * chrome the browser has and can inherit nothing.
- *
- * No simplified variant this time, and that is the point of the redesign. Six
- * solid blades hold at 16px because they are shapes rather than lines; the dial
- * needed a separate four-tick version to survive the same size.
  */
 writeFileSync(
   `${ROOT}src/site/favicon.svg`,
@@ -150,7 +138,6 @@ writeFileSync(
   'utf8',
 );
 
-/** Fixed colours for anything rasterised, which has no page to inherit from. */
 writeFileSync(
   `${ROOT}assets/brand/mark-dark.svg`,
   mark({ ink: '#d2e2f4', alert: '#f2857c', title: 'Sighttrue' }),

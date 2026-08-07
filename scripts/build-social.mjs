@@ -54,10 +54,10 @@ const HEAD = `<meta charset="utf-8">
      number nobody trusts, and this is the only thing on the card that matters. */
   .figure {
     font-family: 'Plex Condensed', sans-serif; font-weight: 600;
-    font-variant-numeric: tabular-nums; font-size: 168px; line-height: 0.9;
+    font-variant-numeric: tabular-nums; font-size: 190px; line-height: 0.86;
     color: #d2e2f4; letter-spacing: -0.02em;
   }
-  .say { font-family: 'Plex Serif', Georgia, serif; font-size: 33px; line-height: 1.45; color: #cfcfcf; }
+  .say { font-family: 'Plex Serif', Georgia, serif; font-size: 35px; line-height: 1.5; color: #cfcfcf; }
   .foot {
     position: absolute; left: 76px; right: 76px; bottom: 52px;
     display: flex; justify-content: space-between; align-items: center;
@@ -72,11 +72,15 @@ function card({ eyebrow, figure, unit, say }) {
   return `<!doctype html><html lang="en"><head>${HEAD}
 <style>
   body { width: 1200px; height: 675px; position: relative; }
-  .frame { position: absolute; inset: 0; padding: 74px 76px 0; display: flex;
-           flex-direction: column; justify-content: center; gap: 26px; padding-bottom: 130px; }
+  /* A hairline under the figure, running the full measure. The card was a
+     block of text against three quarters of empty canvas; one rule that spans
+     the column turns the space into a margin instead of a gap. */
+  .frame { position: absolute; inset: 0; padding: 78px 76px 0; display: flex;
+           flex-direction: column; justify-content: center; gap: 30px; padding-bottom: 132px; }
+  .rule { border-bottom: 1px solid #2c2c2c; width: 100%; }
   .unit { font-family: 'Plex Condensed', sans-serif; font-weight: 600; font-size: 27px;
           letter-spacing: 0.13em; text-transform: uppercase; color: #9e9e9e; margin-top: 4px; }
-  .say { max-width: 30ch; }
+  .say { max-width: 44ch; }
 </style></head>
 <body>
   <div class="frame">
@@ -85,6 +89,7 @@ function card({ eyebrow, figure, unit, say }) {
       <div class="figure">${figure}</div>
       <div class="unit">${unit}</div>
     </div>
+    <div class="rule"></div>
     <p class="say">${say}</p>
   </div>
   <div class="foot">

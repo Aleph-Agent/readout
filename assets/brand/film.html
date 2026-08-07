@@ -77,8 +77,16 @@
     // reading being taken rather than a badge being placed.
     const p = window_(2.7, 4.6);
     stage.innerHTML = '<div class="rows">' + FIGURES.map((row, i) => {
-      const own = ease((t - 2.7 - i * 0.18) / 1.5);
-      const value = Math.round(row[1] * own).toLocaleString('en');
+      // Finishes at 1.1s, a full second before this segment ends, and the easing returns
+      // exactly 1 once its input passes 1 — so the last frames hold the real
+      // figure rather than something a rounding error short of it.
+      //
+      // It did not, and showed 385 commit histories where the ledger holds 387.
+      // On a product whose entire argument is that its numbers can be checked,
+      // a film that displays a wrong one is the worst possible defect, and it
+      // was invisible until the frames were read back.
+      const own = ease((t - 2.7 - i * 0.18) / 1.1);
+      const value = (own >= 1 ? row[1] : Math.round(row[1] * own)).toLocaleString('en');
       return '<div class="row" style="opacity:' + Math.min(1, own * 1.6) + '">' +
         '<span>' + row[0] + '</span><b>' + value + '</b></div>';
     }).join('') + '</div>';

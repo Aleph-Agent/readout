@@ -147,3 +147,7 @@ Thumbs.db
 # Wrangler local state. Miniflare caches and dev bundles — machine-local build
 # artefacts that were tracked for a while and are not sources.
 .wrangler/
+
+# 240 intermediate PNGs for the film. Regenerate with scripts/build-social.mjs
+# and the render loop in assets/brand/README.md; the mp4 is what gets posted.
+assets/brand/frames/

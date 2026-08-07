@@ -31,3 +31,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: node scripts/d1-peek.mjs
+
+      - name: Prove a real session signs somebody in
+        # The half of sign-in that cannot be tested offline. Mints a session the
+        # way the callback does, hands it to the live endpoint, deletes it.
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/smoke-session.mjs

@@ -77,6 +77,8 @@ import { archiveNav, archivePath, renderArchive } from './site/archive.ts';
 import { renderEcosystem } from './site/ecosystem.ts';
 import { renderFindings } from './site/findings.ts';
 import { renderWelcome } from './site/welcome.ts';
+import { renderAccount } from './site/account.ts';
+import { renderHeaders } from './site/headers.ts';
 import { DIGEST_DAYS, renderWeek } from './site/week.ts';
 import { renderDepends, reverseIndex } from './site/depends.ts';
 import { summariseBreaking, summariseCadence } from './lib/releases-summary.ts';
@@ -786,6 +788,10 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     // everything anybody has linked to is where it was.
     ['index.html', renderWelcome(index, previous)],
     ['live.html', renderIndex(index, previous)],
+    // Static like everything else. The names on it arrive from an endpoint
+    // because only a server knows who is asking; the readings arrive from the
+    // same published file the public pages read.
+    ['account.html', renderAccount(index, previous)],
     ...LENSES.map(
       (lens) =>
         [
@@ -979,6 +985,10 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   pages.set('feed.xml', renderFeed(addressable, previous.lastSuccessfulRunAt ?? now.toISOString()));
   pages.set('sitemap.xml', renderSitemap(sitemapPaths));
   pages.set('robots.txt', renderRobots());
+
+  // Owed since the audit and deferred while the site was read-only. Sign-in
+  // ended the deferral: there is now a session cookie worth stealing.
+  pages.set('_headers', renderHeaders());
 
   // The gate hashes everything served — bundles, pages, and the stylesheet — so
   // a change to any of them deploys. Hashing only the JSON would have meant a

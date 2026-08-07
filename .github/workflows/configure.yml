@@ -67,6 +67,88 @@ jobs:
           printf '%s' "${BLOCKSCOUT_API_KEY}" \
             | npx --yes wrangler@4 pages secret put BLOCKSCOUT_API_KEY --project-name=readout
 
+      - name: Put the GitHub OAuth credentials in the Pages project
+        # Named OAUTH_GITHUB_* rather than GITHUB_OAUTH_*. GitHub reserves the
+        # GITHUB_ prefix for secret names and refuses to store one — silently,
+        # if the error is redirected away, which is how the first attempt at
+        # this looked like it had worked.
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          OAUTH_GITHUB_CLIENT_ID: ${{ secrets.OAUTH_GITHUB_CLIENT_ID }}
+          OAUTH_GITHUB_SECRET: ${{ secrets.OAUTH_GITHUB_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${OAUTH_GITHUB_CLIENT_ID:-}" ] || [ -z "${OAUTH_GITHUB_SECRET:-}" ]; then
+            echo "The GitHub OAuth credentials are not set. Nothing to configure." >&2
+            exit 1
+          fi
+          printf '%s' "${OAUTH_GITHUB_CLIENT_ID}" \
+            | npx --yes wrangler@4 pages secret put OAUTH_GITHUB_CLIENT_ID --project-name=readout
+          printf '%s' "${OAUTH_GITHUB_SECRET}" \
+            | npx --yes wrangler@4 pages secret put OAUTH_GITHUB_SECRET --project-name=readout
+
+      - name: Create the database, if it is not already there
+        # Idempotent by inspection rather than by swallowing an error: a create
+        # that fails for a different reason must not be mistaken for one that
+        # failed because the database already exists.
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if npx --yes wrangler@4 d1 list --json | grep -q '"name": *"sighttrue"'; then
+            echo "The database already exists."
+          else
+            npx --yes wrangler@4 d1 create sighttrue
+          fi
+
+      - name: Apply the schema
+        # Re-run on every configure. Every statement in the migration is
+        # CREATE ... IF NOT EXISTS, so applying it twice is applying it once,
+        # and a schema that can only be applied to an empty database is a schema
+        # nobody dares apply.
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4 d1 execute sighttrue --remote --yes \
+            --file=migrations/0001_init.sql
+
+      - name: Bind the database to the Pages project
+        # There is no `wrangler pages` command for this, so it goes through the
+        # API directly. Read, merge, write — never a blind PATCH: the same
+        # object holds the environment variables the earlier steps just set, and
+        # sending a fresh one would drop them.
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          uuid=$(npx --yes wrangler@4 d1 list --json \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+                const found=JSON.parse(s).find(d=>d.name==="sighttrue");
+                if(!found){console.error("no database named sighttrue");process.exit(1);}
+                process.stdout.write(found.uuid);
+              })')
+          echo "database ${uuid}"
+
+          api="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/readout"
+          curl -sS -X PATCH "${api}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H 'content-type: application/json' \
+            --data "{\"deployment_configs\":{\"production\":{\"d1_databases\":{\"DB\":{\"id\":\"${uuid}\"}}},\"preview\":{\"d1_databases\":{\"DB\":{\"id\":\"${uuid}\"}}}}}" \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+                const body=JSON.parse(s);
+                if(!body.success){console.error(JSON.stringify(body.errors));process.exit(1);}
+                const bound=body.result.deployment_configs.production.d1_databases;
+                // Checks the response rather than the status code. A 200 with
+                // an unchanged config is the failure mode worth catching.
+                if(!bound||!bound.DB){console.error("the binding did not take");process.exit(1);}
+                console.log("bound DB to "+bound.DB.id);
+              })'
+
       - run: npm ci
 
       - name: Build
@@ -101,3 +183,32 @@ jobs:
           done
           echo "Still unconfigured after six attempts. The secret did not take effect." >&2
           exit 1
+
+      - name: Confirm sign-in reaches GitHub
+        # A 302 to github.com proves the client id arrived. Anything else means
+        # the endpoint answered its own "not configured" branch, and finding
+        # that out from the first person who tries to sign in is the wrong time.
+        run: |
+          set -euo pipefail
+          location=$(curl -s -o /dev/null -w '%{redirect_url}' \
+            'https://sighttrue.com/api/auth/github/start?next=/account')
+          echo "start redirects to ${location%%\?*}"
+          case "${location}" in
+            https://github.com/login/oauth/authorize*) ;;
+            *) echo "sign-in did not redirect to GitHub" >&2; exit 1 ;;
+          esac
+
+      - name: Confirm the database is actually bound
+        # Sends a session cookie that cannot exist. With no cookie at all the
+        # endpoint answers before it queries anything, so it would report
+        # success on an unbound database — which is exactly the kind of
+        # adjacent-thing check this project has been caught by before. A cookie
+        # forces the lookup, so a 200 here means the query ran.
+        run: |
+          set -euo pipefail
+          body=$(curl -sS --cookie 'st_session=not-a-real-session' https://sighttrue.com/api/auth/me)
+          echo "me answered ${body}"
+          case "${body}" in
+            *'"account": null'*) echo "the database answered" ;;
+            *) echo "the database did not answer the lookup" >&2; exit 1 ;;
+          esac

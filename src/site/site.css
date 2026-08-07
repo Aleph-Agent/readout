@@ -1874,3 +1874,116 @@ a.lens-cell:hover {
   margin: 0 0 12px;
   max-width: 46ch;
 }
+
+/* --------------------------------------------------------------- your stack
+
+   The one page about a single reader. It borrows the instrument's table
+   wholesale rather than inventing a "my dashboard" look, because the readings
+   are the same readings — the only difference is which rows are on it. */
+
+.watch-signin {
+  display: inline-block;
+  background: var(--ink-050);
+  border: 1px solid var(--ink-100);
+  color: var(--ink-900);
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 12px 26px;
+  text-decoration: none;
+}
+
+.watch-signin:hover {
+  background: var(--ink-100);
+}
+
+/* What this asks GitHub for. Set as claims rather than as reassurance: each
+   line is checkable on the authorisation screen before anybody clicks. */
+.watch-points {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  max-width: 64ch;
+}
+
+.watch-points li {
+  border-left: 2px solid var(--ink-100);
+  padding: 6px 0 6px 14px;
+  font-family: var(--face-prose);
+  font-size: var(--t-small);
+  color: var(--ink-700);
+}
+
+.watch-points b {
+  color: var(--ink-900);
+  font-weight: 400;
+}
+
+.watch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.watch-form select,
+.watch-form input[type='text'] {
+  background: var(--ink-025);
+  border: 1px solid var(--ink-100);
+  color: var(--ink-900);
+  font-family: var(--face-data);
+  font-size: var(--t-small);
+  padding: 11px 12px;
+}
+
+.watch-form input[type='text'] {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.watch-form input[type='text']::placeholder {
+  color: var(--ink-300);
+}
+
+.watch-form select:focus,
+.watch-form input[type='text']:focus {
+  outline: none;
+  border-color: var(--ink-300);
+  background: var(--ink-050);
+}
+
+/* The failure colour, and the only place colour appears on this page. A
+   message that reads the same whether or not it worked is a message nobody
+   reads twice. */
+.watch-bad {
+  color: var(--alert);
+}
+
+.watch-drop,
+.watch-signout {
+  background: none;
+  border: 1px solid var(--ink-100);
+  color: var(--ink-500);
+  font-family: var(--face-label);
+  font-size: var(--t-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.watch-drop:hover,
+.watch-signout:hover {
+  color: var(--ink-900);
+  border-color: var(--ink-300);
+}
+
+.watch-drop:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

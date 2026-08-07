@@ -3,6 +3,7 @@ import { REACHABLE_SHARE } from '../lib/calibration.ts';
 import { MIN_INSTALLS } from '../lib/divergence.ts';
 import { COMPARE_SCRIPT } from './compare.ts';
 import { STACK_SCRIPT } from './stack.ts';
+import { ACCOUNT_SCRIPT } from './account-script.ts';
 import type { IndexBundle, LensBundle, LensName, StripMark } from '../types/bundles.ts';
 import { isRepositorySubject, type EventRecord } from '../types/events.ts';
 import type { MetaRecord } from '../types/meta.ts';
@@ -45,7 +46,10 @@ const NAV: { href: string; label: string; lens: LensName | null }[] = [
   // not read strangers' commit logs.
   // The tools sit after the readings: a visitor who does not know what this
   // measures has no use for a tool that measures it.
-  { href: '/stack', label: 'Your stack', lens: null },
+  // Pointed at /stack until there was somewhere for it to point. That left two
+  // navigation entries on one href, and the one labelled "Your stack" was the
+  // watchlist's stack rather than the reader's.
+  { href: '/account', label: 'Your stack', lens: null },
   { href: '/models', label: 'Models', lens: null },
   { href: '/incidents', label: 'Status', lens: null },
   { href: '/ecosystem', label: 'Ecosystem', lens: null },
@@ -414,7 +418,7 @@ function analyticsHtml(): string {
  * has never touched the switch gets their own preference with no script
  * involved at all.
  */
-const THEME_BOOT =
+export const THEME_BOOT =
   "try{var t=localStorage.getItem('readout-theme');" +
   "if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}";
 
@@ -522,6 +526,7 @@ export const SITE_SCRIPT = [
   ASK_SCRIPT,
   COMPARE_SCRIPT,
   STACK_SCRIPT,
+  ACCOUNT_SCRIPT,
 ].join('\n\n');
 
 export function layout(options: PageOptions): string {

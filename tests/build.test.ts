@@ -261,6 +261,10 @@ describe('output hygiene', () => {
       )
       .map((f) => f.name);
     expect(pages.sort()).toEqual([
+      // The only page about one reader rather than the watchlist, and still a
+      // file on the CDN: the names arrive from an endpoint, the readings from
+      // the same published bundle every other page reads.
+      'account.html',
       // The one page here that is a tool rather than a reading.
       'compare.html',
       'demand.html',

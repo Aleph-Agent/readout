@@ -5,10 +5,15 @@
 ## Check your dependencies in CI
 
 ```yaml
-- uses: kaitzyy-dev/readout@main
-  with:
-    manifest: package.json
-    fail-on: archived,relicensed
+permissions:
+  pull-requests: write   # only needed for the comment
+
+steps:
+  - uses: actions/checkout@v4
+  - uses: kaitzyy-dev/readout@main
+    with:
+      manifest: package.json
+      fail-on: archived,relicensed
 ```
 
 Fails the build when a dependency's repository has been archived or has moved
@@ -17,6 +22,14 @@ account, no service to sign up to — it reads published measurements and talks
 to OSV. A network problem is never a finding: if the readings cannot be fetched
 the step says so and passes, because a build that breaks when somebody else's
 site is down is a build that gets deleted.
+
+On a pull request it also leaves a comment with the findings as a table, and
+rewrites that same comment on every push rather than adding another. A red
+build tells a reviewer that something is wrong; it does not tell them which
+dependency, or what changed about it, without opening the log. Set
+`comment: false` to report only in the step summary. A pull request from a fork
+gets a read-only token, so the comment is skipped there and the step still
+passes.
 
 Also runs against `requirements.txt` and `Cargo.toml`.
 

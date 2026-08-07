@@ -24,6 +24,20 @@ inputs:
       advisories. Empty reports without failing.
     required: false
     default: 'archived,relicensed'
+  comment:
+    description: >-
+      Post the findings as a pull request comment, rewritten in place on each
+      push. Needs `permissions: pull-requests: write`. Ignored outside a pull
+      request. Set to false to report only in the step summary.
+    required: false
+    default: 'true'
+  token:
+    description: >-
+      Token used to post the comment. The default job token is enough. A pull
+      request from a fork gets a read-only one, in which case the comment is
+      skipped and the step still passes.
+    required: false
+    default: ${{ github.token }}
   endpoint:
     description: 'Override the Readout origin. For testing this action itself.'
     required: false
@@ -53,3 +67,5 @@ runs:
         READOUT_REGISTRY: ${{ inputs.registry }}
         READOUT_FAIL_ON: ${{ inputs.fail-on }}
         READOUT_ENDPOINT: ${{ inputs.endpoint }}
+        READOUT_COMMENT: ${{ inputs.comment }}
+        READOUT_TOKEN: ${{ inputs.token }}

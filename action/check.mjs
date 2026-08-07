@@ -16,10 +16,13 @@
  *
  * Failure policy: a network problem is not a finding. If the readings cannot be
  * fetched the step says so and passes, because a build that breaks when a
- * third-party site is down is a build nobody keeps.
+ * third-party site is down is a build nobody keeps. The same applies to posting
+ * the review comment: a comment that cannot be posted is not a reason to fail
+ * somebody's pipeline.
  */
 
 import { readFileSync, appendFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 const endpoint = (process.env.READOUT_ENDPOINT || 'https://readout-7pt.pages.dev').replace(/\/$/, '');
 const manifestPath = process.env.READOUT_MANIFEST || 'package.json';
@@ -90,7 +93,8 @@ async function advisories(registry, packages) {
 
   for (let i = 0; i < packages.length; i += 100) {
     const slice = packages.slice(i, i + 100);
-    const body = await getJson('https://api.osv.dev/v1/querybatch', {
+    const osv = (process.env.READOUT_OSV || 'https://api.osv.dev').replace(/\/$/, '');
+    const body = await getJson(`${osv}/v1/querybatch`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -108,6 +112,95 @@ async function advisories(registry, packages) {
 function output(key, value) {
   if (process.env.GITHUB_OUTPUT) {
     appendFileSync(process.env.GITHUB_OUTPUT, `${key}=${value}\n`);
+  }
+}
+
+/**
+ * How the comment finds itself again.
+ *
+ * Invisible in the rendered comment, and the only reliable handle: matching on
+ * the author would collide with every other action running as the same bot, and
+ * matching on the text would break the first time the wording changed.
+ */
+const MARKER = '<!-- readout-dependency-check -->';
+
+/** The pull request this run belongs to, or null when it is not one. */
+function pullRequestNumber() {
+  const path = process.env.GITHUB_EVENT_PATH;
+  if (path) {
+    try {
+      const event = JSON.parse(readFileSync(path, 'utf8'));
+      const number = event.pull_request?.number ?? event.issue?.number;
+      if (Number.isInteger(number)) return number;
+    } catch {
+      // Falls through to the ref, which is the same answer by another route.
+    }
+  }
+
+  const match = /^refs\/pull\/(\d+)\//.exec(process.env.GITHUB_REF || '');
+  return match ? Number(match[1]) : null;
+}
+
+async function github(token, method, path, body) {
+  const api = (process.env.GITHUB_API_URL || 'https://api.github.com').replace(/\/$/, '');
+  const response = await fetch(`${api}${path}`, {
+    method,
+    headers: {
+      accept: 'application/vnd.github+json',
+      authorization: `Bearer ${token}`,
+      'x-github-api-version': '2022-11-28',
+      ...(body ? { 'content-type': 'application/json' } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+
+  if (!response.ok) throw new Error(`${response.status} ${method} ${path}`);
+  return response.status === 204 ? null : response.json();
+}
+
+/**
+ * One comment per pull request, rewritten in place.
+ *
+ * A new comment on every push turns a busy branch into a wall of near-identical
+ * reports, which is how a useful check gets muted. Finding the previous one and
+ * editing it means the thread holds the current reading and nothing else.
+ *
+ * A clean run still rewrites an existing comment rather than deleting it. A
+ * warning that silently disappears leaves a reviewer unsure whether it was
+ * fixed or the check stopped running, and those are different facts.
+ */
+async function comment(body) {
+  if ((process.env.READOUT_COMMENT || 'true').toLowerCase() === 'false') return;
+
+  const token = process.env.READOUT_TOKEN;
+  const repository = process.env.GITHUB_REPOSITORY;
+  const number = pullRequestNumber();
+  if (!token || !repository || number === null) return;
+
+  const contents = `${MARKER}\n${body}`;
+
+  try {
+    const existing = await github(
+      token,
+      'GET',
+      `/repos/${repository}/issues/${number}/comments?per_page=100`,
+    );
+    const mine = (existing || []).find((entry) => (entry.body || '').includes(MARKER));
+
+    if (mine) {
+      await github(token, 'PATCH', `/repos/${repository}/issues/comments/${mine.id}`, {
+        body: contents,
+      });
+    } else {
+      await github(token, 'POST', `/repos/${repository}/issues/${number}/comments`, {
+        body: contents,
+      });
+    }
+  } catch (error) {
+    // A pull request from a fork gets a read-only token, so this is the normal
+    // outcome there rather than a fault. Said once, quietly, and never fatal:
+    // the findings are already in the step summary and the outputs.
+    process.stdout.write(`Comment not posted (${error.message}). Findings are in the summary.\n`);
   }
 }
 
@@ -143,6 +236,10 @@ async function main() {
   } catch (error) {
     // A network problem is not a finding, and a build that breaks when someone
     // else's site is down is a build that gets removed.
+    //
+    // Deliberately does not touch the pull request comment. Rewriting it here
+    // would replace yesterday's "three archived" with "readings unavailable"
+    // and quietly retract a true finding because of an unrelated outage.
     summary([`### Readout`, ``, `Readings unavailable (${error.message}). Nothing failed.`]);
     return;
   }
@@ -150,6 +247,7 @@ async function main() {
   const archived = [];
   const relicensed = [];
   const risky = [];
+  const rows = [];
   let total = 0;
   let tracked = 0;
 
@@ -158,35 +256,72 @@ async function main() {
     const count = osv.get(name) ?? hit?.advisories ?? 0;
     total += count;
     if (count > 0) risky.push(`${name} (${count})`);
-    if (!hit) continue;
 
-    tracked += 1;
-    if (hit.archived) archived.push(name);
-    if (hit.license && SOURCE_AVAILABLE.test(hit.license)) {
-      relicensed.push(`${name} (${hit.license})`);
+    const flags = [];
+    if (count > 0) flags.push(`${count} ${count === 1 ? 'advisory' : 'advisories'}`);
+
+    if (hit) {
+      tracked += 1;
+      if (hit.archived) {
+        archived.push(name);
+        flags.push('archived');
+      }
+      if (hit.license && SOURCE_AVAILABLE.test(hit.license)) {
+        relicensed.push(`${name} (${hit.license})`);
+        flags.push(`licence now ${hit.license}`);
+      }
+    }
+
+    if (flags.length > 0) {
+      rows.push({
+        name,
+        flags,
+        // Only tracked packages have a page. A link to a 404 is worse than no
+        // link, and an untracked package is not being judged anyway.
+        repo: hit?.repo ?? null,
+      });
     }
   }
 
   const lines = [
     `### Readout`,
     ``,
-    `${packages.length} dependencies read, ${tracked} with full readings.`,
+    `${packages.length} ${registry} ${packages.length === 1 ? 'dependency' : 'dependencies'} read, ${tracked} with full readings.`,
     ``,
   ];
-  const section = (title, items) => {
-    if (items.length === 0) return;
-    lines.push(`**${title}**`, ``, ...items.map((item) => `- ${item}`), ``);
-  };
 
-  section('Archived', archived);
-  section('Source-available licence', relicensed);
-  section('Advisories on record', risky);
-
-  if (archived.length + relicensed.length + risky.length === 0) {
-    lines.push(`Nothing to report.`, ``);
+  if (rows.length === 0) {
+    lines.push(
+      `Nothing to report. Nothing here is archived, relicensed, or carrying an advisory.`,
+      ``,
+    );
+  } else {
+    lines.push(`| Dependency | What changed |`, `| --- | --- |`);
+    for (const row of rows) {
+      const label =
+        row.repo === null
+          ? `\`${row.name}\``
+          : `[\`${row.name}\`](${endpoint}/repo/${row.repo})`;
+      lines.push(`| ${label} | ${row.flags.join(', ')} |`);
+    }
+    lines.push(``);
   }
-  lines.push(`Advisory counts are all time — a mature project carries more than a young one.`);
+
+  lines.push(
+    `Advisory counts are all time — a mature project carries more than a young one, and a`,
+    `count is not a warning on its own. Untracked dependencies are not being judged; the`,
+    `watchlist is curated and partial.`,
+  );
+
   summary(lines);
+  await comment(
+    [
+      ...lines,
+      ``,
+      `<sub>Readings taken by [Readout](${endpoint}), every four hours. This comment is`,
+      `rewritten in place on each push rather than added to.</sub>`,
+    ].join('\n'),
+  );
 
   output('archived', archived.join(','));
   output('relicensed', relicensed.join(','));
@@ -204,4 +339,10 @@ async function main() {
   }
 }
 
-await main();
+// Only when run as a command. Guarded so the tests can import the parsing
+// helpers without the module firing a network run on import.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
+}
+
+export { names, pullRequestNumber, MARKER };

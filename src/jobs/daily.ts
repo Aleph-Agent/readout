@@ -184,6 +184,19 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
   // broken detector, and the evidence to tell them apart is gone by then.
   const spikeMultipliers: number[] = [];
 
+  /**
+   * Findings a collector wrote for itself, counted so the run still reports
+   * them.
+   *
+   * Two collectors append their own findings the moment they have them, rather
+   * than handing them to `events` for the single append at the end. That is
+   * deliberate for both: their "announce once" rule is decided by a ledger row
+   * written in the same breath, so a crash between the two would settle the row
+   * and lose the announcement permanently, with nothing left to re-detect it
+   * from.
+   */
+  let appendedByCollectors = 0;
+
   for (const row of state) {
     if (!row.active) continue;
 
@@ -341,8 +354,13 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
         seen: new Set(readEvents(month).map((event) => event.id)),
       });
       writeModels(models.rows);
+      // Written here rather than added to `events`, which is appended in one go
+      // at the end. Doing both appended every model finding twice, and the
+      // second append is rejected outright — `appendEvents` refuses to rewrite
+      // an id it has already seen, which is the right rule and turned a price
+      // move into a crash that took the whole run with it.
       if (models.events.length > 0) appendEvents(month, models.events);
-      for (const event of models.events) events.push(event);
+      appendedByCollectors += models.events.length;
       errors.push(...models.errors);
     } catch (error) {
       errors.push(`models: ${error instanceof Error ? error.message : String(error)}`);
@@ -363,8 +381,9 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       // every product answers 404 at once. Stale dates are wrong by days; an
       // empty file is wrong about everything and takes the page with it.
       writeLifecycle(lifecycle.rows.length === 0 ? known : lifecycle.rows);
+      // Appended here, not through `events`. See the models block above.
       if (lifecycle.events.length > 0) appendEvents(month, lifecycle.events);
-      for (const event of lifecycle.events) events.push(event);
+      appendedByCollectors += lifecycle.events.length;
       errors.push(...lifecycle.errors);
     } catch (error) {
       errors.push(`lifecycle: ${error instanceof Error ? error.message : String(error)}`);
@@ -521,7 +540,7 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
     partial: errors.length > 0,
     requestsConsumed,
     reposChecked: snapshot.length,
-    eventsDetected: events.length,
+    eventsDetected: events.length + appendedByCollectors,
     collectorsErrored: errors,
   };
 

@@ -4,14 +4,14 @@ import { join } from 'node:path';
 import { collectAdoption } from '../collectors/adoption.ts';
 import { collectHealth } from '../collectors/health.ts';
 import { collectIssues } from '../collectors/issues.ts';
-import { collectHiring } from '../collectors/hiring.ts';
-import { collectImages } from '../collectors/images.ts';
-import { collectQuestions } from '../collectors/questions.ts';
-import { collectStaleness } from '../collectors/staleness.ts';
-import { collectTyposquats } from '../collectors/typosquat.ts';
-import { collectIncidents } from '../collectors/incidents.ts';
-import { collectLifecycle } from '../collectors/lifecycle.ts';
-import { collectModels } from '../collectors/models.ts';
+import { collectHiring, type HiringClient } from '../collectors/hiring.ts';
+import { collectImages, type ImageClient } from '../collectors/images.ts';
+import { collectQuestions, type QuestionClient } from '../collectors/questions.ts';
+import { collectStaleness, type StalenessClient } from '../collectors/staleness.ts';
+import { collectTyposquats, type TyposquatClient } from '../collectors/typosquat.ts';
+import { collectIncidents, type IncidentClient } from '../collectors/incidents.ts';
+import { collectLifecycle, type LifecycleClient } from '../collectors/lifecycle.ts';
+import { collectModels, type ModelClient } from '../collectors/models.ts';
 import { collectManifests } from '../collectors/manifests.ts';
 import { lastDetectionByRepo } from '../lib/confidence.ts';
 import { createGitHubClient, type GitHubClient } from '../lib/github.ts';
@@ -89,10 +89,34 @@ export interface DailyOptions {
   /** Days of daily-resolution history to keep before weekly thinning. */
   retainDailyDays?: number;
   /**
-   * Skip the two network collectors. Snapshot and spike classification read
-   * only what the pulses already collected, so they still run.
+   * Skip every network collector. Snapshot and spike classification read only
+   * what the pulses already collected, so they still run.
    */
   offline?: boolean;
+  /**
+   * Stand-ins for the collectors that reach a third party.
+   *
+   * Every one of these took its own client already; none of them was reachable
+   * from here, so the whole block behind `offline` had no way to be exercised
+   * except by running it against four live APIs. It went out untested and a
+   * model price move crashed the entire run — the collectors each worked, and
+   * the wiring between them did not.
+   *
+   * Supplying one runs that collector against the stand-in. Supplying none and
+   * setting `offline` skips the block, which is what a build does.
+   */
+  collectors?: {
+    models?: ModelClient;
+    lifecycle?: LifecycleClient;
+    incidents?: IncidentClient;
+    hiring?: HiringClient;
+    staleness?: StalenessClient;
+    typosquat?: TyposquatClient;
+    images?: ImageClient;
+    questions?: QuestionClient;
+  };
+  /** Sleeps between third-party reads. Zero in tests; politeness in production. */
+  delayMs?: number;
 }
 
 /** Days of daily-resolution history kept before weekly thinning begins. */
@@ -280,6 +304,17 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
   // judging so the bar can be checked rather than guessed at again.
   const demandEngagements: number[] = [];
 
+  /**
+   * Which third-party collectors run.
+   *
+   * Nothing supplied means all of them, which is production. Anything supplied
+   * means only the ones supplied — a harness that stubs two collectors and
+   * quietly sends the other six to the real network is not a harness.
+   */
+  const only = options.collectors;
+  const wanted = (name: keyof NonNullable<DailyOptions['collectors']>): boolean =>
+    only === undefined || only[name] !== undefined;
+
   if (options.offline !== true) {
     const client =
       options.client ??
@@ -359,10 +394,11 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
     // The model catalogue. One free unauthenticated request for 400 models
     // across 58 providers, and the first reading here with nothing to do with a
     // repository. Prices move weekly and nobody keeps a dated record of them.
-    try {
+    if (wanted('models')) try {
       const models = await collectModels(readModels(), {
         now: nowIso,
         today,
+        ...(options.collectors?.models ? { client: options.collectors.models } : {}),
         seen: new Set(readEvents(month).map((event) => event.id)),
       });
       writeModels(models.rows);
@@ -380,11 +416,13 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
 
     // End-of-life dates. Twenty-four curated products, one free request each,
     // and the dates are published years ahead and watched by almost nobody.
-    try {
+    if (wanted('lifecycle')) try {
       const known = readLifecycle();
       const lifecycle = await collectLifecycle(known, {
         now: nowIso,
         today,
+        ...(options.collectors?.lifecycle ? { client: options.collectors.lifecycle } : {}),
+        ...(options.delayMs === undefined ? {} : { delayMs: options.delayMs }),
         seen: new Set(readEvents(month).map((event) => event.id)),
       });
       // A ledger is never emptied by a bad read. A failed fetch is carried
@@ -405,9 +443,13 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
     // and none of them charging for this. No events: GitHub alone files
     // incidents most weeks, and a finding apiece would bury every other signal
     // here under somebody else's operational noise.
-    try {
+    if (wanted('incidents')) try {
       const held = readIncidents();
-      const incidents = await collectIncidents(held, { today });
+      const incidents = await collectIncidents(held, {
+        today,
+        ...(options.collectors?.incidents ? { client: options.collectors.incidents } : {}),
+        ...(options.delayMs === undefined ? {} : { delayMs: options.delayMs }),
+      });
       // Same rule as the end-of-life ledger. Twenty feeds failing at once is a
       // network problem, not twenty providers that never had an incident.
       writeIncidents(incidents.rows.length === 0 ? held : incidents.rows);
@@ -419,9 +461,12 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
     // What employers pay for, from one month's hiring thread. Three requests,
     // no key, and the only demand signal here that somebody spent money to
     // express. Sample is narrow and the page says so beside every number.
-    try {
+    if (wanted('hiring')) try {
       const held = readHiring();
-      const hiring = await collectHiring(held);
+      const hiring = await collectHiring(held, {
+        ...(options.collectors?.hiring ? { client: options.collectors.hiring } : {}),
+        ...(options.delayMs === undefined ? {} : { delayMs: options.delayMs }),
+      });
       writeHiring(hiring.rows.length === 0 ? held : hiring.rows);
       errors.push(...hiring.errors);
     } catch (error) {
@@ -434,36 +479,53 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
     // not a package that stopped existing.
     const tracked = readAdoption();
 
-    try {
+    if (wanted('staleness')) try {
       const held = readStaleness();
-      const staleness = await collectStaleness(tracked, held, { now: nowIso });
+      const staleness = await collectStaleness(tracked, held, {
+        now: nowIso,
+        ...(options.collectors?.staleness ? { client: options.collectors.staleness } : {}),
+        ...(options.delayMs === undefined ? {} : { delayMs: options.delayMs }),
+      });
       writeStaleness(staleness.rows.length === 0 ? held : staleness.rows);
       errors.push(...staleness.errors);
     } catch (error) {
       errors.push(`staleness: ${error instanceof Error ? error.message : String(error)}`);
     }
 
-    try {
+    if (wanted('typosquat')) try {
       const held = readTyposquats();
-      const squats = await collectTyposquats(tracked, held, { now: nowIso, limit: 12 });
+      const squats = await collectTyposquats(tracked, held, {
+        now: nowIso,
+        limit: 12,
+        ...(options.collectors?.typosquat ? { client: options.collectors.typosquat } : {}),
+        ...(options.delayMs === undefined ? {} : { delayMs: options.delayMs }),
+      });
       writeTyposquats(squats.rows.length === 0 ? held : squats.rows);
       errors.push(...squats.errors);
     } catch (error) {
       errors.push(`typosquat: ${error instanceof Error ? error.message : String(error)}`);
     }
 
-    try {
+    if (wanted('images')) try {
       const held = readImages();
-      const images = await collectImages(held, { now: nowIso });
+      const images = await collectImages(held, {
+        now: nowIso,
+        ...(options.collectors?.images ? { client: options.collectors.images } : {}),
+        ...(options.delayMs === undefined ? {} : { delayMs: options.delayMs }),
+      });
       writeImages(images.rows.length === 0 ? held : images.rows);
       errors.push(...images.errors);
     } catch (error) {
       errors.push(`images: ${error instanceof Error ? error.message : String(error)}`);
     }
 
-    try {
+    if (wanted('questions')) try {
       const held = readQuestions();
-      const questions = await collectQuestions(held, { today });
+      const questions = await collectQuestions(held, {
+        today,
+        ...(options.collectors?.questions ? { client: options.collectors.questions } : {}),
+        ...(options.delayMs === undefined ? {} : { delayMs: options.delayMs }),
+      });
       writeQuestions(questions.rows.length === 0 ? held : questions.rows);
       errors.push(...questions.errors);
     } catch (error) {

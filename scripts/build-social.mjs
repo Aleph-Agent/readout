@@ -43,6 +43,48 @@ const n = (value) => value.toLocaleString('en');
  */
 const HANDLE = '@Sighttruehq';
 
+/**
+ * The wordmark, and why there is no symbol any more.
+ *
+ * Four abstract marks were drawn and rejected — crosshairs, a dial, an aperture,
+ * a geometric S. The pattern in all four was the same: a symbol was being made
+ * to carry the meaning, and the meaning of this product is carried by its data.
+ * Every one of them needed a paragraph to explain, and a mark that needs
+ * explaining has already lost.
+ *
+ * So the identity is the name, set properly. The one typographic move is the
+ * crossbar: the double `t` sits exactly where "sight" meets "true", and its two
+ * crossbars are run together into a single rule that overshoots both letters.
+ * That is the datum — the reference line the whole product measures against —
+ * and it is drawn from the spelling of the name rather than bolted on beside it.
+ *
+ * It is a detail somebody notices second, not first, which is the correct order
+ * for a detail.
+ */
+function wordmark({ size = 64, colour = '#e8e8e8', rule = '#f2857c' } = {}) {
+  const u = size / 64;
+  return `<span class="wm" style="font-size:${round(size)}px;color:${colour}">
+    <span class="wm-a">sigh</span><span class="wm-tt">tt<i style="background:${rule};height:${round(Math.max(1.5, 3.4 * u))}px"></i></span><span class="wm-a">rue</span>
+  </span>`;
+}
+
+const round = (n) => Number(n.toFixed(2));
+
+/** Shared type for the wordmark. Kept with it so the two cannot drift. */
+const WORDMARK_CSS = `
+  /* text-transform is reset explicitly. The footer uppercases everything in it
+     and swallowed the wordmark whole — a lowercase mark set in capitals is a
+     different mark, and the crossbar rule then lands nowhere near a crossbar. */
+  .wm { font-family: 'Plex Condensed', sans-serif; font-weight: 600;
+        letter-spacing: -0.022em; line-height: 1; white-space: nowrap;
+        display: inline-block; text-transform: none; }
+  .wm-tt { position: relative; }
+  /* The rule sits at the crossbar height of the two t's and overshoots both,
+     so it reads as a line the letters are measured against rather than as part
+     of them. Absolute, because it must not add width to the word. */
+  .wm-tt i { position: absolute; left: -0.10em; right: -0.16em; top: 0.325em; display: block; }
+`;
+
 /** Shared head: the site's own fonts and tokens, so the account cannot drift from the product. */
 const HEAD = `<meta charset="utf-8">
 <style>
@@ -53,6 +95,7 @@ const HEAD = `<meta charset="utf-8">
   @font-face { font-family: 'Plex Serif'; font-weight: 400;
     src: url('../../dist/fonts/ibm-plex-serif-latin-400-normal.woff2') format('woff2'); }
 
+${WORDMARK_CSS}
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #121212; color: #e8e8e8; font-family: 'Plex Mono', monospace; overflow: hidden; }
 
@@ -67,7 +110,18 @@ const HEAD = `<meta charset="utf-8">
     font-variant-numeric: tabular-nums; font-size: 190px; line-height: 0.86;
     color: #d2e2f4; letter-spacing: -0.02em;
   }
-  .say { font-family: 'Plex Serif', Georgia, serif; font-size: 35px; line-height: 1.5; color: #cfcfcf; }
+  /* The loss, in the reader's own terms, at the size a headline gets. The card
+     led with the figure before, and a number with no loss attached reads as a
+     statistic about somebody else's project — which is exactly the impression
+     this deck was accused of and deserved. */
+  .say { font-family: 'Plex Serif', Georgia, serif; font-size: 52px; line-height: 1.28;
+         color: #e8e8e8; letter-spacing: -0.012em; }
+  /* The figure is now evidence for the sentence above it, not the hero. */
+  .proof { display: flex; align-items: baseline; gap: 16px; }
+  .proof b { font-family: 'Plex Condensed', sans-serif; font-weight: 600;
+             font-variant-numeric: tabular-nums; font-size: 62px; color: #d2e2f4; line-height: 1; }
+  .proof span { font-family: 'Plex Condensed', sans-serif; font-weight: 600; font-size: 22px;
+                letter-spacing: 0.14em; text-transform: uppercase; color: #9e9e9e; }
   .foot {
     position: absolute; left: 76px; right: 76px; bottom: 52px;
     display: flex; justify-content: space-between; align-items: center;
@@ -90,20 +144,17 @@ function card({ eyebrow, figure, unit, say }) {
   .rule { border-bottom: 1px solid #2c2c2c; width: 100%; }
   .unit { font-family: 'Plex Condensed', sans-serif; font-weight: 600; font-size: 27px;
           letter-spacing: 0.13em; text-transform: uppercase; color: #9e9e9e; margin-top: 4px; }
-  .say { max-width: 44ch; }
+  .say { max-width: 20ch; }
 </style></head>
 <body>
   <div class="frame">
     <span class="eyebrow">${eyebrow}</span>
-    <div>
-      <div class="figure">${figure}</div>
-      <div class="unit">${unit}</div>
-    </div>
-    <div class="rule"></div>
     <p class="say">${say}</p>
+    <div class="rule"></div>
+    <div class="proof"><b>${figure}</b> <span>${unit}</span></div>
   </div>
   <div class="foot">
-    <span class="mark">${mark.replace('width="64" height="64"', 'width="30" height="30"')} ${HANDLE}</span>
+    <span class="mark">${wordmark({ size: 30 })} <span style="margin-left:4px">${HANDLE}</span></span>
     <span>sighttrue.com</span>
   </div>
 </body></html>`;
@@ -255,13 +306,29 @@ const film = `<!doctype html><html lang="en"><head>${HEAD}
 
 writeFileSync(`${ROOT}assets/brand/film.html`, film, 'utf8');
 
-/** The avatar. One mark, nothing else: the only size that matters is 48px. */
+/**
+ * The avatar: the wordmark's own `s`, in a solid tile.
+ *
+ * The one place that genuinely needs a square, so it gets the letter the
+ * wordmark already uses rather than a symbol drawn separately — which is how
+ * four rejected marks happened. Nothing here has to be kept in step with
+ * anything, because it is the same letterform at a different size.
+ *
+ * A filled tile rather than a letter floating on the page colour: at 48px in a
+ * timeline, a shape with an edge holds and a glyph on a dark field dissolves
+ * into the dark field beside it.
+ */
 writeFileSync(
   `${ROOT}assets/brand/avatar.html`,
-  `<!doctype html><meta charset="utf-8">
-<style>html,body{margin:0;padding:0}
-body{width:400px;height:400px;background:#121212;display:grid;place-items:center}</style>
-${mark.replace('width="64" height="64"', 'width="312" height="312"')}`,
+  `<!doctype html><html><head><meta charset="utf-8"><style>
+${HEAD.slice(HEAD.indexOf('<style>') + 7, HEAD.lastIndexOf('</style>'))}
+html,body{margin:0;padding:0}
+body{width:400px;height:400px;background:#121212;display:grid;place-items:center}
+.tile{width:400px;height:400px;background:#1c1c1c;display:grid;place-items:center;position:relative}
+.tile .wm{font-size:300px;color:#e8e8e8}
+</style></head><body><div class="tile">
+<span class="wm" style="font-size:300px;color:#e8e8e8">s<i style="position:absolute;left:50%;transform:translateX(-50%);width:190px;height:14px;background:#f2857c;top:214px;display:block"></i></span>
+</div></body></html>`,
   'utf8',
 );
 

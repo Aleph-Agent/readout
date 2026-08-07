@@ -4,6 +4,7 @@ Rendered from HTML with the site's own tokens and fonts, so the account and the
 product cannot drift apart. Regenerate after any palette change:
 
 ```sh
+node scripts/build-brand.mjs   # regenerates banner.html from the real strip
 node scripts/build.ts   # fonts must exist in dist/fonts first
 "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" `
   --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=2 `
@@ -14,7 +15,9 @@ node scripts/build.ts   # fonts must exist in dist/fonts first
 | File | Size | Where it goes |
 |---|---|---|
 | `banner.png` | 3000x1000 (2x of 1500x500) | X header |
-| `avatar.png` | 800x800 (2x of 400x400) | X profile picture |
+| `avatar.png` | 800x800 (2x of 400x400) | X profile picture, GitHub org |
+| `mark.svg` | vector | the mark on its own, for anything that takes SVG |
+| `../../src/site/favicon.svg` | vector | browser tab, shipped by the build |
 
 Rendered at 2x because X resamples down and a 1x asset arrives soft.
 

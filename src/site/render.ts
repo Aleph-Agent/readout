@@ -551,6 +551,7 @@ export function layout(options: PageOptions): string {
 <meta name="twitter:title" content="${esc(options.title)}">
 <meta name="twitter:description" content="${esc(description)}">
 <link rel="alternate" type="application/rss+xml" title="${esc(options.feed?.title ?? 'Sighttrue findings')}" href="${esc(options.feed?.href ?? '/feed.xml')}">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/site.css">
 <script>${THEME_BOOT}</script>
 </head>

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Sighttrue">
+  <title>Sighttrue</title>
+
+  <!--
+    Crosshairs, drawn as an instrument reticle rather than a logo.
+
+    Two decisions carry the whole thing.
+
+    The crosshair does not sit at the centre. On a real scope it sits where the
+    instrument is pointed, and a centred one reads as a plus sign — which is a
+    symbol for addition, not for aim. Offset a third of the way, it reads as an
+    instrument in use.
+
+    The horizontal line is broken either side of the ring. An unbroken cross
+    through a circle is a target; a break is what a graticule actually looks
+    like, because the etching stops where the reticle glass carries its scale.
+
+    One stroke weight, one colour, no gradient, no glow. At 32 pixels every
+    detail below 2px disappears, so nothing here is thinner than that.
+  -->
+
+  <g fill="none" stroke="#ccff00" stroke-width="3.5" stroke-linecap="square">
+    <!-- Vertical, full height, passing through the aim point. -->
+    <path d="M26 6 V58" />
+
+    <!-- Horizontal, broken where the ring sits. -->
+    <path d="M4 26 H14" />
+    <path d="M38 26 H60" />
+
+    <!-- The ring. Where the instrument is pointed. -->
+    <circle cx="26" cy="26" r="12" />
+  </g>
+
+  <!-- The reading. A single mark inside the ring, off centre, because a
+       reticle with nothing in it is an instrument pointed at nothing. -->
+  <circle cx="26" cy="26" r="3" fill="#ccff00" />
+</svg>

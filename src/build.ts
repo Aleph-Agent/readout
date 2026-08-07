@@ -138,6 +138,16 @@ const PENDING_LENSES = new Set<LensName>();
 
 const SITE_CSS = fileURLToPath(new URL('./site/site.css', import.meta.url));
 
+/**
+ * The mark, as a tab icon.
+ *
+ * There was none, so every tab showed a blank page glyph and a bookmark showed
+ * nothing at all — for a site somebody is meant to keep open beside their work.
+ * SVG rather than ICO: it is 368 bytes, scales to any density, and every
+ * browser that matters has taken it for years.
+ */
+const FAVICON = fileURLToPath(new URL('./site/favicon.svg', import.meta.url));
+
 /** Timeline entries per profile page. Keeps a long-lived page bounded. */
 const MAX_TIMELINE_EVENTS = 200;
 
@@ -1029,6 +1039,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   }
 
   copyFileSync(SITE_CSS, join(DIST_DIR, 'site.css'));
+  copyFileSync(FAVICON, join(DIST_DIR, 'favicon.svg'));
 
   // The share card. Every link to this site posted anywhere rendered as a blank
   // box until this existed, which is a poor showing for a project whose only

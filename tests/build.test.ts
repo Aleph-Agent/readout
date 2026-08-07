@@ -318,7 +318,13 @@ describe('output hygiene', () => {
     // page, retractions included, and retractions have none.
     const built = runBuild({ now: NOW });
     const served = new Set(
-      built.files.map((f) => `/${f.name.replace(/\.html$/, '')}`).concat('/'),
+      built.files
+        .map((f) => `/${f.name.replace(/\.html$/, '')}`)
+        // Copied into the output rather than generated into the page map, so
+        // `files` does not list them. They are served all the same, and a test
+        // whose model of "what is served" is narrower than reality reports a
+        // dead link that is not one.
+        .concat('/', '/favicon.svg', '/site.css', '/share.png'),
     );
 
     for (const file of built.files.filter((f) => f.name.endsWith('.html'))) {

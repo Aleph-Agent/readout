@@ -92,8 +92,10 @@ jobs:
             tree=$(mktemp -d)
             cp -r data "${tree}/"
             git reset --hard "origin/${GITHUB_REF_NAME}"
-            rm -rf data
-            cp -r "${tree}/data" data
+            # Overlay onto the remote tree rather than replacing it. See the
+            # same step in daily.yml: deleting the directory first reverted
+            # whatever the winner of the race had appended.
+            cp -r "${tree}/data/." data/
             git add data
             git commit --allow-empty -m "${message}"
             git push origin "HEAD:${GITHUB_REF_NAME}"

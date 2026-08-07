@@ -100,8 +100,14 @@ jobs:
             tree=$(mktemp -d)
             cp -r data "${tree}/"
             git reset --hard "origin/${GITHUB_REF_NAME}"
-            rm -rf data
-            cp -r "${tree}/data" data
+            # Overlay onto the remote tree rather than replacing it. Deleting
+            # the directory first discarded every file the winner of the race
+            # had written that this run did not touch — including appends to
+            # the append-only events ledger, which is the one file in this
+            # project that must never lose a line. Copying over the top still
+            # lets this run win on the files it actually generated, which hold
+            # the newest readings, and leaves everything else standing.
+            cp -r "${tree}/data/." data/
             git add data
             git commit --allow-empty -m "${message}"
             git push origin "HEAD:${GITHUB_REF_NAME}"

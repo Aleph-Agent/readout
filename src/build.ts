@@ -10,6 +10,10 @@ import {
   latestCalibration,
   readHealth,
   readHiring,
+  readImages,
+  readQuestions,
+  readStaleness,
+  readTyposquats,
   readIncidents,
   readLifecycle,
   readModels,
@@ -27,7 +31,10 @@ import { buildCoverage } from './lib/coverage.ts';
 import { summariseAdoption } from './lib/adoption-summary.ts';
 import { summariseHealth } from './lib/health-summary.ts';
 import { summariseDivergence } from './lib/divergence.ts';
+import { summariseAdvisories } from './lib/advisory-summary.ts';
 import { summariseHiring } from './lib/hiring-summary.ts';
+import { summariseQuestions } from './lib/questions-summary.ts';
+import { summariseStaleness } from './lib/staleness-summary.ts';
 import { summariseIncidents } from './lib/incidents-summary.ts';
 import { summariseLifecycle } from './lib/lifecycle-summary.ts';
 import { summariseModels } from './lib/models-summary.ts';
@@ -62,6 +69,7 @@ import {
   renderSitemap,
 } from './site/event.ts';
 import { archiveNav, archivePath, renderArchive } from './site/archive.ts';
+import { renderEcosystem } from './site/ecosystem.ts';
 import {
   baselineFromHistory,
   classifySpike,
@@ -527,6 +535,9 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     lifecycle: summariseLifecycle(readLifecycle(), today),
     incidents: summariseIncidents(readIncidents(), today),
     hiring: summariseHiring(readHiring()),
+    staleness: summariseStaleness(readStaleness(), today),
+    advisories: summariseAdvisories(readAdoption(), readHealth()),
+    questions: summariseQuestions(readQuestions()),
     divergence: summariseDivergence(
       strip.map((mark) => ({
         id: mark.id,
@@ -637,6 +648,22 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
         latest: row.latest,
         lts: row.lts,
       })),
+    }),
+  );
+
+  // The four readings that have nothing to do with GitHub, published flat so an
+  // agent can read them without scraping a page.
+  emitted.set(
+    'ecosystem.json',
+    stableJson({
+      generatedAt: previous.lastSuccessfulRunAt ?? now.toISOString(),
+      note: 'Registry publish dates, base image sizes, question volume, and near-miss package names. None of this comes from GitHub.',
+      lastPublish: readStaleness(),
+      baseImages: readImages(),
+      questions: readQuestions(),
+      // Names one edit from a tracked package. Existence only — this is not a
+      // claim that any of them is malicious, and nothing may present it as one.
+      nearMissNames: readTyposquats(),
     }),
   );
 
@@ -846,6 +873,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   pages.set('stack.html', renderStack(index, previous));
   pages.set('models.html', renderModels(index, previous));
   pages.set('incidents.html', renderIncidents(index, previous));
+  pages.set('ecosystem.html', renderEcosystem(index, previous));
 
   // One badge per watched repository. A maintainer who embeds one puts a
   // permanent link back in a README that may be read more in a week than this
@@ -868,6 +896,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     '/stack',
     '/models',
     '/incidents',
+    '/ecosystem',
     ...LENSES.map((lens) => `/${lens}`),
     ...[...profiles.keys()].map((repo) => `/repo/${repo}`),
     ...addressable.map((event) => eventPath(event)),

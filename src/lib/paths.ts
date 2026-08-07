@@ -74,6 +74,17 @@ export const INCIDENTS_PATH = join(LIVE_DIR, 'incidents.jsonl');
  * rewritten; the current month's thread grows all month and is re-read.
  */
 export const HIRING_PATH = join(LIVE_DIR, 'hiring.jsonl');
+/** Last publish date per package, from the registries rather than from git. */
+export const STALENESS_PATH = join(LIVE_DIR, 'staleness.jsonl');
+
+/** Names one edit from a package people install. Rebuilt per canonical name. */
+export const TYPOSQUAT_PATH = join(LIVE_DIR, 'typosquat.jsonl');
+
+/** Base image sizes and rebuild dates. Overwritten daily; a tag is a moving target. */
+export const IMAGES_PATH = join(LIVE_DIR, 'images.jsonl');
+
+/** Questions asked per tag across two equal windows. */
+export const QUESTIONS_PATH = join(LIVE_DIR, 'questions.jsonl');
 export const META_PATH = join(DATA_DIR, 'meta.json');
 
 /**

@@ -48,6 +48,7 @@ const NAV: { href: string; label: string; lens: LensName | null }[] = [
   { href: '/stack', label: 'Your stack', lens: null },
   { href: '/models', label: 'Models', lens: null },
   { href: '/incidents', label: 'Status', lens: null },
+  { href: '/ecosystem', label: 'Ecosystem', lens: null },
   { href: '/compare', label: 'Compare', lens: null },
   { href: '/method', label: 'Method', lens: null },
 ];
@@ -811,7 +812,7 @@ whose window has not filled yet shows no figure rather than a zero.</p>`;
  * enumerable — nobody refers to "reading 04". The rail does the work the
  * numbers were added for.
  */
-function band(name: string, inner: string, note?: string): string {
+export function band(name: string, inner: string, note?: string): string {
   if (inner.trim() === '') return '';
 
   return `<section class="band">

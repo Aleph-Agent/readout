@@ -1,6 +1,9 @@
 import type { CalibrationSummary } from '../lib/calibration.ts';
 import type { DivergenceSummary } from '../lib/divergence.ts';
+import type { AdvisorySummary } from '../lib/advisory-summary.ts';
 import type { HiringSummary } from '../lib/hiring-summary.ts';
+import type { QuestionSummary } from '../lib/questions-summary.ts';
+import type { StalenessSummary } from '../lib/staleness-summary.ts';
 import type { IncidentSummary } from '../lib/incidents-summary.ts';
 import type { LifecycleSummary } from '../lib/lifecycle-summary.ts';
 import type { ModelSummary } from '../lib/models-summary.ts';
@@ -204,6 +207,12 @@ export interface IndexBundle {
   incidents: IncidentSummary;
   /** What employers asked for. See `lib/hiring-summary.ts`. */
   hiring: HiringSummary;
+  /** When each package last actually shipped. See `lib/staleness-summary.ts`. */
+  staleness: StalenessSummary;
+  /** Advisory load per ecosystem. See `lib/advisory-summary.ts`. */
+  advisories: AdvisorySummary;
+  /** Whether anybody is still asking. See `lib/questions-summary.ts`. */
+  questions: QuestionSummary;
   /** Where attention and use disagree. See `lib/divergence.ts`. */
   divergence: DivergenceSummary;
   /** What is actually installed. See `collectors/adoption.ts`. */

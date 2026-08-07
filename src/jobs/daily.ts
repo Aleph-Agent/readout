@@ -5,6 +5,10 @@ import { collectAdoption } from '../collectors/adoption.ts';
 import { collectHealth } from '../collectors/health.ts';
 import { collectIssues } from '../collectors/issues.ts';
 import { collectHiring } from '../collectors/hiring.ts';
+import { collectImages } from '../collectors/images.ts';
+import { collectQuestions } from '../collectors/questions.ts';
+import { collectStaleness } from '../collectors/staleness.ts';
+import { collectTyposquats } from '../collectors/typosquat.ts';
 import { collectIncidents } from '../collectors/incidents.ts';
 import { collectLifecycle } from '../collectors/lifecycle.ts';
 import { collectModels } from '../collectors/models.ts';
@@ -19,6 +23,10 @@ import {
   readEvents,
   readModels,
   readHiring,
+  readImages,
+  readQuestions,
+  readStaleness,
+  readTyposquats,
   readIncidents,
   readLifecycle,
   readAllEvents,
@@ -32,6 +40,10 @@ import {
   writeHealth,
   writeModels,
   writeHiring,
+  writeImages,
+  writeQuestions,
+  writeStaleness,
+  writeTyposquats,
   writeIncidents,
   writeLifecycle,
   writeManifests,
@@ -414,6 +426,48 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       errors.push(...hiring.errors);
     } catch (error) {
       errors.push(`hiring: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    // Four readings with nothing to do with GitHub, and none of them charging
+    // for the privilege. Each carries its last known values forward on a bad
+    // read for the same reason as the ledgers above: an unreadable registry is
+    // not a package that stopped existing.
+    const tracked = readAdoption();
+
+    try {
+      const held = readStaleness();
+      const staleness = await collectStaleness(tracked, held, { now: nowIso });
+      writeStaleness(staleness.rows.length === 0 ? held : staleness.rows);
+      errors.push(...staleness.errors);
+    } catch (error) {
+      errors.push(`staleness: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    try {
+      const held = readTyposquats();
+      const squats = await collectTyposquats(tracked, held, { now: nowIso, limit: 12 });
+      writeTyposquats(squats.rows.length === 0 ? held : squats.rows);
+      errors.push(...squats.errors);
+    } catch (error) {
+      errors.push(`typosquat: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    try {
+      const held = readImages();
+      const images = await collectImages(held, { now: nowIso });
+      writeImages(images.rows.length === 0 ? held : images.rows);
+      errors.push(...images.errors);
+    } catch (error) {
+      errors.push(`images: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    try {
+      const held = readQuestions();
+      const questions = await collectQuestions(held, { today });
+      writeQuestions(questions.rows.length === 0 ? held : questions.rows);
+      errors.push(...questions.errors);
+    } catch (error) {
+      errors.push(`questions: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     requestsConsumed = client.stats().consumed;

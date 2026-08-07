@@ -90,6 +90,7 @@ describe('bundle emission', () => {
       // only by that page, never by the index.
       'compare.json',
       'demand.json',
+      'ecosystem.json',
       // When each tracked runtime stops getting security fixes. The one class
       // of question where a model answering from training data is confidently
       // wrong, because the answer is a date that has since passed.
@@ -263,6 +264,8 @@ describe('output hygiene', () => {
       // The one page here that is a tool rather than a reading.
       'compare.html',
       'demand.html',
+      // The readings that never touch GitHub: registries, OSV, Stack Overflow.
+      'ecosystem.html',
       'forks.html',
       // Who goes down and how often, kept after their own feeds forget.
       'incidents.html',

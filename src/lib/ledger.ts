@@ -25,11 +25,19 @@ import {
   HEALTH_PATH,
   MODELS_PATH,
   HIRING_PATH,
+  IMAGES_PATH,
   INCIDENTS_PATH,
+  QUESTIONS_PATH,
+  STALENESS_PATH,
+  TYPOSQUAT_PATH,
   LIFECYCLE_PATH,
 } from './paths.ts';
 import { MODEL_KEYS, type ModelRow } from '../types/models.ts';
 import { HIRING_KEYS, type HiringRow } from '../types/hiring.ts';
+import { IMAGE_KEYS, type ImageRow } from '../types/images.ts';
+import { QUESTION_KEYS, type QuestionRow } from '../types/questions.ts';
+import { STALENESS_KEYS, type StalenessRow } from '../types/staleness.ts';
+import { TYPOSQUAT_KEYS, type TyposquatRow } from '../types/typosquat.ts';
 import { INCIDENT_KEYS, type IncidentRow } from '../types/incidents.ts';
 import { LIFECYCLE_KEYS, type LifecycleRow } from '../types/lifecycle.ts';
 import { HEALTH_KEYS, type HealthRow } from '../types/health.ts';
@@ -171,6 +179,58 @@ export function readLifecycle(): LifecycleRow[] {
 export function writeLifecycle(rows: readonly LifecycleRow[]): void {
   writeJsonl(LIFECYCLE_PATH, rows, LIFECYCLE_KEYS, {
     sortBy: (row) => [row.product, row.cycle].join(' '),
+    rejectDuplicates: true,
+  });
+}
+
+// ------------------------------------------------------------------ staleness
+
+export function readStaleness(): StalenessRow[] {
+  return readJsonl(STALENESS_PATH).map((row) => conform<StalenessRow>(row, STALENESS_KEYS));
+}
+
+export function writeStaleness(rows: readonly StalenessRow[]): void {
+  writeJsonl(STALENESS_PATH, rows, STALENESS_KEYS, {
+    sortBy: (row) => [row.registry, row.name].join(' '),
+    rejectDuplicates: true,
+  });
+}
+
+// ------------------------------------------------------------------ typosquat
+
+export function readTyposquats(): TyposquatRow[] {
+  return readJsonl(TYPOSQUAT_PATH).map((row) => conform<TyposquatRow>(row, TYPOSQUAT_KEYS));
+}
+
+export function writeTyposquats(rows: readonly TyposquatRow[]): void {
+  writeJsonl(TYPOSQUAT_PATH, rows, TYPOSQUAT_KEYS, {
+    sortBy: (row) => [row.canonical, row.name].join(' '),
+    rejectDuplicates: true,
+  });
+}
+
+// --------------------------------------------------------------------- images
+
+export function readImages(): ImageRow[] {
+  return readJsonl(IMAGES_PATH).map((row) => conform<ImageRow>(row, IMAGE_KEYS));
+}
+
+export function writeImages(rows: readonly ImageRow[]): void {
+  writeJsonl(IMAGES_PATH, rows, IMAGE_KEYS, {
+    sortBy: (row) => [row.image, row.tag].join(' '),
+    rejectDuplicates: true,
+  });
+}
+
+// ------------------------------------------------------------------ questions
+
+export function readQuestions(): QuestionRow[] {
+  return readJsonl(QUESTIONS_PATH).map((row) => conform<QuestionRow>(row, QUESTION_KEYS));
+}
+
+export function writeQuestions(rows: readonly QuestionRow[]): void {
+  writeJsonl(QUESTIONS_PATH, rows, QUESTION_KEYS, {
+    sortBy: (row) => row.tag,
     rejectDuplicates: true,
   });
 }

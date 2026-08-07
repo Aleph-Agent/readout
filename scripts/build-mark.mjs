@@ -3,39 +3,42 @@
  *
  *   node scripts/build-mark.mjs
  *
- * Generated rather than hand-drawn because it is thirty-six ticks around a
- * circle, and thirty-six pairs of coordinates typed by hand is thirty-six
- * chances to be a degree out in a way nobody notices until it is printed.
+ * An aperture: six blades closing on a hexagonal opening, one of them held
+ * further in than the rest.
  *
- * ## What it is
+ * ## How it got here
  *
- * A graduated dial with one reading past the rest.
+ * Two rejected attempts, both instructive.
  *
- * The old mark was crosshairs, which is the icon every monitoring product and
- * half the shooting ranges already use. It said "we look at things". It did not
- * say what this looks at or what it finds, and at 48 pixels it was a plus sign
- * in a circle.
+ * **Crosshairs.** The icon every monitoring product and half the shooting
+ * ranges already use. It said "we look at things", which is not a claim, and at
+ * 48 pixels it was a plus sign in a circle.
  *
- * This says the product in one shape. A datum ring — the baseline every
- * repository is measured against, which is the "true" in the name. Graduations
- * standing off it, most of them short, because most of what this watches is
- * behaving normally and reporting that honestly is the job. And one mark that
- * runs past the edge, because the entire point is finding the one thing that
- * moved.
+ * **A graduated dial.** Thirty-six thin ticks inside a ring. It carried the
+ * meaning — a bar, a population, one reading crossing out — and it read as a
+ * wristwatch. Fine hairlines on a circle is a watch face, and no amount of
+ * irregular tick lengths overcomes that at a glance, which is the only look a
+ * mark gets.
  *
- * It reads three ways at once and all three are on-brief: an aperture, which is
- * "sight"; a dial face, which is the instrument; and a distribution with one
- * outlier, which is the reading.
+ * The lesson from both: **weight is what reads as professional, not detail.**
+ * Thin strokes and many elements look tentative at any size and disappear at
+ * small ones. A mark should survive being seen as a solid black silhouette.
  *
- * ## What it is not
+ * ## Why an aperture
  *
- * Not data. The tick lengths are designed and fixed. A logo generated from
- * today's readings would change when they do, and a mark that is different on
- * Tuesday is not a mark. The banner carries the live strip; this carries the
- * idea of it.
+ * It is the one instrument in the whole vernacular that is literally named
+ * "sight". Six solid blades give a silhouette you could recognise filled in
+ * with any single colour, and the opening at the centre is a shape rather than
+ * an absence.
  *
- * Every length is stated below rather than produced by a random function, so
- * the shape is reviewable and identical on every machine that builds it.
+ * The meaning is in the odd blade. Five sit at the same stop; one is closed
+ * further, in the alert colour. That is the product in a shape — a population
+ * measured against the same bar, and one of them somewhere the others are not.
+ * It also breaks the six-fold symmetry, which is what stops the mark reading as
+ * a wheel.
+ *
+ * Fixed geometry, not data. A logo generated from today's readings changes when
+ * they do, and a mark that is different on Tuesday is not a mark.
  */
 
 import { writeFileSync } from 'node:fs';
@@ -43,172 +46,121 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
-/**
- * Thirty-six graduations, one every ten degrees.
- *
- * The distribution is deliberate: mostly quiet, a handful of mild movement, one
- * that breaks out. It is the shape of a real watchlist, drawn on purpose rather
- * than sampled from a day that happened to look good.
- *
- * Nothing is shorter than 2.5. Below that a tick disappears at avatar size and
- * the ring develops gaps that read as damage rather than as measurement.
- */
-const TICKS = [
-  3.0, 5.5, 3.5, 2.5, 7.0, 3.0, 2.5, 9.0, 4.0, 3.0, 5.0, 2.5,
-  3.5, 8.0, 3.0, 2.5, 4.5, 3.5, 9.5, 3.0, 2.5, 6.0, 4.0, 3.0,
-  7.5, 2.5, 3.5, 5.0, 3.0, 8.5, 2.5, 4.0, 6.5, 3.0, 2.5, 4.5,
-];
-
-/**
- * Which one breaks out. Index 30 puts it at 300 degrees — upper left.
- *
- * Not at twelve o'clock. A spike at the top reads as a pointer on a gauge,
- * which means "this is the current value"; off-axis it reads as one member of a
- * population that went somewhere the others did not, which is what it is.
- */
-const BREAKOUT = 30;
-
 const CENTRE = 32;
+/** Outer radius. Two units of margin inside the 64 box, so nothing clips. */
+const R = 30;
 /**
- * The threshold, drawn as a bezel.
+ * How far the five ordinary blades close.
  *
- * It was inside at first, with the graduations growing outward off it, and that
- * is a sunburst — thirty-six spokes radiating from a hub, which is a loading
- * spinner or a sun and not an instrument. Real dials put the scale inside the
- * bezel.
- *
- * Turning it inside out also fixed the meaning. The ring is now the bar every
- * reading is measured against; everything inside is a repository behaving
- * normally, and the one mark crossing out through it is the finding. The shape
- * says what the software does instead of decorating it.
+ * They stopped at 11.5 first, which left a small opening and six fat wedges —
+ * a pie chart, and the odd blade was the largest slice, so the shape said "one
+ * of these dominates" when it means "one of these is elsewhere". A wide opening
+ * is what separates an aperture from a pie.
  */
-const DATUM = 24;
+const STOP = 19.5;
+/** The odd one. Closed further, which is what makes it the finding. */
+const CLOSED = 11.5;
 /**
- * How far the outlier runs, outward, from the bar.
+ * Degrees of daylight between blades.
  *
- * Nothing else crosses the ring at all, so the length only has to be enough to
- * read as deliberate rather than as a stray stroke.
+ * Wide enough to read as six separate objects at 32px, narrow enough that the
+ * mark still holds together as one disc rather than six petals.
  */
-const BREAK_TO = 31;
+const GAP = 4.2;
+/** Which blade is different. Upper left: off both axes, so it cannot read as a pointer. */
+const ODD = 4;
 
-function tick(index, from, to) {
-  // Twelve o'clock is -90 degrees in SVG, where 0 points right.
-  const angle = ((index * 10 - 90) * Math.PI) / 180;
-  const cos = Math.cos(angle);
-  const sin = Math.sin(angle);
-
+const rad = (deg) => ((deg - 90) * Math.PI) / 180;
+const at = (deg, radius) => {
+  const a = rad(deg);
   const round = (n) => Number(n.toFixed(2));
-  return {
-    x1: round(CENTRE + cos * from),
-    y1: round(CENTRE + sin * from),
-    x2: round(CENTRE + cos * to),
-    y2: round(CENTRE + sin * to),
-  };
+  return `${round(CENTRE + Math.cos(a) * radius)} ${round(CENTRE + Math.sin(a) * radius)}`;
+};
+
+/**
+ * One blade.
+ *
+ * An arc along the outside and a straight chord across the inside. The chord is
+ * what makes it an aperture rather than a pie slice: six straight inner edges
+ * meet as a hexagonal opening, which is what a real iris does and what a ring
+ * of arcs never looks like.
+ */
+function blade(index, stop) {
+  const from = index * 60 + GAP;
+  const to = index * 60 + 60 - GAP;
+
+  return [
+    `M ${at(from, R)}`,
+    `A ${R} ${R} 0 0 1 ${at(to, R)}`,
+    `L ${at(to, stop)}`,
+    `L ${at(from, stop)}`,
+    'Z',
+  ].join(' ');
 }
 
-/**
- * `ink` and `alert` are passed in rather than fixed, so the same geometry
- * serves the light page, the dark page and a PNG that has to carry its own
- * colours. The site copy uses `currentColor` and inherits.
- */
-function mark({ ink, alert, datum, title, simple = false }) {
-  // Thirty-six graduations is right at 48px and mush at 16. A favicon that is a
-  // shrunk copy of the full mark is a grey smudge with a pink fleck, so the
-  // small variant drops to four cardinal marks and thickens everything — the
-  // same idea, drawn with the strokes the size can actually carry.
-  const strokes = simple
-    ? { grad: 4, ring: 2.6, out: 4.5 }
-    : { grad: 1.7, ring: 1.1, out: 2.4 };
-
-  // Inward, off the bezel. Longer means closer to the bar without reaching it.
-  const graduations = TICKS.map((length, index) => {
-    if (index === BREAKOUT) return '';
-    if (simple && index % 9 !== 0) return '';
-    const { x1, y1, x2, y2 } = tick(index, DATUM, DATUM - (simple ? 8 : length));
-    return `    <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
-  })
-    .filter(Boolean)
+function mark({ ink, alert, title }) {
+  const ordinary = [0, 1, 2, 3, 4, 5]
+    .filter((index) => index !== ODD)
+    .map((index) => `    <path d="${blade(index, STOP)}" />`)
     .join('\n');
-
-  const out = tick(BREAKOUT, DATUM, BREAK_TO);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="${title}">
   <title>${title}</title>
 
   <!--
-    A graduated dial with one reading past the rest. Generated by
-    scripts/build-mark.mjs, which explains every decision in it.
+    An aperture. Generated by scripts/build-mark.mjs, which states every
+    decision in it and the two marks this replaced.
 
-    The ring is the bar every reading is measured against — the "true" in the
-    name. The graduations hang inside it, mostly short, because most of what
-    this watches is behaving normally and reporting that honestly is the job.
-    The one mark crossing out through the ring is the finding.
+    Five blades at one stop and one closed further: a population measured
+    against the same bar, and one of them somewhere the others are not. The odd
+    blade also breaks the six-fold symmetry, which is what stops this reading as
+    a wheel.
 
-    One stroke weight for the graduations, one for the outlier, no gradient and
-    no glow. Nothing here is thinner than 2 units, which is 1px at avatar size.
+    Solid shapes, no strokes, no gradient, no glow. A mark has to survive being
+    seen as a single-colour silhouette, and hairlines do not.
   -->
 
-  <!-- The bar. Thinner and dimmer than the graduations inside it: a reference
-       is not a reading and must not compete with one. A closed contour draws
-       the eye harder than anything else on a shape this small, so it is held
-       well back. -->
-  <circle cx="${CENTRE}" cy="${CENTRE}" r="${DATUM}" fill="none"
-          stroke="${datum}" stroke-width="${strokes.ring}" />
-
-  <g stroke="${ink}" stroke-width="${strokes.grad}" stroke-linecap="butt">
-${graduations}
+  <g fill="${ink}">
+${ordinary}
   </g>
 
-  <!-- The one that moved. Wider as well as longer, so it survives being resized
-       to sixteen pixels by somebody else's favicon cache. -->
-  <line x1="${out.x1}" y1="${out.y1}" x2="${out.x2}" y2="${out.y2}"
-        stroke="${alert}" stroke-width="${strokes.out}" stroke-linecap="butt" />
+  <!-- The one that is different. -->
+  <path d="${blade(ODD, CLOSED)}" fill="${alert}" />
 </svg>
 `;
 }
 
-/**
- * The repository copy inherits its colour, so one file works on both themes and
- * anywhere it is dropped into text.
- */
 writeFileSync(
   `${ROOT}assets/brand/mark.svg`,
-  mark({
-    ink: 'currentColor',
-    alert: 'currentColor',
-    datum: 'currentColor',
-    title: 'Sighttrue',
-  }).replace(
-    '<circle cx="32"',
-    '<circle opacity="0.45" cx="32"',
-  ),
+  mark({ ink: 'currentColor', alert: 'currentColor', title: 'Sighttrue' }),
   'utf8',
 );
 
 /**
- * The tab icon carries its own colours, because a favicon is drawn against
- * whatever chrome the browser has and cannot inherit anything.
+ * The tab icon carries its own colours: a favicon is drawn against whatever
+ * chrome the browser has and can inherit nothing.
  *
- * Dark-side colours: the mark is seen against a browser tab far more often than
- * against a page, and every tab strip worth designing for is dark or grey.
+ * No simplified variant this time, and that is the point of the redesign. Six
+ * solid blades hold at 16px because they are shapes rather than lines; the dial
+ * needed a separate four-tick version to survive the same size.
  */
 writeFileSync(
   `${ROOT}src/site/favicon.svg`,
-  mark({
-    ink: '#d2e2f4',
-    alert: '#f2857c',
-    datum: '#8a8a8a',
-    title: 'Sighttrue',
-    simple: true,
-  }),
+  mark({ ink: '#d2e2f4', alert: '#f2857c', title: 'Sighttrue' }),
   'utf8',
 );
 
-/** Fixed colours for the avatar, which is rasterised and has no page to inherit from. */
+/** Fixed colours for anything rasterised, which has no page to inherit from. */
 writeFileSync(
   `${ROOT}assets/brand/mark-dark.svg`,
-  mark({ ink: '#d2e2f4', alert: '#f2857c', datum: '#5c5c5c', title: 'Sighttrue' }),
+  mark({ ink: '#d2e2f4', alert: '#f2857c', title: 'Sighttrue' }),
   'utf8',
 );
 
-console.log('mark.svg, favicon.svg and mark-dark.svg written');
+writeFileSync(
+  `${ROOT}assets/brand/mark-light.svg`,
+  mark({ ink: '#1a1a1a', alert: '#a3231b', title: 'Sighttrue' }),
+  'utf8',
+);
+
+console.log('mark.svg, mark-dark.svg, mark-light.svg and favicon.svg written');

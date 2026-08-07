@@ -74,8 +74,7 @@ if (stackForm) {
   // once, because a link that lands on an empty box has not shared anything.
   const shared = /^#deps=(.+)$/.exec(location.hash);
   if (shared) {
-    field.value = shared[1].split(',').map(decodeURIComponent).join('
-');
+    field.value = shared[1].split(',').map(decodeURIComponent).join(String.fromCharCode(10));
     requestAnimationFrame(() => stackForm.requestSubmit());
   }
 

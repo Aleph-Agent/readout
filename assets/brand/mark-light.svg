@@ -16,7 +16,4 @@
     <path d="M 56 18 L 42 18 L 42 44 L 49 44 L 56 33 Z" />
   </g>
 
-  <!-- Where the pointer landed. The only element carrying a judgement, and the
-       mark reads complete without it. -->
-  <rect x="30" y="2" width="4" height="7" fill="#a3231b" />
 </svg>

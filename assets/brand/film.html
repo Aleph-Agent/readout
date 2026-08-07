@@ -1,0 +1,132 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<style>
+  @font-face { font-family: 'Plex Condensed'; font-weight: 600;
+    src: url('../../dist/fonts/ibm-plex-sans-condensed-latin-600-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'Plex Mono'; font-weight: 400;
+    src: url('../../dist/fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'Plex Serif'; font-weight: 400;
+    src: url('../../dist/fonts/ibm-plex-serif-latin-400-normal.woff2') format('woff2'); }
+
+
+  /* text-transform is reset explicitly. The footer uppercases everything in it
+     and swallowed the wordmark whole — a lowercase mark set in capitals is a
+     different mark, and the crossbar rule then lands nowhere near a crossbar. */
+  .wm { font-family: 'Plex Condensed', sans-serif; font-weight: 600;
+        letter-spacing: -0.022em; line-height: 1; white-space: nowrap;
+        display: inline-block; text-transform: none; }
+  .wm-tt { position: relative; }
+  /* The rule sits at the crossbar height of the two t's and overshoots both,
+     so it reads as a line the letters are measured against rather than as part
+     of them. Absolute, because it must not add width to the word. */
+  .wm-tt i { position: absolute; left: -0.10em; right: -0.16em; top: 0.325em; display: block; }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #121212; color: #e8e8e8; font-family: 'Plex Mono', monospace; overflow: hidden; }
+
+  .eyebrow {
+    font-family: 'Plex Condensed', sans-serif; font-weight: 600;
+    font-size: 19px; letter-spacing: 0.2em; text-transform: uppercase; color: #9e9e9e;
+  }
+  /* Tabular figures, always. A column of numbers that shifts as it counts is a
+     number nobody trusts, and this is the only thing on the card that matters. */
+  .figure {
+    font-family: 'Plex Condensed', sans-serif; font-weight: 600;
+    font-variant-numeric: tabular-nums; font-size: 190px; line-height: 0.86;
+    color: #d2e2f4; letter-spacing: -0.02em;
+  }
+  /* The loss, in the reader's own terms, at the size a headline gets. The card
+     led with the figure before, and a number with no loss attached reads as a
+     statistic about somebody else's project — which is exactly the impression
+     this deck was accused of and deserved. */
+  .say { font-family: 'Plex Serif', Georgia, serif; font-size: 52px; line-height: 1.28;
+         color: #e8e8e8; letter-spacing: -0.012em; }
+  /* The figure is now evidence for the sentence above it, not the hero. */
+  .proof { display: flex; align-items: baseline; gap: 16px; }
+  .proof b { font-family: 'Plex Condensed', sans-serif; font-weight: 600;
+             font-variant-numeric: tabular-nums; font-size: 62px; color: #d2e2f4; line-height: 1; }
+  .proof span { font-family: 'Plex Condensed', sans-serif; font-weight: 600; font-size: 22px;
+                letter-spacing: 0.14em; text-transform: uppercase; color: #9e9e9e; }
+  .foot {
+    position: absolute; left: 76px; right: 76px; bottom: 52px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'Plex Condensed', sans-serif; font-weight: 600;
+    font-size: 17px; letter-spacing: 0.18em; text-transform: uppercase; color: #6b6b6b;
+  }
+  .foot .mark { display: flex; align-items: center; gap: 14px; color: #9e9e9e; }
+</style>
+<style>
+  body { width: 1200px; height: 675px; position: relative; }
+  .stage { position: absolute; inset: 0; display: grid; place-items: center; }
+  .lockup { display: flex; align-items: center; gap: 30px; }
+  .word { font-family: 'Plex Condensed', sans-serif; font-weight: 600; font-size: 92px;
+          letter-spacing: -0.015em; line-height: 1; }
+  .line { font-family: 'Plex Serif', Georgia, serif; font-size: 34px; color: #cfcfcf;
+          text-align: center; max-width: 26ch; }
+  .rows { display: grid; gap: 22px; width: 660px; }
+  .row { display: flex; justify-content: space-between; align-items: baseline;
+         border-bottom: 1px solid #2c2c2c; padding-bottom: 12px; }
+  .row span { font-family: 'Plex Condensed', sans-serif; font-weight: 600; font-size: 21px;
+              letter-spacing: 0.14em; text-transform: uppercase; color: #9e9e9e; }
+  .row b { font-weight: 400; font-size: 46px; font-variant-numeric: tabular-nums; color: #d2e2f4; }
+  .url { font-family: 'Plex Condensed', sans-serif; font-weight: 600; font-size: 30px;
+         letter-spacing: 0.2em; text-transform: uppercase; color: #9e9e9e; }
+  /* The handle sits under the domain, quieter. The domain is the thing that
+     cannot be forged; the handle is how to find the account that points at it. */
+  .handle { font-family: 'Plex Mono', monospace; font-size: 22px; color: #6b6b6b;
+            margin-top: -22px; }
+  .col { display: grid; gap: 38px; place-items: center; }
+</style></head>
+<body>
+  <div class="stage" id="stage"></div>
+<script>
+  const FPS = 30;
+  const frame = Number(new URLSearchParams(location.search).get('f') || 0);
+  const t = frame / FPS;
+
+  // Ease-out. Motion that decelerates reads as something settling into place;
+  // linear motion reads as a slide, which is decoration.
+  const ease = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+  const window_ = (from, to) => ease((t - from) / (to - from));
+
+  const FIGURES = [["Repositories",388],["Incidents kept",441],["EOL clocks",518],["Commit histories",387]];
+
+  const mark = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\" width=\"104\" height=\"104\" role=\"img\" aria-label=\"Sighttrue\">\n  <title>Sighttrue</title>\n\n  <!--\n    Caliper jaws. Generated by scripts/build-mark.mjs, which records the nine\n    marks this replaced and why each failed.\n\n    The gap is the mark: every solid part exists to define the space between the\n    jaws, and that space is the measurement. A caliper says measured, not\n    watched — which is the difference between this and the eye that preceded it.\n  -->\n\n  <g fill=\"#d2e2f4\">\n    <rect x=\"4\" y=\"9\" width=\"56\" height=\"9\" />\n    <path d=\"M 8 18 L 22 18 L 22 55 L 15 55 L 8 44 Z\" />\n    <path d=\"M 56 18 L 42 18 L 42 44 L 49 44 L 56 33 Z\" />\n  </g>\n\n</svg>\n";
+  const stage = document.getElementById('stage');
+
+  if (t < 2.6) {
+    // The name, arriving.
+    const p = window_(0.2, 1.4);
+    stage.innerHTML =
+      '<div class="lockup" style="opacity:' + p + ';transform:translateY(' + (18 - 18 * p) + 'px)">' +
+      mark + '<span class="word">Sighttrue</span></div>';
+  } else if (t < 5.4) {
+    // The figures, counting. Counting rather than appearing, because the claim
+    // is that these are measured — and a number that ticks up reads as a
+    // reading being taken rather than a badge being placed.
+    const p = window_(2.7, 4.6);
+    stage.innerHTML = '<div class="rows">' + FIGURES.map((row, i) => {
+      // Finishes at 1.1s, a full second before this segment ends, and the easing returns
+      // exactly 1 once its input passes 1 — so the last frames hold the real
+      // figure rather than something a rounding error short of it.
+      //
+      // It did not, and showed 385 commit histories where the ledger holds 387.
+      // On a product whose entire argument is that its numbers can be checked,
+      // a film that displays a wrong one is the worst possible defect, and it
+      // was invisible until the frames were read back.
+      const own = ease((t - 2.7 - i * 0.18) / 1.1);
+      const value = (own >= 1 ? row[1] : Math.round(row[1] * own)).toLocaleString('en');
+      return '<div class="row" style="opacity:' + Math.min(1, own * 1.6) + '">' +
+        '<span>' + row[0] + '</span><b>' + value + '</b></div>';
+    }).join('') + '</div>';
+    stage.style.opacity = String(t > 5.1 ? 1 - (t - 5.1) / 0.3 : 1);
+  } else {
+    const p = window_(5.5, 6.6);
+    stage.innerHTML =
+      '<div class="col" style="opacity:' + p + '">' +
+      mark +
+      '<p class="line">Take the reading, and check it.</p>' +
+      '<span class="url">sighttrue.com</span>' +
+      '<span class="handle">' + "HANDLE_PLACEHOLDER".replace('HANDLE_PLACEHOLDER', "@Sighttruehq") + '</span></div>';
+  }
+</script>
+</body></html>

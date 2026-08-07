@@ -116,7 +116,16 @@ function jaw(mirrored) {
  */
 const TICK = { w: 4, h: 7 };
 
-function mark({ ink, alert, title, datum = true }) {
+/**
+ * `datum` off by default.
+ *
+ * The red tick on the beam was the only element carrying a second colour, and
+ * the mark is stronger without it: the gap between the jaws already is the
+ * reading, so a pointer above it says the same thing twice. Dropping it also
+ * brings the mark into line with rule three of the reference — one flat colour,
+ * nothing depending on a second — which every other version quietly broke.
+ */
+function mark({ ink, alert, title, datum = false }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="${title}">
   <title>${title}</title>
 

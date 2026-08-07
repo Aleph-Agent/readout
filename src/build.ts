@@ -79,6 +79,7 @@ import { renderFindings } from './site/findings.ts';
 import { renderWelcome } from './site/welcome.ts';
 import { renderHeaders } from './site/headers.ts';
 import { renderReadings } from './site/readings-page.ts';
+import { DOORS, READINGS } from './site/readings.ts';
 import { DIGEST_DAYS, renderWeek } from './site/week.ts';
 import { renderDepends, reverseIndex } from './site/depends.ts';
 import { summariseBreaking, summariseCadence } from './lib/releases-summary.ts';
@@ -957,19 +958,21 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     );
   }
 
+  // Derived from the navigation rather than listed again here. This was a
+  // hand-kept list and it drifted the moment a page was added: /readings went
+  // live and was in no sitemap at all, which is the one way a new page can be
+  // both published and invisible. Deduped, because /stack is both a door and a
+  // reading.
   const sitemapPaths = [
-    '/',
-    '/method',
-    '/compare',
-    '/stack',
-    '/models',
-    '/incidents',
-    '/ecosystem',
-    '/findings',
-    '/live',
-    '/depends',
-    '/week',
-    ...LENSES.map((lens) => `/${lens}`),
+    ...new Set([
+      '/',
+      ...DOORS.map((door) => door.href),
+      ...READINGS.map((reading) => reading.href),
+      '/compare',
+    ]),
+    ...LENSES.map((lens) => `/${lens}`).filter(
+      (path) => !READINGS.some((reading) => reading.href === path),
+    ),
     ...[...profiles.keys()].map((repo) => `/repo/${repo}`),
     ...addressable.map((event) => eventPath(event)),
     ...LENSES.flatMap((lens) =>

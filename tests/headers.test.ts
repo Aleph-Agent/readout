@@ -154,3 +154,32 @@ describe('what the rest of the headers promise', () => {
     expect(data).toContain('Access-Control-Allow-Origin: *');
   });
 });
+
+describe('the sitemap lists every page that was published', () => {
+  // It was a hand-kept list, and it drifted the first time a page was added:
+  // /readings went live and appeared in no sitemap at all, which is the one way
+  // a new page can be both published and invisible. It is derived from the
+  // navigation now, and this is what says so.
+  const sitemap = read('sitemap.xml');
+
+  const emitted = readdirSync(DIST, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.html'))
+    .map((entry) => (entry.name === 'index.html' ? '/' : `/${entry.name.slice(0, -'.html'.length)}`));
+
+  it('covers each of them', () => {
+    for (const path of emitted) {
+      // Archive pages are reachable from their lens and deliberately not
+      // submitted; everything a reader can navigate to from the bar is.
+      if (/^\/(ships|forks|demand|stack|lineage)-\d{4}-\d{2}$/.test(path)) continue;
+      expect(sitemap, `${path} is published but not in the sitemap`).toContain(
+        `<loc>https://sighttrue.com${path === '/' ? '/' : path}</loc>`,
+      );
+    }
+  });
+
+  it('lists nothing that is no longer served', () => {
+    // /account was retired into /stack. A sitemap entry for it would submit a
+    // 301 to every crawler that reads the file.
+    expect(sitemap).not.toContain('<loc>https://sighttrue.com/account</loc>');
+  });
+});

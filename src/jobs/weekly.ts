@@ -1,4 +1,6 @@
+import { collectContributors } from '../collectors/contributors.ts';
 import { collectLineage, DEFAULT_LINEAGE_THRESHOLDS } from '../collectors/lineage.ts';
+import { createGitHubClient, type GitHubClient } from '../lib/github.ts';
 import { createHuggingFaceClient, type HuggingFaceClient } from '../lib/huggingface.ts';
 import { summariseCalibration } from '../lib/calibration.ts';
 import {
@@ -8,6 +10,9 @@ import {
   readLineageRoots,
   readMeta,
   writeLineageRoots,
+  readActiveWatchlist,
+  readContributors,
+  writeContributors,
   writeMeta,
 } from '../lib/ledger.ts';
 import { utcDate, utcMonth } from '../lib/paths.ts';
@@ -26,6 +31,10 @@ import type { MetaRecord } from '../types/meta.ts';
 export interface WeeklyOptions {
   now?: Date;
   client?: HuggingFaceClient;
+  /** GitHub client for the contributor read. Omit to build one from the token. */
+  githubClient?: GitHubClient;
+  /** Skip the contributor read. Lineage still runs. */
+  offline?: boolean;
   token?: string;
 }
 
@@ -65,6 +74,31 @@ export async function runWeekly(options: WeeklyOptions = {}): Promise<MetaRecord
     result.errors.push(
       `calibration: ${error instanceof Error ? error.message : String(error)}`,
     );
+  }
+
+  // How concentrated each project's commit history is. Weekly rather than
+  // daily: the shape of a decade of commits does not move overnight, and one
+  // request per repository is not worth spending six times a day to learn.
+  if (options.offline !== true) {
+    try {
+      const github =
+        options.githubClient ??
+        createGitHubClient({ token: process.env['GITHUB_PAT'] ?? '' });
+      const held = readContributors();
+      const concentrated = await collectContributors(held, {
+        now: nowIso,
+        client: github,
+        repos: readActiveWatchlist().map((entry) => entry.id),
+      });
+      // Same rule as every other ledger here: a run that read nothing is a
+      // network problem, not four hundred projects that lost their history.
+      writeContributors(concentrated.rows.length === 0 ? held : concentrated.rows);
+      result.errors.push(...concentrated.errors);
+    } catch (error) {
+      result.errors.push(
+        `contributors: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   const previous = readMeta();

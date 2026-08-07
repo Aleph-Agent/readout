@@ -72,7 +72,7 @@ const NOW = new Date('2026-08-07T02:17:00.000Z');
  */
 const SILENT = {
   async getJson() {
-    return { kind: 'missing' } as never;
+    return { status: 'missing' } as never;
   },
   stats: () => ({ consumed: 0, unchanged: 0, remaining: null }) as never,
   isExhausted: () => false,

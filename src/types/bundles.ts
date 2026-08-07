@@ -1,6 +1,7 @@
 import type { CalibrationSummary } from '../lib/calibration.ts';
 import type { DivergenceSummary } from '../lib/divergence.ts';
 import type { AdvisorySummary } from '../lib/advisory-summary.ts';
+import type { ContributorSummary } from '../lib/contributors-summary.ts';
 import type { ImageSummary, NameSummary } from '../lib/ecosystem-summary.ts';
 import type { HiringSummary } from '../lib/hiring-summary.ts';
 import type { QuestionSummary } from '../lib/questions-summary.ts';
@@ -218,6 +219,8 @@ export interface IndexBundle {
   images: ImageSummary;
   /** Names one edit from a tracked package. Existence only, never a judgement. */
   names: NameSummary;
+  /** Where the commit history is concentrated. See `lib/contributors-summary.ts`. */
+  contributors: ContributorSummary;
   /** Where attention and use disagree. See `lib/divergence.ts`. */
   divergence: DivergenceSummary;
   /** What is actually installed. See `collectors/adoption.ts`. */

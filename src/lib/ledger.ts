@@ -24,6 +24,7 @@ import {
   ADOPTION_PATH,
   HEALTH_PATH,
   MODELS_PATH,
+  CONTRIBUTORS_PATH,
   HIRING_PATH,
   IMAGES_PATH,
   INCIDENTS_PATH,
@@ -33,6 +34,7 @@ import {
   LIFECYCLE_PATH,
 } from './paths.ts';
 import { MODEL_KEYS, type ModelRow } from '../types/models.ts';
+import { CONTRIBUTOR_KEYS, type ContributorRow } from '../types/contributors.ts';
 import { HIRING_KEYS, type HiringRow } from '../types/hiring.ts';
 import { IMAGE_KEYS, type ImageRow } from '../types/images.ts';
 import { QUESTION_KEYS, type QuestionRow } from '../types/questions.ts';
@@ -179,6 +181,19 @@ export function readLifecycle(): LifecycleRow[] {
 export function writeLifecycle(rows: readonly LifecycleRow[]): void {
   writeJsonl(LIFECYCLE_PATH, rows, LIFECYCLE_KEYS, {
     sortBy: (row) => [row.product, row.cycle].join(' '),
+    rejectDuplicates: true,
+  });
+}
+
+// --------------------------------------------------------------- contributors
+
+export function readContributors(): ContributorRow[] {
+  return readJsonl(CONTRIBUTORS_PATH).map((row) => conform<ContributorRow>(row, CONTRIBUTOR_KEYS));
+}
+
+export function writeContributors(rows: readonly ContributorRow[]): void {
+  writeJsonl(CONTRIBUTORS_PATH, rows, CONTRIBUTOR_KEYS, {
+    sortBy: (row) => row.id.toLowerCase(),
     rejectDuplicates: true,
   });
 }

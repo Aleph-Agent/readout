@@ -14,7 +14,7 @@ import type { MetaRecord } from '../types/meta.ts';
  * one keystroke from something you install every day can already be taken.
  */
 export function renderEcosystem(index: IndexBundle, meta: MetaRecord): string {
-  const { staleness, advisories, questions, images, names } = index;
+  const { staleness, advisories, questions, images, names, contributors } = index;
 
   const signed = (value: number, suffix = ''): string =>
     `${value > 0 ? '+' : '−'}${Math.abs(value).toFixed(1)}${suffix}`;
@@ -205,6 +205,40 @@ export function renderEcosystem(index: IndexBundle, meta: MetaRecord): string {
           'These names exist on npm and are one edit from a package people install. That is the entire claim. None of them is being called malicious, and none should be read that way — near names are routinely forks, ports, translations, or somebody’s abandoned first attempt. Only deletions and transpositions are swept, so this finds fewer than exist and never claims to be a complete list.',
         );
 
+  const concentrated =
+    contributors.measured === 0
+      ? ''
+      : band(
+          'How many people it would survive losing',
+          `<div class="hero-figures">
+    <div class="figure"><span class="figure-value num">${contributors.measured}</span><span class="label">Projects measured</span></div>
+    <div class="figure"><span class="figure-value num">${contributors.singleAuthor}</span><span class="label">Where one person wrote half</span></div>
+    <div class="figure"><span class="figure-value num">${contributors.medianBusFactor ?? '—'}</span><span class="label">Median bus factor</span></div>
+  </div>
+  <div class="wrap"><table class="readout">
+  <caption class="label">Most concentrated commit history</caption>
+  <thead><tr>
+    <th scope="col">Repository</th>
+    <th scope="col" class="n">Bus factor</th>
+    <th scope="col" class="n">Largest share</th>
+    <th scope="col" class="n">Contributors</th>
+    <th scope="col" class="n">Commits counted</th>
+  </tr></thead>
+  <tbody>${contributors.concentrated
+    .map(
+      (row) => `<tr>
+      <td><a href="/repo/${esc(row.repo)}">${esc(row.repo)}</a></td>
+      <td class="n"><span class="big num">${row.busFactor}</span></td>
+      <td class="n num">${row.topShare.toFixed(1)}%</td>
+      <td class="n num">${row.contributors}${row.truncated ? '+' : ''}</td>
+      <td class="n num">${row.commits.toLocaleString('en')}</td>
+    </tr>`,
+    )
+    .join('')}</tbody>
+</table></div>`,
+          'The bus factor is how many contributors, from the most prolific down, account for half the commits. One means half a project’s history came from a single person. Three things it is not: commit count is not contribution, and review, triage and documentation leave few commits while a project cannot run without them; it is history rather than the present, so a founder who left three years ago still dominates; and a low number is a fact about a distribution, never an accusation about anybody. A contributor count with a plus sign was capped at a hundred.',
+        );
+
   return layout({
     title: 'Ecosystem — readings that are not GitHub',
     description:
@@ -214,7 +248,7 @@ export function renderEcosystem(index: IndexBundle, meta: MetaRecord): string {
     index,
     meta,
     body: `<section class="hero">
-  <h1 class="hero-thesis">Five things a repository cannot tell you.</h1>
+  <h1 class="hero-thesis">Six things a repository cannot tell you.</h1>
   <p class="hero-sub">
     A project can have commits this week and a package nobody has shipped in two years. A base
     image can weigh two hundred times its lightest sibling. A name one keystroke from something
@@ -227,6 +261,7 @@ ${shipped}
 ${weight}
 ${nearMiss}
 ${load}
+${concentrated}
 ${asking}`,
   });
 }

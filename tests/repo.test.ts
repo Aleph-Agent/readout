@@ -25,6 +25,7 @@ const index: IndexBundle = {
   questions: { windowDays: 0, tags: 0, total: 0, medianChange: null, busiest: [], holding: [], fading: [] },
   images: { tags: 0, images: 0, stalestDays: null, heaviest: [], stalest: [] },
   names: { swept: 0, found: 0, byPackage: [] },
+  contributors: { measured: 0, singleAuthor: 0, medianBusFactor: null, concentrated: [] },
   hiring: { month: null, sample: 0, previousMonth: null, previousSample: 0, top: [], rising: [], falling: [] },
   divergence: { compared: 0, median: null, used: [], watched: [] },
   health: { scored: 0, unscored: 0, median: null, advisories: 0, weakest: [] },

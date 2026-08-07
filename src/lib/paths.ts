@@ -85,6 +85,11 @@ export const IMAGES_PATH = join(LIVE_DIR, 'images.jsonl');
 
 /** Questions asked per tag across two equal windows. */
 export const QUESTIONS_PATH = join(LIVE_DIR, 'questions.jsonl');
+/**
+ * How concentrated each project's commit history is. Read weekly: the shape of
+ * a decade of commits does not move in a day.
+ */
+export const CONTRIBUTORS_PATH = join(LIVE_DIR, 'contributors.jsonl');
 export const META_PATH = join(DATA_DIR, 'meta.json');
 
 /**

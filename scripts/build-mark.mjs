@@ -1,39 +1,43 @@
 /**
- * The mark: a plumb bob that is also a bird's head.
+ * The mark: a lens sighting down onto a datum.
  *
  *   node scripts/build-mark.mjs
  *
- * ## Drawn against a reference
+ * ## The rules, taken from the reference
  *
- * Six marks were made and rejected before this one, and every one failed the
- * same way: thin. Single stroke weight, hairlines, shapes outlined rather than
- * filled. Conceptually defensible and visually unfinished — a wireframe, not a
- * logo.
+ * Eight marks were drawn and rejected before this one. The user then supplied a
+ * logofolio of about eighty marks, and it settles the question of *how* a mark
+ * for this project has to be built, whatever it depicts:
  *
- * The reference the user finally supplied settled it. A logofolio of about
- * eighty marks, and they share four properties without exception:
+ *   1. Solid fill. No outlines, no stroke weights to get wrong.
+ *   2. Heavy. Every mark in that sheet survives being printed at the size of a
+ *      fingernail.
+ *   3. One flat colour, with nothing depending on a second.
+ *   4. Negative space does a job. The counter is where the second reading
+ *      lives, and it is what separates a logo from a pictogram.
  *
- *   1. Solid fill. No outlines anywhere, no stroke weights to get wrong.
- *   2. Heavy. Every one survives being printed at the size of a fingernail.
- *   3. One flat colour. Black on paper, and nothing depends on a second.
- *   4. Negative space does a job. The counter is not leftover — it is where the
- *      second reading lives, and it is what separates a logo from a pictogram.
+ * Every one of the first six failures was the same defect: thin. Hairlines and
+ * outlines, defensible on paper and unfinished on screen.
  *
- * ## The shape
+ * ## What it depicts, and what it deliberately is not
  *
- * A single solid form, wide and round at the top, tapering to a point.
+ * A lens — the vesica every optical element makes — with the pupil punched out
+ * of it, sighting down at the line it is measured against. Sight, and true.
  *
- * Read one way it is a plumb bob: the oldest instrument for establishing what is
- * true by measuring it, and the phrase masons still use — plumb and true — is
- * the name of this product. It hangs, and the point either meets the datum or
- * it does not. That is a reading rather than an opinion.
+ * The two most recent failures were not drawing errors. They were collisions:
+ * a solid round-capped bob is the Google Maps pin, and the same shape with a
+ * collar on a cord is a crucifix. So the test applied here before anything was
+ * drawn was not "is this a good shape" but "what does this shape already mean
+ * to somebody who has never heard of us".
  *
- * Read the other way the punched circle is an eye and the whole form is the head
- * of a bird of prey, which is the other half of the name. Nothing in nature
- * sights better.
+ * A pointed oval with a hole in it is a lens, an eye and an aperture, and none
+ * of those three is the wrong answer for a product called Sighttrue. It is not
+ * a pin, a cross, a target, a clock or a letter.
  *
- * One object, two readings, and the second one lives in the hole. That is the
- * move the reference makes on nearly every mark in it.
+ * The counter is large on purpose: a small hole closes up at 16px and the
+ * second reading disappears exactly where a mark most needs to be legible. It
+ * has to stay inside the lens, though — see BOW, where getting that wrong once
+ * produced a pupil hanging out of the bottom of the eye.
  */
 
 import { writeFileSync } from 'node:fs';
@@ -41,66 +45,55 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
-const X = 32;
+/** The lens. Wide and shallow, the way a real optical element is drawn. */
+const LEFT = 5;
+const RIGHT = 59;
+const MID_Y = 27;
+/**
+ * How far the two arcs bow.
+ *
+ * A quadratic reaches only half its control offset, so this is double the
+ * height the lens actually gets: 30 here means the shape spans 15 units either
+ * side of the midline. That caught me out — at 20 the lens was 20 units tall
+ * and held a pupil 19 across, so the counter burst through the bottom edge and
+ * the mark looked broken rather than drawn.
+ *
+ * Fat regardless, which is the one property the reference demands without
+ * exception.
+ */
+const BOW = 30;
 
 /**
- * The cord and its collar, and why the mark would be worthless without them.
+ * The pupil.
  *
- * The first solid version was a round cap tapering to a point with a circle
- * punched in the middle. That is the Google Maps pin — the single most
- * recognised glyph on the internet — and it says "location", which is not what
- * this product does.
- *
- * A pin is dropped. A bob hangs. The cord is the whole difference, and it is
- * also the honest one: a plumb bob without a line is not an instrument, it is a
- * weight. So the line goes in, with a turned collar where it seats, and the cap
- * flattens so the silhouette stops being a circle with a tail.
+ * Below centre, not on it. Centred, the mark is a symmetrical eye staring
+ * outward — which reads as surveillance, and is the wrong feeling entirely for
+ * something whose promise is that you can check its work. Dropped a few units,
+ * the lens is looking down at the line beneath it, which is what taking a
+ * reading looks like.
  */
-const CORD_TOP = 3;
-const CORD_W = 4.2;
-const COLLAR_Y = 12;
-const COLLAR_H = 4.4;
-const COLLAR_HALF = 9;
+const PUPIL = { y: 28.5, r: 8.2 };
 
-/** Where the shoulder sits. Everything above it is the cap. */
-const SHOULDER = 30;
-/** Half-width. Deliberately fat — this is the property every reference mark shares. */
-const HALF = 17.5;
-/** The point. Short of the frame so the silhouette has air beneath it. */
-const TIP = 57;
-
-/**
- * The eye.
- *
- * Above the shoulder and slightly high in the cap, where an eye sits on a bird
- * rather than in the middle of a face. Centred it read as a washer with a hole
- * in it; three units up and it reads as looking at you.
- *
- * Large. A small counter closes up at 16px and the second reading disappears
- * exactly where a mark needs it most.
- */
-const EYE = { y: 28, r: 6.2 };
+/** The reference the lens is sighted against. */
+const DATUM = { y: 55, h: 4, inset: 12 };
 
 const r = (n) => Number(n.toFixed(2));
 
 /**
- * The body and the eye as one path, with `evenodd` punching the hole.
+ * Lens and pupil as one path, with `evenodd` cutting the hole.
  *
- * One path rather than a shape plus a background-coloured circle on top. A
- * circle painted in the page colour stops being a hole the moment the mark is
- * placed on anything else — a sticker, somebody's slide, a dark timeline — and
- * that is the most common way a logo breaks in the wild.
+ * One path rather than a shape with a background-coloured circle on top. A
+ * painted counter stops being a hole the moment the mark is placed on anything
+ * else — a sticker, somebody's slide, a dark timeline — and that is the most
+ * common way a logo breaks once it leaves the file it was drawn in.
  */
-const BODY = [
-  // A flattened cap rather than a half circle: a bob is turned on a lathe and
-  // is wider than it is tall at the shoulder. The half circle is what made the
-  // first version a pin.
-  `M ${r(X - HALF)} ${SHOULDER}`,
-  `A ${HALF} ${r(HALF * 0.78)} 0 0 1 ${r(X + HALF)} ${SHOULDER}`,
-  `L ${X} ${TIP}`,
+const LENS = [
+  `M ${LEFT} ${MID_Y}`,
+  `Q 32 ${r(MID_Y - BOW)} ${RIGHT} ${MID_Y}`,
+  `Q 32 ${r(MID_Y + BOW)} ${LEFT} ${MID_Y}`,
   'Z',
-  `M ${X} ${r(EYE.y - EYE.r)}`,
-  `a ${EYE.r} ${EYE.r} 0 1 0 0.01 0`,
+  `M 32 ${r(PUPIL.y - PUPIL.r)}`,
+  `a ${PUPIL.r} ${PUPIL.r} 0 1 0 0.01 0`,
   'Z',
 ].join(' ');
 
@@ -109,28 +102,23 @@ function mark({ ink, alert, title, datum = true }) {
   <title>${title}</title>
 
   <!--
-    A plumb bob that is also the head of a bird of prey. Generated by
-    scripts/build-mark.mjs, which records the six marks this replaced and the
-    single property they all lacked: weight.
+    A lens sighting down onto its datum. Generated by scripts/build-mark.mjs,
+    which records the eight marks this replaced and the rule taken from the
+    reference: solid, heavy, one colour, and the counter carrying the second
+    reading.
 
-    Solid fill, one flat colour, and the eye is a real hole rather than a circle
-    painted in the background colour — a painted counter stops being a hole the
-    moment the mark is placed on anything else.
+    The pupil sits below centre. Centred, this is a symmetrical eye staring out,
+    which reads as surveillance — the wrong feeling for a product whose promise
+    is that you can check its work.
   -->
 
-  <g fill="${ink}">
-    <!-- The cord and the collar it seats in. Without these the silhouette is a
-         map pin, which says location and not measurement. -->
-    <rect x="${r(X - CORD_W / 2)}" y="${CORD_TOP}" width="${CORD_W}" height="${r(COLLAR_Y - CORD_TOP + 1)}" />
-    <rect x="${r(X - COLLAR_HALF)}" y="${COLLAR_Y}" width="${r(COLLAR_HALF * 2)}" height="${COLLAR_H}" />
-    <path d="${BODY}" fill-rule="evenodd" />
-  </g>
+  <path d="${LENS}" fill="${ink}" fill-rule="evenodd" />
 ${
   datum
     ? `
-  <!-- The datum the point is measured against. The only element carrying a
+  <!-- The line the reading is taken against. The only element carrying a
        judgement, so the only one in the alert colour. -->
-  <rect x="8" y="61" width="48" height="3" fill="${alert}" />`
+  <rect x="${DATUM.inset}" y="${DATUM.y}" width="${r(64 - DATUM.inset * 2)}" height="${DATUM.h}" fill="${alert}" />`
     : ''
 }
 </svg>
@@ -144,7 +132,7 @@ writeFileSync(
 );
 
 /**
- * The favicon and the avatar carry their own colours: neither inherits anything
+ * The favicon and the avatar carry their own colours. Neither inherits anything
  * from a page, and both are drawn against chrome this project does not control.
  */
 writeFileSync(
@@ -165,7 +153,7 @@ writeFileSync(
   'utf8',
 );
 
-/** Silhouette only, for the avatar tile and anywhere the datum would crowd it. */
+/** Silhouette only, for the avatar and anywhere the datum would crowd it. */
 writeFileSync(
   `${ROOT}assets/brand/mark-solo.svg`,
   mark({ ink: '#d2e2f4', alert: '#f2857c', title: 'Sighttrue', datum: false }),

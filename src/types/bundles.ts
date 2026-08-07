@@ -1,5 +1,6 @@
 import type { CalibrationSummary } from '../lib/calibration.ts';
 import type { DivergenceSummary } from '../lib/divergence.ts';
+import type { HiringSummary } from '../lib/hiring-summary.ts';
 import type { IncidentSummary } from '../lib/incidents-summary.ts';
 import type { LifecycleSummary } from '../lib/lifecycle-summary.ts';
 import type { ModelSummary } from '../lib/models-summary.ts';
@@ -201,6 +202,8 @@ export interface IndexBundle {
   lifecycle: LifecycleSummary;
   /** Who went down, as their own status feeds said. See `lib/incidents-summary.ts`. */
   incidents: IncidentSummary;
+  /** What employers asked for. See `lib/hiring-summary.ts`. */
+  hiring: HiringSummary;
   /** Where attention and use disagree. See `lib/divergence.ts`. */
   divergence: DivergenceSummary;
   /** What is actually installed. See `collectors/adoption.ts`. */

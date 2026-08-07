@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { collectAdoption } from '../collectors/adoption.ts';
 import { collectHealth } from '../collectors/health.ts';
 import { collectIssues } from '../collectors/issues.ts';
+import { collectHiring } from '../collectors/hiring.ts';
 import { collectIncidents } from '../collectors/incidents.ts';
 import { collectLifecycle } from '../collectors/lifecycle.ts';
 import { collectModels } from '../collectors/models.ts';
@@ -17,6 +18,7 @@ import {
   readAdoption,
   readEvents,
   readModels,
+  readHiring,
   readIncidents,
   readLifecycle,
   readAllEvents,
@@ -29,6 +31,7 @@ import {
   writeAdoption,
   writeHealth,
   writeModels,
+  writeHiring,
   writeIncidents,
   writeLifecycle,
   writeManifests,
@@ -380,6 +383,18 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       errors.push(...incidents.errors);
     } catch (error) {
       errors.push(`incidents: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    // What employers pay for, from one month's hiring thread. Three requests,
+    // no key, and the only demand signal here that somebody spent money to
+    // express. Sample is narrow and the page says so beside every number.
+    try {
+      const held = readHiring();
+      const hiring = await collectHiring(held);
+      writeHiring(hiring.rows.length === 0 ? held : hiring.rows);
+      errors.push(...hiring.errors);
+    } catch (error) {
+      errors.push(`hiring: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     requestsConsumed = client.stats().consumed;

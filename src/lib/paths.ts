@@ -69,6 +69,11 @@ export const LIFECYCLE_PATH = join(LIVE_DIR, 'lifecycle.jsonl');
  * is worth writing at all.
  */
 export const INCIDENTS_PATH = join(LIVE_DIR, 'incidents.jsonl');
+/**
+ * Job posts naming each technology, by month. Settled months are never
+ * rewritten; the current month's thread grows all month and is re-read.
+ */
+export const HIRING_PATH = join(LIVE_DIR, 'hiring.jsonl');
 export const META_PATH = join(DATA_DIR, 'meta.json');
 
 /**

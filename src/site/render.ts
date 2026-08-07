@@ -1687,8 +1687,83 @@ ${band(
   'A count is how often a provider announced something, not how often it broke. A company that publishes every degradation will out-count one that publishes nothing, so this ranks disclosure as much as reliability. Never read a low number as a good one.',
 )}
 
-${band('Recently', recent, 'Titles are the provider’s own wording, linking to their own write-up.')}`,
+${band('Recently', recent, 'Titles are the provider’s own wording, linking to their own write-up.')}
+
+${hiringHtml(index)}`,
   });
+}
+
+/**
+ * What employers are paying for.
+ *
+ * Every other reading in this product measures what developers publish. This
+ * measures what somebody was willing to spend money to ask for, and the two
+ * disagree often enough to be worth putting on one page — a framework can be
+ * the most starred thing on GitHub and appear in four job posts.
+ *
+ * Shares rather than counts, because the threads are different sizes and
+ * comparing raw numbers across them publishes a trend that is really a quieter
+ * month. The sample is stated at the top of the band, not underneath it.
+ */
+function hiringHtml(index: IndexBundle): string {
+  const { hiring } = index;
+  if (hiring.month === null || hiring.sample === 0) return '';
+
+  const flag = (reading: { conservative: boolean }): string =>
+    reading.conservative
+      ? ' <span class="label" title="Matched only in unmistakably technical context, so this is a floor rather than a count">floor</span>'
+      : '';
+
+  const move = (value: number | null): string => {
+    if (value === null || value === 0) return '<span class="dim">—</span>';
+    return `${value > 0 ? '+' : '−'}${Math.abs(value).toFixed(1)}`;
+  };
+
+  const table = `<div class="wrap"><table class="readout">
+  <caption class="label">Named in ${hiring.month}, most first</caption>
+  <thead><tr>
+    <th scope="col">Technology</th>
+    <th scope="col" class="n">Posts</th>
+    <th scope="col" class="n">Share</th>
+    <th scope="col" class="n">Points vs ${hiring.previousMonth === null ? 'last month' : esc(hiring.previousMonth)}</th>
+  </tr></thead>
+  <tbody>${hiring.top
+    .map(
+      (reading) => `<tr>
+      <td>${esc(reading.term)}${flag(reading)}</td>
+      <td class="n num">${reading.posts}</td>
+      <td class="n"><span class="big num">${reading.share.toFixed(1)}%</span></td>
+      <td class="n num">${move(reading.move)}</td>
+    </tr>`,
+    )
+    .join('')}</tbody>
+</table></div>`;
+
+  const movers = (title: string, readings: typeof hiring.rising): string =>
+    readings.length === 0
+      ? ''
+      : `<div class="finding-metrics">${readings
+          .map(
+            (reading) => `<div class="metric">
+      <span class="label">${esc(reading.term)}</span>
+      <span class="metric-value num">${move(reading.move)}</span>
+    </div>`,
+          )
+          .join('')}</div>
+    <p class="band-note">${esc(title)}</p>`;
+
+  return band(
+    'What employers asked for',
+    `<div class="hero-figures">
+    <div class="figure"><span class="figure-value num">${hiring.sample}</span><span class="label">Job posts in ${esc(hiring.month)}</span></div>
+    <div class="figure"><span class="figure-value num">${hiring.previousSample}</span><span class="label">${hiring.previousMonth === null ? 'No prior month' : `Posts in ${esc(hiring.previousMonth)}`}</span></div>
+    <div class="figure"><span class="figure-value num">${hiring.top.length}</span><span class="label">Technologies named</span></div>
+  </div>
+${table}
+${movers('Asked for more often than last month', hiring.rising)}
+${movers('Asked for less often than last month', hiring.falling)}`,
+    `Counted from one Hacker News hiring thread a month — ${hiring.sample} posts, skewed hard toward American startups, and evidence about that population and no wider one. A post counts once however often it names a thing. Terms marked "floor" collide with ordinary English and are matched only in unmistakably technical context, so their number is a minimum rather than a count.`,
+  );
 }
 
 /**

@@ -20,6 +20,7 @@ const index: IndexBundle = {
   models: { available: 0, providers: 0, withdrawn: 0, cheapest: [], dearest: [], moved: [], perContext: [] },
   lifecycle: { products: 0, dated: 0, ended: 0, approaching: 0, soon: [], supported: [] },
   incidents: { windowDays: 90, providers: 0, total: 0, observedDays: 0, byProvider: [], recent: [] },
+  hiring: { month: null, sample: 0, previousMonth: null, previousSample: 0, top: [], rising: [], falling: [] },
   divergence: { compared: 0, median: null, used: [], watched: [] },
   health: { scored: 0, unscored: 0, median: null, advisories: 0, weakest: [] },
   lenses: {

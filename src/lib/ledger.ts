@@ -24,10 +24,12 @@ import {
   ADOPTION_PATH,
   HEALTH_PATH,
   MODELS_PATH,
+  HIRING_PATH,
   INCIDENTS_PATH,
   LIFECYCLE_PATH,
 } from './paths.ts';
 import { MODEL_KEYS, type ModelRow } from '../types/models.ts';
+import { HIRING_KEYS, type HiringRow } from '../types/hiring.ts';
 import { INCIDENT_KEYS, type IncidentRow } from '../types/incidents.ts';
 import { LIFECYCLE_KEYS, type LifecycleRow } from '../types/lifecycle.ts';
 import { HEALTH_KEYS, type HealthRow } from '../types/health.ts';
@@ -169,6 +171,19 @@ export function readLifecycle(): LifecycleRow[] {
 export function writeLifecycle(rows: readonly LifecycleRow[]): void {
   writeJsonl(LIFECYCLE_PATH, rows, LIFECYCLE_KEYS, {
     sortBy: (row) => [row.product, row.cycle].join(' '),
+    rejectDuplicates: true,
+  });
+}
+
+// --------------------------------------------------------------------- hiring
+
+export function readHiring(): HiringRow[] {
+  return readJsonl(HIRING_PATH).map((row) => conform<HiringRow>(row, HIRING_KEYS));
+}
+
+export function writeHiring(rows: readonly HiringRow[]): void {
+  writeJsonl(HIRING_PATH, rows, HIRING_KEYS, {
+    sortBy: (row) => [row.month, row.term].join(' '),
     rejectDuplicates: true,
   });
 }

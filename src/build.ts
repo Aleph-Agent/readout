@@ -9,6 +9,7 @@ import {
   readAllEvents,
   latestCalibration,
   readHealth,
+  readHiring,
   readIncidents,
   readLifecycle,
   readModels,
@@ -26,6 +27,7 @@ import { buildCoverage } from './lib/coverage.ts';
 import { summariseAdoption } from './lib/adoption-summary.ts';
 import { summariseHealth } from './lib/health-summary.ts';
 import { summariseDivergence } from './lib/divergence.ts';
+import { summariseHiring } from './lib/hiring-summary.ts';
 import { summariseIncidents } from './lib/incidents-summary.ts';
 import { summariseLifecycle } from './lib/lifecycle-summary.ts';
 import { summariseModels } from './lib/models-summary.ts';
@@ -524,6 +526,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     models: summariseModels(readModels()),
     lifecycle: summariseLifecycle(readLifecycle(), today),
     incidents: summariseIncidents(readIncidents(), today),
+    hiring: summariseHiring(readHiring()),
     divergence: summariseDivergence(
       strip.map((mark) => ({
         id: mark.id,

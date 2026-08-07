@@ -19,6 +19,13 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      deprecate:
+        description: >-
+          A server name to mark deprecated after publishing, e.g. an entry left
+          behind by a rename. Leave empty to publish only.
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -74,6 +81,22 @@ jobs:
           set -euo pipefail
           ./mcp-publisher login github-oidc
           ./mcp-publisher publish
+
+      - name: Retire an entry left behind by a rename
+        # Publishing under a new name does not replace the old entry, it adds a
+        # second one — which is how a registry ends up with two listings for one
+        # server, pointing at two addresses that will drift apart. Marking the
+        # old one deprecated leaves it visible with a warning rather than
+        # vanishing it, so anybody already using that address is told rather
+        # than simply broken.
+        if: inputs.deprecate != ''
+        run: |
+          set -euo pipefail
+          ./mcp-publisher status \
+            --status deprecated \
+            --message 'Renamed. This server is now io.github.kaitzyy-dev/sighttrue at https://sighttrue.com/api/mcp' \
+            --all-versions \
+            "${{ inputs.deprecate }}"
 
       - name: Confirm the listing is readable
         run: |

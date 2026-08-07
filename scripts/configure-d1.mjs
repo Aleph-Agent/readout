@@ -24,10 +24,6 @@ const DATABASE = process.env['D1_DATABASE'] ?? 'sighttrue';
 
 const API = 'https://api.cloudflare.com/client/v4';
 
-if (ACCOUNT === '' || TOKEN === '') {
-  console.error('CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN must both be set.');
-  process.exit(1);
-}
 
 /**
  * One call, with the API's own words on failure.
@@ -125,30 +121,36 @@ async function ensureDatabase() {
  * that failed. A migration that reports "syntax error" without saying where is
  * a migration somebody debugs by bisecting a file.
  *
+ * Comments come out before the split, not after. The other way round cuts the
+ * file at every semicolon that happens to sit inside a comment — and this
+ * schema has one, in the line explaining why accounts key on the numeric id.
+ * The result was a CREATE TABLE ending halfway through its own column list and
+ * an error that said "incomplete input", which is true and points nowhere.
+ *
  * PRAGMA lines are dropped. D1 manages its own connection pragmas and rejects
  * them over the query API; the one in the file is there for the SQLite the
  * tests run against, where it is honoured.
  */
-function statements() {
-  const sql = readFileSync(
-    fileURLToPath(new URL('../migrations/0001_init.sql', import.meta.url)),
-    'utf8',
-  );
+export function statements(sql) {
+  const withoutComments = sql
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('--'))
+    .join('\n');
 
-  return sql
+  return withoutComments
     .split(';')
-    .map((part) =>
-      part
-        .split('\n')
-        .filter((line) => !line.trim().startsWith('--'))
-        .join('\n')
-        .trim(),
-    )
+    .map((part) => part.trim())
     .filter((part) => part !== '' && !/^PRAGMA/i.test(part));
 }
 
+function schema() {
+  return statements(
+    readFileSync(fileURLToPath(new URL('../migrations/0001_init.sql', import.meta.url)), 'utf8'),
+  );
+}
+
 async function applySchema(uuid) {
-  const parts = statements();
+  const parts = schema();
   for (const [index, sql] of parts.entries()) {
     try {
       await call(`/accounts/${ACCOUNT}/d1/database/${uuid}/query`, {
@@ -216,8 +218,18 @@ async function confirm(uuid) {
   }
 }
 
-await reportToken();
-const uuid = await ensureDatabase();
-await applySchema(uuid);
-await confirm(uuid);
-await bind(uuid);
+// Only when run, never when imported. The splitter above is tested against the
+// real migration file, and a test that imported this module would otherwise
+// reach for a production database on the way in.
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  if (ACCOUNT === '' || TOKEN === '') {
+    console.error('CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN must both be set.');
+    process.exit(1);
+  }
+
+  await reportToken();
+  const uuid = await ensureDatabase();
+  await applySchema(uuid);
+  await confirm(uuid);
+  await bind(uuid);
+}

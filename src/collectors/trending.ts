@@ -80,7 +80,10 @@ export function createTrendingClient(): TrendingClient {
         `${API}?language=${encodeURIComponent(language)}&period=past_3_months`,
         { headers: { 'user-agent': USER_AGENT, accept: 'application/json' } },
       );
-      if (!response.ok) return null;
+      // The status travels with the failure. "Unavailable" told us four
+      // languages had failed and nothing about whether that was a rate limit, a
+      // block, or an outage — three problems with three different answers.
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`.trim());
 
       const body = (await response.json()) as { data?: { rows?: TrendRow[] } };
       return (body.data?.rows ?? [])

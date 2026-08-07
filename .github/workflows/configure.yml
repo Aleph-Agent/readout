@@ -1,16 +1,23 @@
 name: Configure Pages
 
-# Pushes the answer endpoint's credentials into the Cloudflare Pages project.
+# Puts the credentials and bindings a Pages Function needs into the Pages
+# project, then proves each of them is live.
 #
-# Run by hand, and rarely: on first setup, and again if the Groq key is ever
-# replaced. It is a separate workflow rather than a step in Pulse because the
-# key does not change six times a day, and a deploy token that edits project
-# settings should be used as seldom as the thing it configures changes.
+# Run by hand, and rarely: on first setup, and again whenever a key changes. It
+# is a separate workflow rather than a step in Pulse because none of this
+# changes six times a day, and a deploy token that edits project settings should
+# be used as seldom as the thing it configures changes.
 #
 # Why this exists at all: a Pages Function reads its secrets from the project's
 # environment, which is set out of band rather than at deploy time. This is the
 # out-of-band step, kept in the repository so it is reproducible and reviewable
 # instead of being a thing somebody once did in a dashboard.
+#
+# Order is load-bearing. Bindings first, secrets second. A PATCH to the
+# project's deployment config once wiped every secret on it — Cloudflare returns
+# secrets redacted on a GET, so reading and writing back the config stores the
+# names with the values gone. Writing the secrets last means they survive
+# whatever the config edit does.
 on:
   workflow_dispatch:
 
@@ -24,7 +31,7 @@ concurrency:
 jobs:
   configure:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v7
@@ -32,6 +39,24 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
+
+      # ---------------------------------------------------------- bindings
+
+      - name: Create the database, apply the schema, bind it
+        # One script against the REST API rather than three wrangler commands.
+        # Wrangler does its own account lookup for D1 and, when that fails,
+        # reports the lookup rather than the refusal underneath it — two screens
+        # of output that never say whether the token can reach D1 at all.
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/configure-d1.mjs
+
+      # ------------------------------------------------------------ secrets
+      #
+      # After the binding, never before. Each value is piped rather than passed
+      # as an argument: an argument is visible in the process list of every
+      # other process on the runner.
 
       - name: Put the Groq key in the Pages project
         env:
@@ -44,8 +69,6 @@ jobs:
             echo "GROQ_API_KEY is not set. Nothing to configure." >&2
             exit 1
           fi
-          # Piped rather than passed as an argument: an argument is visible in
-          # the process list of every other process on the runner.
           printf '%s' "${GROQ_API_KEY}" \
             | npx --yes wrangler@4 pages secret put GROQ_API_KEY --project-name=readout
 
@@ -88,15 +111,7 @@ jobs:
           printf '%s' "${OAUTH_GITHUB_SECRET}" \
             | npx --yes wrangler@4 pages secret put OAUTH_GITHUB_SECRET --project-name=readout
 
-      - name: Create the database, apply the schema, bind it
-        # One script against the REST API rather than three wrangler commands.
-        # Wrangler does its own account lookup for D1 and, when that fails,
-        # reports the lookup rather than the refusal underneath it — two screens
-        # of output that never say whether the token can reach D1 at all.
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: node scripts/configure-d1.mjs
+      # ------------------------------------------------------------- deploy
 
       - run: npm ci
 
@@ -107,30 +122,57 @@ jobs:
 
       - name: Redeploy
         # Load-bearing, and the reason this workflow builds at all. A Pages
-        # project's environment is bound at deployment time: the secret above
-        # lands in the project settings and the running deployment carries on
-        # without it. Nothing changes until something new is deployed.
+        # project's environment is bound at deployment time: the secrets above
+        # land in the project settings and the running deployment carries on
+        # without them. Nothing changes until something new is deployed.
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4 pages deploy dist --project-name=readout --branch=main
 
-      - name: Confirm the endpoint reports itself configured
-        # Checks observable behaviour rather than the setting. An unconfigured
-        # endpoint answers 503 and says so, so anything else — 400 is the
-        # answer to the empty question sent here — is proof the key arrived.
+      # -------------------------------------------------------------- proof
+      #
+      # Each check below has to fail when its key is missing. The previous
+      # version of this section did not: it posted an empty question to
+      # /api/ask, which is rejected for being empty before the key is ever read,
+      # so it reported success against a project whose secrets had all been
+      # wiped. Every check here now exercises the credential itself.
+      #
+      # All of them retry. A Pages deployment takes a minute or two to reach
+      # every edge, and the first probe after a deploy can hit an old one.
+
+      - name: Confirm the answer endpoint has its key
+        # A real question. An unconfigured endpoint answers 503; anything else
+        # means the key arrived and the request got as far as the model.
         run: |
           set -euo pipefail
-          for attempt in 1 2 3 4 5 6; do
+          for attempt in 1 2 3 4 5 6 7 8; do
             code=$(curl -s -o /dev/null -w '%{http_code}' \
               -X POST https://sighttrue.com/api/ask \
               -H 'content-type: application/json' \
-              --data '{"question":""}')
-            echo "attempt ${attempt}: endpoint answered ${code}"
+              --data '{"question":"which repository shipped most this week"}')
+            echo "attempt ${attempt}: ask answered ${code}"
             if [ "${code}" != "503" ]; then exit 0; fi
-            sleep 10
+            sleep 15
           done
-          echo "Still unconfigured after six attempts. The secret did not take effect." >&2
+          echo "The answer endpoint still has no key." >&2
+          exit 1
+
+      - name: Confirm the chain is reachable with its key
+        # canVerifyPayments is false without the Blockscout key: both public RPC
+        # endpoints answer 429 from a Worker, so the keyed reader is the only one
+        # that works. This is the check that would have caught the wipe.
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6 7 8; do
+            body=$(curl -sS https://sighttrue.com/api/chain)
+            echo "attempt ${attempt}: $(echo "${body}" | head -c 120)"
+            case "${body}" in
+              *'"canVerifyPayments": true'*) echo "the chain is reachable"; exit 0 ;;
+            esac
+            sleep 15
+          done
+          echo "Payments cannot be verified from this deployment." >&2
           exit 1
 
       - name: Confirm sign-in reaches GitHub
@@ -139,25 +181,34 @@ jobs:
         # that out from the first person who tries to sign in is the wrong time.
         run: |
           set -euo pipefail
-          location=$(curl -s -o /dev/null -w '%{redirect_url}' \
-            'https://sighttrue.com/api/auth/github/start?next=/account')
-          echo "start redirects to ${location%%\?*}"
-          case "${location}" in
-            https://github.com/login/oauth/authorize*) ;;
-            *) echo "sign-in did not redirect to GitHub" >&2; exit 1 ;;
-          esac
+          for attempt in 1 2 3 4 5 6 7 8; do
+            location=$(curl -s -o /dev/null -w '%{redirect_url}' \
+              'https://sighttrue.com/api/auth/github/start?next=/account')
+            echo "attempt ${attempt}: start redirects to ${location%%\?*}"
+            case "${location}" in
+              https://github.com/login/oauth/authorize*) echo "sign-in is live"; exit 0 ;;
+            esac
+            sleep 15
+          done
+          echo "Sign-in did not redirect to GitHub." >&2
+          exit 1
 
       - name: Confirm the database is actually bound
         # Sends a session cookie that cannot exist. With no cookie at all the
         # endpoint answers before it queries anything, so it would report
-        # success on an unbound database — which is exactly the kind of
-        # adjacent-thing check this project has been caught by before. A cookie
-        # forces the lookup, so a 200 here means the query ran.
+        # success on an unbound database — exactly the kind of adjacent-thing
+        # check this workflow has already been caught by. A cookie forces the
+        # lookup, so a null account here means the query ran.
         run: |
           set -euo pipefail
-          body=$(curl -sS --cookie 'st_session=not-a-real-session' https://sighttrue.com/api/auth/me)
-          echo "me answered ${body}"
-          case "${body}" in
-            *'"account": null'*) echo "the database answered" ;;
-            *) echo "the database did not answer the lookup" >&2; exit 1 ;;
-          esac
+          for attempt in 1 2 3 4 5 6 7 8; do
+            body=$(curl -sS --cookie 'st_session=not-a-real-session' \
+              https://sighttrue.com/api/auth/me)
+            echo "attempt ${attempt}: me answered $(echo "${body}" | tr -d '\n ')"
+            case "${body}" in
+              *'"account": null'*) echo "the database answered"; exit 0 ;;
+            esac
+            sleep 15
+          done
+          echo "The database did not answer the lookup." >&2
+          exit 1

@@ -166,12 +166,20 @@ async function applySchema(uuid) {
 }
 
 /**
- * Bind it, without dropping what is already bound.
+ * Bind it, and touch nothing else.
  *
- * Read, merge, write. The same object holds the environment variables the
- * secrets steps just set, and a blind PATCH with a fresh config would remove
- * them — silently, and the symptom would be an endpoint reporting itself
- * unconfigured hours later.
+ * The payload names `d1_databases` and no other key. Read-merge-write was tried
+ * here and it destroyed every secret on the project: Cloudflare returns secrets
+ * redacted on a GET — `{"type":"secret_text"}` with no value — so merging the
+ * response and sending it back writes the names with the values removed. Groq,
+ * Blockscout and the OAuth credentials were all cleared by a step whose comment
+ * claimed it was preserving them.
+ *
+ * The bindings this reads are the D1 ones only, which are not redacted, so
+ * another database bound alongside `DB` survives.
+ *
+ * This runs before the secrets are set rather than after. Even if Cloudflare's
+ * merge semantics change under this, the secrets are written last and win.
  */
 async function bind(uuid) {
   const project = await call(`/accounts/${ACCOUNT}/pages/projects/${PROJECT}`);
@@ -180,7 +188,6 @@ async function bind(uuid) {
   const merged = {};
   for (const environment of ['production', 'preview']) {
     merged[environment] = {
-      ...(configs[environment] ?? {}),
       d1_databases: {
         ...(configs[environment]?.d1_databases ?? {}),
         DB: { id: uuid },

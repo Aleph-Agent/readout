@@ -1815,3 +1815,62 @@ a.lens-cell:hover {
     font-size: var(--t-large);
   }
 }
+
+/* ------------------------------------------------------------------ doors
+
+   Four questions on the front door, each with the answer underneath.
+
+   `instrument-ui` bans large rounded cards holding three words — the shape of
+   an interface with nothing to show. These are the opposite case: a question
+   and a real answer, on the one page whose job is to explain rather than to
+   report. Square corners and a rule rather than a box, so they read as entries
+   in an index and not as feature tiles. */
+
+.doors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
+  gap: 0;
+  border-top: var(--rule);
+}
+
+.door {
+  border-bottom: var(--rule);
+  border-right: var(--rule);
+  padding: 20px 22px 18px 0;
+}
+
+/* No rule hanging off the right edge of the last column in each row. */
+.door:last-child {
+  border-right: 0;
+}
+
+@media (min-width: 900px) {
+  .door:nth-child(2n) {
+    border-right: 0;
+  }
+  .door {
+    padding-right: 30px;
+  }
+  .door:nth-child(2n) {
+    padding-left: 30px;
+    padding-right: 0;
+  }
+}
+
+.door-q {
+  font-family: var(--face-label);
+  font-weight: 600;
+  font-size: var(--t-mid);
+  letter-spacing: 0.01em;
+  color: var(--ink-900);
+  margin: 0 0 8px;
+}
+
+.door-a {
+  font-family: var(--face-prose);
+  font-size: var(--t-base);
+  line-height: 1.6;
+  color: var(--ink-500);
+  margin: 0 0 12px;
+  max-width: 46ch;
+}

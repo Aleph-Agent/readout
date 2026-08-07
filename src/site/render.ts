@@ -34,7 +34,7 @@ export function esc(value: string): string {
  * way.
  */
 const NAV: { href: string; label: string; lens: LensName | null }[] = [
-  { href: '/', label: 'Index', lens: null },
+  { href: '/live', label: 'Live', lens: null },
   { href: '/ships', label: 'Ships', lens: 'ships' },
   { href: '/forks', label: 'Forks', lens: 'forks' },
   { href: '/demand', label: 'Demand', lens: 'demand' },
@@ -853,7 +853,7 @@ function heroHtml(index: IndexBundle, meta: MetaRecord): string {
   return `<section class="hero">
   <aside class="install">
     <span class="install-label">Install for your coding agent</span>
-    <code class="install-code" id="install-code">{ "mcpServers": { "readout": { "url": "${SITE_ORIGIN}/api/mcp" } } }</code>
+    <code class="install-code" id="install-code">{ "mcpServers": { "sighttrue": { "url": "${SITE_ORIGIN}/api/mcp" } } }</code>
     <button type="button" class="install-copy" data-copy="install-code">Copy</button>
     <span class="install-note">Read-only. No key, no account.</span>
   </aside>
@@ -1212,8 +1212,9 @@ export function renderIndex(index: IndexBundle, meta: MetaRecord): string {
       Their counts are shown raw; no multiplier is computed for them and none is implied.</div>`;
 
   return layout({
-    title: 'Sighttrue — developer activity readings',
-    current: '/',
+    title: 'Live — every reading, right now',
+    current: '/live',
+    path: '/live',
     index,
     meta,
     body: `${heroHtml(index, meta)}
@@ -1387,7 +1388,7 @@ ${band(
     An MCP server over the same readings, so an agent answers "is this dependency healthy" from a
     measurement taken today rather than from training data a year old.
   </p>
-  <pre class="method-code">{ "mcpServers": { "readout": { "url": "${SITE_ORIGIN}/api/mcp" } } }</pre>
+  <pre class="method-code">{ "mcpServers": { "sighttrue": { "url": "${SITE_ORIGIN}/api/mcp" } } }</pre>
   <p>
     Six read-only tools: <code>check_package</code>, <code>check_stack</code>,
     <code>check_eol</code>, <code>compare_repositories</code>, <code>search_repositories</code>,

@@ -66,7 +66,7 @@ function reading(input: BadgeInput): { label: string; value: string } {
 
   // Watched, and nothing measurable yet. Saying so is still a true statement
   // and still links back; inventing a figure to fill the badge would not be.
-  return { label: 'readout', value: 'watched' };
+  return { label: 'sighttrue', value: 'watched' };
 }
 
 export function renderBadge(input: BadgeInput): string {

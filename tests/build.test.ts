@@ -275,6 +275,8 @@ describe('output hygiene', () => {
       'incidents.html',
       'index.html',
       'lineage.html',
+      // The instrument.  is the front door now; this is what used to be there.
+      'live.html',
       // How the readings are taken and what they cannot support. It was all in
       // the commit log, which is a credibility argument aimed at an audience
       // that does not read strangers' commit logs.

@@ -76,6 +76,7 @@ import {
 import { archiveNav, archivePath, renderArchive } from './site/archive.ts';
 import { renderEcosystem } from './site/ecosystem.ts';
 import { renderFindings } from './site/findings.ts';
+import { renderWelcome } from './site/welcome.ts';
 import { DIGEST_DAYS, renderWeek } from './site/week.ts';
 import { renderDepends, reverseIndex } from './site/depends.ts';
 import { summariseBreaking, summariseCadence } from './lib/releases-summary.ts';
@@ -781,7 +782,10 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   );
 
   const pages = new Map<string, string>([
-    ['index.html', renderIndex(index, previous)],
+    // The front door, and the instrument behind it. Exactly one URL moved:
+    // everything anybody has linked to is where it was.
+    ['index.html', renderWelcome(index, previous)],
+    ['live.html', renderIndex(index, previous)],
     ...LENSES.map(
       (lens) =>
         [
@@ -957,6 +961,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     '/incidents',
     '/ecosystem',
     '/findings',
+    '/live',
     '/depends',
     '/week',
     ...LENSES.map((lens) => `/${lens}`),

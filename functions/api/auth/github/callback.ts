@@ -40,6 +40,21 @@ import type { Env } from '../_session.ts';
 
 const NEXT_COOKIE = 'st_oauth_next';
 
+/**
+ * Marks the redirect so the page can tell two states apart.
+ *
+ * "Never signed in" and "signed in a second ago and the cookie did not survive
+ * the trip back" render identically otherwise — and the second is the one where
+ * somebody is owed an explanation. With the marker the page can say that GitHub
+ * authorised it and the browser dropped the cookie, which points at the actual
+ * cause instead of leaving a person clicking the same button.
+ *
+ * Stripped from the address bar by the page as soon as it is read.
+ */
+function landing(next: string): string {
+  return `${next}${next.includes('?') ? '&' : '?'}signedin=1`;
+}
+
 function fail(reason: string, status: number, secure: boolean): Response {
   const headers = new Headers({
     'content-type': 'application/json',
@@ -169,7 +184,7 @@ export async function onRequestGet(context: { request: Request; env: Env }): Pro
     .run();
 
   const headers = new Headers({
-    location: safeNext(cookies[NEXT_COOKIE] ?? null),
+    location: landing(safeNext(cookies[NEXT_COOKIE] ?? null)),
     'cache-control': 'no-store',
   });
   headers.append(

@@ -1,11 +1,14 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
 import { SITE_SCRIPT } from '../src/site/render.ts';
+
+const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
 
 /**
  * Does the site's JavaScript parse.
@@ -51,5 +54,54 @@ describe('the site script', () => {
     expect(SITE_SCRIPT.indexOf('data-theme-switch')).toBeLessThan(
       SITE_SCRIPT.indexOf('stack-form'),
     );
+  });
+});
+
+/**
+ * Sign-in has to be findable, and it has to speak when it breaks.
+ *
+ * Both of these are the same bug wearing two faces. Sign-in lived halfway down
+ * one page, so a reader had to already know the feature existed to find the way
+ * in — and when the session failed, the page redrew the identical sign-in
+ * button with no explanation, so somebody who had just authorised on GitHub had
+ * no way to tell whether they had done something wrong or the site had.
+ */
+describe('sign-in is reachable and never silent', () => {
+  const pages = readdirSync(DIST, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.html'))
+    .map((entry) => join(entry.parentPath, entry.name));
+
+  it('puts the control in the chrome of every page', () => {
+    // Every page, not only /account. The bar is where a reader looks for
+    // whether they are signed in, and it is on all 1,500 of them.
+    expect(pages.length).toBeGreaterThan(100);
+    for (const page of pages) {
+      expect(readFileSync(page, 'utf8'), page).toContain('data-account-slot');
+    }
+  });
+
+  it('gives the account page somewhere to report a failure', () => {
+    const account = readFileSync(join(DIST, 'account.html'), 'utf8');
+
+    expect(account).toContain('id="account-gate-note"');
+    // Hidden until there is something to say. A permanently visible warning is
+    // a warning nobody reads.
+    expect(account).toMatch(/id="account-gate-note"[^>]*hidden/);
+  });
+
+  it('writes the reason into the page rather than discarding it', () => {
+    // The empty catch was the original defect: a rejected cookie, a blocked
+    // request and a genuine first visit all produced the same page.
+    expect(SITE_SCRIPT).toContain('account-gate-note');
+    expect(SITE_SCRIPT).toContain('Sign-in unavailable');
+    expect(SITE_SCRIPT).toContain('did not keep the ');
+  });
+
+  it('asks who is signed in exactly once per page load', () => {
+    // The chrome control starts the request and the watchlist waits on the same
+    // promise. Two fetches of the same no-store endpoint on one page load is a
+    // request nobody needed.
+    const asks = SITE_SCRIPT.split("fetch('/api/auth/me'").length - 1;
+    expect(asks).toBe(1);
   });
 });

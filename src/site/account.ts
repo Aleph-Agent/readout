@@ -52,6 +52,11 @@ ${band(
   `<p class="finding-detail" style="max-width:56ch">Nothing to install and nothing to connect.
     The first ${free} packages are free.</p>
   <p class="repo-facts"><a class="watch-signin" href="/api/auth/github/start?next=/account">Sign in with GitHub</a></p>
+  <!-- Filled only when something went wrong, and it says what. Silence here was
+       the original bug: a rejected cookie, a blocked request and a genuine
+       first visit all drew the same page, so somebody who had just authorised
+       on GitHub saw a sign-in button and no explanation. -->
+  <p id="account-gate-note" class="watch-bad band-note" role="status" hidden></p>
   <ul class="watch-points">
     <li><b>No scopes are requested.</b> GitHub's authorisation screen will say it wants your public
       profile and nothing else. This cannot read your repositories, private or public, because it

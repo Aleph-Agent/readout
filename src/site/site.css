@@ -1987,3 +1987,64 @@ a.lens-cell:hover {
   opacity: 0.4;
   cursor: default;
 }
+
+/* Sign-in state, in the bar that is on every page.
+
+   It sat halfway down /account before, which meant a reader had to already know
+   the feature existed to find the way in, and no page said whether they were
+   signed in. Styled as signage like everything else in the chrome — no colour,
+   no button fill. The only coloured state is the one that reports a fault. */
+.chrome-account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.chrome-account a.label {
+  text-decoration: none;
+  border-bottom: 1px solid var(--ink-100);
+  padding-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 18ch;
+}
+
+.chrome-account a.label:hover {
+  color: var(--ink-900);
+  border-bottom-color: var(--ink-300);
+}
+
+.chrome-signout {
+  background: none;
+  border: 1px solid var(--ink-100);
+  color: var(--ink-500);
+  font-family: var(--face-label);
+  font-size: var(--t-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chrome-signout:hover {
+  color: var(--ink-900);
+  border-color: var(--ink-300);
+}
+
+/* A fault, not a state. Says which half is unavailable rather than implying the
+   readings are affected — they are static files and they are not. */
+.chrome-account-bad {
+  color: var(--alert);
+  cursor: help;
+}
+
+@media (max-width: 640px) {
+  /* The name goes; the control stays. On a narrow bar the useful thing is the
+     way in and the way out, not whose name it is. */
+  .chrome-account a.label {
+    max-width: 10ch;
+  }
+}

@@ -3,7 +3,7 @@ import { REACHABLE_SHARE } from '../lib/calibration.ts';
 import { MIN_INSTALLS } from '../lib/divergence.ts';
 import { COMPARE_SCRIPT } from './compare.ts';
 import { STACK_SCRIPT } from './stack.ts';
-import { ACCOUNT_SCRIPT } from './account-script.ts';
+import { ACCOUNT_SCRIPT, CHROME_ACCOUNT_SCRIPT } from './account-script.ts';
 import type { IndexBundle, LensBundle, LensName, StripMark } from '../types/bundles.ts';
 import { isRepositorySubject, type EventRecord } from '../types/events.ts';
 import type { MetaRecord } from '../types/meta.ts';
@@ -259,6 +259,13 @@ function chromeHtml(current: string, meta: MetaRecord, index: IndexBundle): stri
       <span class="theme-track" aria-hidden="true"><span class="theme-thumb"></span></span>
       <span data-theme-name>Dark</span>
     </button>
+    <!-- Whether anybody is signed in, on every page rather than only on the one
+         page about it. Sign-in used to be a link buried halfway down /account,
+         which meant a reader had to already know the feature existed to find
+         the way in, and nothing anywhere told them whether they were signed in.
+         Filled by script, because every page here is a static file: the markup
+         cannot know who is reading it, only the browser can ask. -->
+    <div class="chrome-account" data-account-slot></div>
   </div>
   ${navHtml(current, index.lenses)}
 </header>`;
@@ -526,6 +533,8 @@ export const SITE_SCRIPT = [
   ASK_SCRIPT,
   COMPARE_SCRIPT,
   STACK_SCRIPT,
+  // Before the watchlist block, which waits on the promise this one starts.
+  CHROME_ACCOUNT_SCRIPT,
   ACCOUNT_SCRIPT,
 ].join('\n\n');
 

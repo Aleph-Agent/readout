@@ -105,10 +105,13 @@ jobs:
         if: inputs.deprecate != ''
         run: |
           set -euo pipefail
+          # `--yes` because the command asks for confirmation on a terminal and
+          # there is not one here; without it the step hangs, then dies on EOF.
           ./mcp-publisher status \
             --status deprecated \
             --message 'Renamed. This server is now io.github.kaitzyy-dev/sighttrue at https://sighttrue.com/api/mcp' \
             --all-versions \
+            --yes \
             "${{ inputs.deprecate }}"
 
       - name: Confirm the listing is readable

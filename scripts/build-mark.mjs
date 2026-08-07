@@ -1,43 +1,44 @@
 /**
- * The mark: a lens sighting down onto a datum.
+ * The mark: a pair of caliper jaws.
  *
  *   node scripts/build-mark.mjs
  *
- * ## The rules, taken from the reference
+ * ## The rules
  *
- * Eight marks were drawn and rejected before this one. The user then supplied a
- * logofolio of about eighty marks, and it settles the question of *how* a mark
- * for this project has to be built, whatever it depicts:
+ * Taken from the logofolio the user supplied, which about eighty marks obey
+ * without exception:
  *
  *   1. Solid fill. No outlines, no stroke weights to get wrong.
- *   2. Heavy. Every mark in that sheet survives being printed at the size of a
- *      fingernail.
+ *   2. Heavy enough to survive at the size of a fingernail.
  *   3. One flat colour, with nothing depending on a second.
- *   4. Negative space does a job. The counter is where the second reading
- *      lives, and it is what separates a logo from a pictogram.
+ *   4. Negative space does a job — the counter is where the meaning lives, and
+ *      it is what separates a logo from a pictogram.
  *
- * Every one of the first six failures was the same defect: thin. Hairlines and
- * outlines, defensible on paper and unfinished on screen.
+ * ## Why a caliper
  *
- * ## What it depicts, and what it deliberately is not
+ * The gap is the mark. Everything solid here exists to define the space between
+ * the jaws, and that space is the measurement — which makes rule four literal
+ * rather than decorative. No other shape considered for this project put the
+ * meaning in the counter so directly.
  *
- * A lens — the vesica every optical element makes — with the pupil punched out
- * of it, sighting down at the line it is measured against. Sight, and true.
+ * A caliper is also unmistakably an instrument of precision and nothing else.
+ * That matters more here than it would elsewhere, because the two marks before
+ * this failed on collisions rather than on drawing: a solid round-capped plumb
+ * bob is the Google Maps pin, the same shape on a cord is a crucifix, and the
+ * one after those was an eye — which is the house style of every surveillance
+ * product on the internet and the opposite of what this is.
  *
- * The two most recent failures were not drawing errors. They were collisions:
- * a solid round-capped bob is the Google Maps pin, and the same shape with a
- * collar on a cord is a crucifix. So the test applied here before anything was
- * drawn was not "is this a good shape" but "what does this shape already mean
- * to somebody who has never heard of us".
+ * Nothing in software uses a caliper. It says measured, not watched.
  *
- * A pointed oval with a hole in it is a lens, an eye and an aperture, and none
- * of those three is the wrong answer for a product called Sighttrue. It is not
- * a pin, a cross, a target, a clock or a letter.
+ * ## Nine marks
  *
- * The counter is large on purpose: a small hole closes up at 16px and the
- * second reading disappears exactly where a mark most needs to be legible. It
- * has to stay inside the lens, though — see BOW, where getting that wrong once
- * produced a pupil hanging out of the bottom of the eye.
+ * Crosshairs, a graduated dial, an aperture, a geometric S, a wordmark, a thin
+ * plumb bob, a solid one, the same with a collar, and an eye. Six failed for
+ * being thin — hairlines and outlines, defensible on paper and unfinished on
+ * screen. Three failed for meaning something else already.
+ *
+ * The question asked before drawing this one was not "is this a good shape" but
+ * "what does this shape already mean to somebody who has never heard of us".
  */
 
 import { writeFileSync } from 'node:fs';
@@ -45,80 +46,100 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
-/** The lens. Wide and shallow, the way a real optical element is drawn. */
-const LEFT = 5;
-const RIGHT = 59;
-const MID_Y = 27;
-/**
- * How far the two arcs bow.
- *
- * A quadratic reaches only half its control offset, so this is double the
- * height the lens actually gets: 30 here means the shape spans 15 units either
- * side of the midline. That caught me out — at 20 the lens was 20 units tall
- * and held a pupil 19 across, so the counter burst through the bottom edge and
- * the mark looked broken rather than drawn.
- *
- * Fat regardless, which is the one property the reference demands without
- * exception.
- */
-const BOW = 30;
+/** The beam the jaws hang from. Full width, so the mark has a strong lid. */
+const BEAM = { x: 4, y: 9, w: 56, h: 9 };
 
 /**
- * The pupil.
+ * The jaws.
  *
- * Below centre, not on it. Centred, the mark is a symmetrical eye staring
- * outward — which reads as surveillance, and is the wrong feeling entirely for
- * something whose promise is that you can check its work. Dropped a few units,
- * the lens is looking down at the line beneath it, which is what taking a
- * reading looks like.
+ * `INNER` is where the measuring faces sit, and the distance between them is
+ * the whole point of the mark — 18 units, which is wide enough that the counter
+ * survives at 16px. A caliper drawn nearly closed is two rectangles.
  */
-const PUPIL = { y: 28.5, r: 8.2 };
-
-/** The reference the lens is sighted against. */
-const DATUM = { y: 55, h: 4, inset: 12 };
+const JAW = {
+  top: 18,
+  /** Outer edge of the left jaw; the right is mirrored. */
+  outer: 8,
+  /** The measuring face. */
+  inner: 22,
+  /**
+   * The two jaws are different lengths, and that is what stops the mark being
+   * the letter pi.
+   *
+   * A full-width beam on two identical legs is pi, or a table, and the first
+   * attempt was both. A real caliper is asymmetric by construction — one jaw is
+   * fixed to the beam and the other slides along it — so making them unequal is
+   * more accurate as well as more legible.
+   */
+  fixed: 55,
+  sliding: 44,
+  /**
+   * The tip narrows toward the inside, not the outside.
+   *
+   * Reversed on the first attempt, which put a foot on the bottom of each leg
+   * pointing away from the gap. Feet read as a structure standing up; points
+   * read as jaws closing on something.
+   */
+  taper: 7,
+};
 
 const r = (n) => Number(n.toFixed(2));
+const M = 64;
 
 /**
- * Lens and pupil as one path, with `evenodd` cutting the hole.
+ * One jaw, as a solid polygon.
  *
- * One path rather than a shape with a background-coloured circle on top. A
- * painted counter stops being a hole the moment the mark is placed on anything
- * else — a sticker, somebody's slide, a dark timeline — and that is the most
- * common way a logo breaks once it leaves the file it was drawn in.
+ * The inner edge is dead vertical for its whole length. That edge is the
+ * measuring face and the reason the shape is legible — taper it and the gap
+ * turns into a wedge, which reads as a funnel rather than a caliper.
  */
-const LENS = [
-  `M ${LEFT} ${MID_Y}`,
-  `Q 32 ${r(MID_Y - BOW)} ${RIGHT} ${MID_Y}`,
-  `Q 32 ${r(MID_Y + BOW)} ${LEFT} ${MID_Y}`,
-  'Z',
-  `M 32 ${r(PUPIL.y - PUPIL.r)}`,
-  `a ${PUPIL.r} ${PUPIL.r} 0 1 0 0.01 0`,
-  'Z',
-].join(' ');
+function jaw(mirrored) {
+  const x = (v) => (mirrored ? r(M - v) : r(v));
+  const bottom = mirrored ? JAW.sliding : JAW.fixed;
+
+  return [
+    `M ${x(JAW.outer)} ${JAW.top}`,
+    `L ${x(JAW.inner)} ${JAW.top}`,
+    `L ${x(JAW.inner)} ${bottom}`,
+    `L ${x(JAW.inner - JAW.taper)} ${bottom}`,
+    `L ${x(JAW.outer)} ${r(bottom - JAW.taper - 4)}`,
+    'Z',
+  ].join(' ');
+}
+
+/**
+ * The reading, marked on the beam.
+ *
+ * One short tick above the gap, in the alert colour. It is the only element
+ * carrying a judgement — the jaws measure, this says where the pointer landed —
+ * and the mark is complete without it, which is what rule three requires.
+ */
+const TICK = { w: 4, h: 7 };
 
 function mark({ ink, alert, title, datum = true }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="${title}">
   <title>${title}</title>
 
   <!--
-    A lens sighting down onto its datum. Generated by scripts/build-mark.mjs,
-    which records the eight marks this replaced and the rule taken from the
-    reference: solid, heavy, one colour, and the counter carrying the second
-    reading.
+    Caliper jaws. Generated by scripts/build-mark.mjs, which records the nine
+    marks this replaced and why each failed.
 
-    The pupil sits below centre. Centred, this is a symmetrical eye staring out,
-    which reads as surveillance — the wrong feeling for a product whose promise
-    is that you can check its work.
+    The gap is the mark: every solid part exists to define the space between the
+    jaws, and that space is the measurement. A caliper says measured, not
+    watched — which is the difference between this and the eye that preceded it.
   -->
 
-  <path d="${LENS}" fill="${ink}" fill-rule="evenodd" />
+  <g fill="${ink}">
+    <rect x="${BEAM.x}" y="${BEAM.y}" width="${BEAM.w}" height="${BEAM.h}" />
+    <path d="${jaw(false)}" />
+    <path d="${jaw(true)}" />
+  </g>
 ${
   datum
     ? `
-  <!-- The line the reading is taken against. The only element carrying a
-       judgement, so the only one in the alert colour. -->
-  <rect x="${DATUM.inset}" y="${DATUM.y}" width="${r(64 - DATUM.inset * 2)}" height="${DATUM.h}" fill="${alert}" />`
+  <!-- Where the pointer landed. The only element carrying a judgement, and the
+       mark reads complete without it. -->
+  <rect x="${r(M / 2 - TICK.w / 2)}" y="${r(BEAM.y - TICK.h)}" width="${TICK.w}" height="${TICK.h}" fill="${alert}" />`
     : ''
 }
 </svg>
@@ -153,7 +174,7 @@ writeFileSync(
   'utf8',
 );
 
-/** Silhouette only, for the avatar and anywhere the datum would crowd it. */
+/** Silhouette only, for anywhere the tick would crowd the shape. */
 writeFileSync(
   `${ROOT}assets/brand/mark-solo.svg`,
   mark({ ink: '#d2e2f4', alert: '#f2857c', title: 'Sighttrue', datum: false }),

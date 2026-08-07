@@ -60,6 +60,15 @@ export const MODELS_PATH = join(LIVE_DIR, 'models.jsonl');
  * moving, not the fact that it did not move today.
  */
 export const LIFECYCLE_PATH = join(LIVE_DIR, 'lifecycle.jsonl');
+
+/**
+ * Provider incidents, as their own status feeds announced them.
+ *
+ * Accumulates rather than being overwritten. Every one of those feeds carries a
+ * few months and then forgets, and outliving that is the only reason this file
+ * is worth writing at all.
+ */
+export const INCIDENTS_PATH = join(LIVE_DIR, 'incidents.jsonl');
 export const META_PATH = join(DATA_DIR, 'meta.json');
 
 /**

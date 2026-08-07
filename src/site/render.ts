@@ -47,6 +47,7 @@ const NAV: { href: string; label: string; lens: LensName | null }[] = [
   // measures has no use for a tool that measures it.
   { href: '/stack', label: 'Your stack', lens: null },
   { href: '/models', label: 'Models', lens: null },
+  { href: '/incidents', label: 'Status', lens: null },
   { href: '/compare', label: 'Compare', lens: null },
   { href: '/method', label: 'Method', lens: null },
 ];
@@ -1582,6 +1583,112 @@ ${soon}
   <div class="finding-metrics" style="padding-top:18px">${supported}</div>`,
     'Dates are published by endoflife.date and cited, never inferred. A release with no announced end date is not listed as ending.',
   );
+}
+
+/**
+ * Who goes down, and how often.
+ *
+ * Every provider here publishes an incident feed and every one of those feeds
+ * forgets after a few months. Ask how often a service went down last year and
+ * the honest answer is that nobody kept the record — so the answer people use
+ * is whatever they remember about the last bad week, which is a memory test
+ * rather than a measurement.
+ *
+ * The comparison is the dangerous part and the caveat is put where the numbers
+ * are, not in a footnote: a count measures how often a provider *announced*
+ * something, and a company that posts every degradation will out-count one that
+ * posts nothing.
+ */
+export function renderIncidents(index: IndexBundle, meta: MetaRecord): string {
+  const { incidents } = index;
+
+  const busiest = incidents.byProvider.filter((row) => row.count > 0);
+  const quiet = incidents.byProvider.filter((row) => row.count === 0);
+
+  const table =
+    busiest.length === 0
+      ? `<p class="notice">No incident has been announced by any of the ${incidents.providers}
+      providers watched here in the last ${incidents.windowDays} days. That is what the feeds
+      said, and it is a reading rather than a claim that nothing broke.</p>`
+      : `<div class="wrap"><table class="readout">
+  <caption class="label">Announced incidents, last ${incidents.windowDays} days</caption>
+  <thead><tr>
+    <th scope="col">Provider</th>
+    <th scope="col" class="n">Incidents</th>
+    <th scope="col" class="n">Marked resolved</th>
+    <th scope="col">Most recent</th>
+  </tr></thead>
+  <tbody>${busiest
+    .map(
+      (row) => `<tr>
+      <td>${esc(row.name)}</td>
+      <td class="n"><span class="big num">${row.count}</span></td>
+      <td class="n num">${row.resolved}</td>
+      <td>${row.latestTitle === null ? '<span class="dim">—</span>' : esc(row.latestTitle)}
+        ${row.latestAt === null ? '' : `<span class="label">${esc(row.latestAt.slice(0, 10))}</span>`}</td>
+    </tr>`,
+    )
+    .join('')}</tbody>
+</table></div>`;
+
+  const silent =
+    quiet.length === 0
+      ? ''
+      : `<p class="band-note">Announced nothing in the window:
+      ${quiet.map((row) => esc(row.name)).join(', ')}. Read that as published, not as proven.</p>`;
+
+  const recent =
+    incidents.recent.length === 0
+      ? ''
+      : `<div class="wrap"><table class="readout">
+  <caption class="label">Newest first, across every provider</caption>
+  <thead><tr>
+    <th scope="col">Date</th>
+    <th scope="col">Provider</th>
+    <th scope="col">What they said it was</th>
+  </tr></thead>
+  <tbody>${incidents.recent
+    .map(
+      (row) => `<tr>
+      <td class="dim num">${esc(row.at.slice(0, 10))}</td>
+      <td>${esc(row.name)}</td>
+      <td>${row.url === '' ? esc(row.title) : `<a href="${esc(row.url)}">${esc(row.title)}</a>`}</td>
+    </tr>`,
+    )
+    .join('')}</tbody>
+</table></div>`;
+
+  return layout({
+    title: 'Status history — who goes down, and how often',
+    description:
+      'A dated record of announced incidents across twenty providers developers depend on, kept after their own status feeds stop carrying it.',
+    current: '/incidents',
+    path: '/incidents',
+    index,
+    meta,
+    body: `<section class="hero">
+  <h1 class="hero-thesis">Every status page forgets.</h1>
+  <p class="hero-sub">
+    Status feeds carry a few months and then drop the rest. Ask how often a provider went down
+    last year and nobody has the record, so the answer people use is whatever they remember about
+    the last bad week. These are their own announcements, kept.
+  </p>
+  <div class="hero-figures">
+    <div class="figure"><span class="figure-value num">${incidents.providers}</span><span class="label">Providers watched</span></div>
+    <div class="figure"><span class="figure-value num">${incidents.total}</span><span class="label">Incidents in ${incidents.windowDays} days</span></div>
+    <div class="figure"><span class="figure-value num">${incidents.observedDays}</span><span class="label">Days on record here</span></div>
+  </div>
+</section>
+
+${band(
+  'By provider',
+  `${table}
+  ${silent}`,
+  'A count is how often a provider announced something, not how often it broke. A company that publishes every degradation will out-count one that publishes nothing, so this ranks disclosure as much as reliability. Never read a low number as a good one.',
+)}
+
+${band('Recently', recent, 'Titles are the provider’s own wording, linking to their own write-up.')}`,
+  });
 }
 
 /**

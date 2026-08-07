@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { collectAdoption } from '../collectors/adoption.ts';
 import { collectHealth } from '../collectors/health.ts';
 import { collectIssues } from '../collectors/issues.ts';
+import { collectIncidents } from '../collectors/incidents.ts';
 import { collectLifecycle } from '../collectors/lifecycle.ts';
 import { collectModels } from '../collectors/models.ts';
 import { collectManifests } from '../collectors/manifests.ts';
@@ -16,6 +17,7 @@ import {
   readAdoption,
   readEvents,
   readModels,
+  readIncidents,
   readLifecycle,
   readAllEvents,
   readLiveState,
@@ -27,6 +29,7 @@ import {
   writeAdoption,
   writeHealth,
   writeModels,
+  writeIncidents,
   writeLifecycle,
   writeManifests,
   writeMeta,
@@ -362,6 +365,21 @@ export async function runDaily(options: DailyOptions = {}): Promise<MetaRecord> 
       errors.push(...lifecycle.errors);
     } catch (error) {
       errors.push(`lifecycle: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    // Provider incidents. Twenty status feeds, none of them GitHub's problem
+    // and none of them charging for this. No events: GitHub alone files
+    // incidents most weeks, and a finding apiece would bury every other signal
+    // here under somebody else's operational noise.
+    try {
+      const held = readIncidents();
+      const incidents = await collectIncidents(held, { today });
+      // Same rule as the end-of-life ledger. Twenty feeds failing at once is a
+      // network problem, not twenty providers that never had an incident.
+      writeIncidents(incidents.rows.length === 0 ? held : incidents.rows);
+      errors.push(...incidents.errors);
+    } catch (error) {
+      errors.push(`incidents: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     requestsConsumed = client.stats().consumed;

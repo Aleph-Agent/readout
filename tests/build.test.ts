@@ -95,6 +95,7 @@ describe('bundle emission', () => {
       // wrong, because the answer is a date that has since passed.
       'eol.json',
       'forks.json',
+      'incidents.json',
       'index.json',
       'lineage.json',
       'meta.json',
@@ -263,6 +264,8 @@ describe('output hygiene', () => {
       'compare.html',
       'demand.html',
       'forks.html',
+      // Who goes down and how often, kept after their own feeds forget.
+      'incidents.html',
       'index.html',
       'lineage.html',
       // How the readings are taken and what they cannot support. It was all in

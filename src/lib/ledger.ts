@@ -24,9 +24,11 @@ import {
   ADOPTION_PATH,
   HEALTH_PATH,
   MODELS_PATH,
+  INCIDENTS_PATH,
   LIFECYCLE_PATH,
 } from './paths.ts';
 import { MODEL_KEYS, type ModelRow } from '../types/models.ts';
+import { INCIDENT_KEYS, type IncidentRow } from '../types/incidents.ts';
 import { LIFECYCLE_KEYS, type LifecycleRow } from '../types/lifecycle.ts';
 import { HEALTH_KEYS, type HealthRow } from '../types/health.ts';
 import { CALIBRATION_KEYS, type CalibrationRow } from './calibration.ts';
@@ -167,6 +169,22 @@ export function readLifecycle(): LifecycleRow[] {
 export function writeLifecycle(rows: readonly LifecycleRow[]): void {
   writeJsonl(LIFECYCLE_PATH, rows, LIFECYCLE_KEYS, {
     sortBy: (row) => [row.product, row.cycle].join(' '),
+    rejectDuplicates: true,
+  });
+}
+
+// ------------------------------------------------------------------ incidents
+
+export function readIncidents(): IncidentRow[] {
+  return readJsonl(INCIDENTS_PATH).map((row) => conform<IncidentRow>(row, INCIDENT_KEYS));
+}
+
+export function writeIncidents(rows: readonly IncidentRow[]): void {
+  writeJsonl(INCIDENTS_PATH, rows, INCIDENT_KEYS, {
+    // By provider, then oldest first. A new incident appends near its
+    // provider's block instead of reshuffling the file, which keeps the diff
+    // readable as what it is: one line added.
+    sortBy: (row) => [row.provider, row.startedAt, row.id].join(' '),
     rejectDuplicates: true,
   });
 }

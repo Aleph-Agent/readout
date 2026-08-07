@@ -9,6 +9,7 @@ import {
   readAllEvents,
   latestCalibration,
   readHealth,
+  readIncidents,
   readLifecycle,
   readModels,
   readManifests,
@@ -25,6 +26,7 @@ import { buildCoverage } from './lib/coverage.ts';
 import { summariseAdoption } from './lib/adoption-summary.ts';
 import { summariseHealth } from './lib/health-summary.ts';
 import { summariseDivergence } from './lib/divergence.ts';
+import { summariseIncidents } from './lib/incidents-summary.ts';
 import { summariseLifecycle } from './lib/lifecycle-summary.ts';
 import { summariseModels } from './lib/models-summary.ts';
 import { renderBadge } from './site/badge.ts';
@@ -45,6 +47,7 @@ import {
   renderIndex,
   renderLens,
   renderMethod,
+  renderIncidents,
   renderModels,
   renderStack,
   SITE_SCRIPT,
@@ -520,6 +523,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     health: summariseHealth(readHealth()),
     models: summariseModels(readModels()),
     lifecycle: summariseLifecycle(readLifecycle(), today),
+    incidents: summariseIncidents(readIncidents(), today),
     divergence: summariseDivergence(
       strip.map((mark) => ({
         id: mark.id,
@@ -630,6 +634,18 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
         latest: row.latest,
         lts: row.lts,
       })),
+    }),
+  );
+
+  // Every incident on record, flat. The whole reason this file exists is that
+  // the providers' own feeds stop carrying their history, so republishing it as
+  // one document is the part nobody else does.
+  emitted.set(
+    'incidents.json',
+    stableJson({
+      generatedAt: previous.lastSuccessfulRunAt ?? now.toISOString(),
+      note: 'Incidents as each provider announced them. A count measures disclosure as much as reliability.',
+      incidents: readIncidents(),
     }),
   );
 
@@ -826,6 +842,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   pages.set('compare.html', renderCompare(index, previous));
   pages.set('stack.html', renderStack(index, previous));
   pages.set('models.html', renderModels(index, previous));
+  pages.set('incidents.html', renderIncidents(index, previous));
 
   // One badge per watched repository. A maintainer who embeds one puts a
   // permanent link back in a README that may be read more in a week than this
@@ -847,6 +864,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     '/compare',
     '/stack',
     '/models',
+    '/incidents',
     ...LENSES.map((lens) => `/${lens}`),
     ...[...profiles.keys()].map((repo) => `/repo/${repo}`),
     ...addressable.map((event) => eventPath(event)),

@@ -63,6 +63,17 @@ interface CompareRow {
   findings: number;
 }
 
+interface IncidentBundle {
+  generatedAt: string;
+  incidents: {
+    provider: string;
+    title: string;
+    startedAt: string;
+    resolved: boolean;
+    url: string;
+  }[];
+}
+
 interface EolBundle {
   generatedAt: string;
   products: {
@@ -212,6 +223,22 @@ const TOOLS = [
         },
       },
       required: ['product'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'check_provider',
+    description:
+      "Read a provider's announced incident history — how many they have filed, how recently, and what they called them. Covers about twenty services developers depend on, kept after the providers' own status feeds stop carrying it. A count measures how often they announced something, not how often they broke, so a low number is not a good one.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        provider: {
+          type: 'string',
+          description: 'Provider slug, e.g. cloudflare, openai, github. Omit for every provider.',
+        },
+        days: { type: 'integer', minimum: 1, maximum: 730, description: 'Window. Default 90.' },
+      },
       additionalProperties: false,
     },
   },
@@ -568,6 +595,68 @@ export async function onRequestPost(context: { request: Request }): Promise<Resp
         'Dates are published by endoflife.date and republished here unchanged. Nothing is inferred.',
         'A release with no announced end date is reported as having none, which is not the same as being supported indefinitely.',
         'The product list is curated — about two dozen runtimes, databases and frameworks, not the whole catalogue.',
+      ],
+    });
+  }
+
+  if (toolName === 'check_provider') {
+    const bundle = await loadJson<IncidentBundle>(origin, '/data/incidents.json');
+    if (bundle === null) {
+      return toolResult(id, { error: 'The incident record could not be loaded.' }, true);
+    }
+
+    const daysRaw = args['days'];
+    const days =
+      typeof daysRaw === 'number' && Number.isFinite(daysRaw)
+        ? Math.min(730, Math.max(1, Math.floor(daysRaw)))
+        : 90;
+
+    const since = Date.now() - days * 86_400_000;
+    const wanted = asString(args['provider'], 40)?.toLowerCase() ?? null;
+
+    const inWindow = bundle.incidents.filter((row) => Date.parse(row.startedAt) >= since);
+    const tracked = [...new Set(bundle.incidents.map((row) => row.provider))].sort();
+
+    if (wanted !== null && !tracked.includes(wanted)) {
+      return toolResult(
+        id,
+        {
+          provider: wanted,
+          covered: false,
+          error: 'Not tracked here, or it has never announced an incident on record.',
+          tracked,
+        },
+        true,
+      );
+    }
+
+    const scoped = wanted === null ? inWindow : inWindow.filter((row) => row.provider === wanted);
+    const counts: Record<string, number> = {};
+    for (const row of scoped) counts[row.provider] = (counts[row.provider] ?? 0) + 1;
+
+    return toolResult(id, {
+      windowDays: days,
+      asOf: bundle.generatedAt,
+      ...(wanted === null ? { tracked } : { provider: wanted }),
+      total: scoped.length,
+      byProvider: Object.fromEntries(
+        Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])),
+      ),
+      incidents: scoped
+        .sort((a, b) => (a.startedAt < b.startedAt ? 1 : -1))
+        .slice(0, MAX_RESULTS)
+        .map((row) => ({
+          provider: row.provider,
+          title: row.title,
+          startedAt: row.startedAt,
+          resolved: row.resolved,
+          url: row.url,
+        })),
+      limits: [
+        'These are the providers’ own announcements, republished unchanged. Nothing here is measured independently.',
+        'A count is how often a provider announced something, not how often it broke. One that publishes every degradation will out-count one that publishes nothing, so a low count is not a good sign on its own.',
+        'Unresolved covers both "still going" and "never closed out", which this cannot tell apart.',
+        'History only goes back as far as this project has been keeping it, which is shorter than the providers have existed.',
       ],
     });
   }

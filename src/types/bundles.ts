@@ -1,5 +1,6 @@
 import type { CalibrationSummary } from '../lib/calibration.ts';
 import type { DivergenceSummary } from '../lib/divergence.ts';
+import type { IncidentSummary } from '../lib/incidents-summary.ts';
 import type { LifecycleSummary } from '../lib/lifecycle-summary.ts';
 import type { ModelSummary } from '../lib/models-summary.ts';
 import type { ConfidenceState, EventRecord } from './events.ts';
@@ -198,6 +199,8 @@ export interface IndexBundle {
   models: ModelSummary;
   /** When runtimes and databases stop getting fixes. See `lib/lifecycle-summary.ts`. */
   lifecycle: LifecycleSummary;
+  /** Who went down, as their own status feeds said. See `lib/incidents-summary.ts`. */
+  incidents: IncidentSummary;
   /** Where attention and use disagree. See `lib/divergence.ts`. */
   divergence: DivergenceSummary;
   /** What is actually installed. See `collectors/adoption.ts`. */

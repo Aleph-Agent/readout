@@ -88,66 +88,15 @@ jobs:
           printf '%s' "${OAUTH_GITHUB_SECRET}" \
             | npx --yes wrangler@4 pages secret put OAUTH_GITHUB_SECRET --project-name=readout
 
-      - name: Create the database, if it is not already there
-        # Idempotent by inspection rather than by swallowing an error: a create
-        # that fails for a different reason must not be mistaken for one that
-        # failed because the database already exists.
+      - name: Create the database, apply the schema, bind it
+        # One script against the REST API rather than three wrangler commands.
+        # Wrangler does its own account lookup for D1 and, when that fails,
+        # reports the lookup rather than the refusal underneath it — two screens
+        # of output that never say whether the token can reach D1 at all.
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
-          if npx --yes wrangler@4 d1 list --json | grep -q '"name": *"sighttrue"'; then
-            echo "The database already exists."
-          else
-            npx --yes wrangler@4 d1 create sighttrue
-          fi
-
-      - name: Apply the schema
-        # Re-run on every configure. Every statement in the migration is
-        # CREATE ... IF NOT EXISTS, so applying it twice is applying it once,
-        # and a schema that can only be applied to an empty database is a schema
-        # nobody dares apply.
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
-          npx --yes wrangler@4 d1 execute sighttrue --remote --yes \
-            --file=migrations/0001_init.sql
-
-      - name: Bind the database to the Pages project
-        # There is no `wrangler pages` command for this, so it goes through the
-        # API directly. Read, merge, write — never a blind PATCH: the same
-        # object holds the environment variables the earlier steps just set, and
-        # sending a fresh one would drop them.
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
-          uuid=$(npx --yes wrangler@4 d1 list --json \
-            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
-                const found=JSON.parse(s).find(d=>d.name==="sighttrue");
-                if(!found){console.error("no database named sighttrue");process.exit(1);}
-                process.stdout.write(found.uuid);
-              })')
-          echo "database ${uuid}"
-
-          api="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/readout"
-          curl -sS -X PATCH "${api}" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            -H 'content-type: application/json' \
-            --data "{\"deployment_configs\":{\"production\":{\"d1_databases\":{\"DB\":{\"id\":\"${uuid}\"}}},\"preview\":{\"d1_databases\":{\"DB\":{\"id\":\"${uuid}\"}}}}}" \
-            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
-                const body=JSON.parse(s);
-                if(!body.success){console.error(JSON.stringify(body.errors));process.exit(1);}
-                const bound=body.result.deployment_configs.production.d1_databases;
-                // Checks the response rather than the status code. A 200 with
-                // an unchanged config is the failure mode worth catching.
-                if(!bound||!bound.DB){console.error("the binding did not take");process.exit(1);}
-                console.log("bound DB to "+bound.DB.id);
-              })'
+        run: node scripts/configure-d1.mjs
 
       - run: npm ci
 

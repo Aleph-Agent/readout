@@ -10,6 +10,7 @@ import {
   latestCalibration,
   readHealth,
   readContributors,
+  readTrending,
   readHiring,
   readImages,
   readQuestions,
@@ -34,6 +35,7 @@ import { summariseHealth } from './lib/health-summary.ts';
 import { summariseDivergence } from './lib/divergence.ts';
 import { summariseAdvisories } from './lib/advisory-summary.ts';
 import { summariseContributors } from './lib/contributors-summary.ts';
+import { summariseTrending } from './lib/trending-summary.ts';
 import { summariseImages, summariseNames } from './lib/ecosystem-summary.ts';
 import { summariseHiring } from './lib/hiring-summary.ts';
 import { summariseQuestions } from './lib/questions-summary.ts';
@@ -548,6 +550,7 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
     images: summariseImages(readImages(), today),
     names: summariseNames(readTyposquats()),
     contributors: summariseContributors(readContributors()),
+    trending: summariseTrending(readTrending()),
     divergence: summariseDivergence(
       strip.map((mark) => ({
         id: mark.id,

@@ -1,4 +1,5 @@
 import { collectContributors } from '../collectors/contributors.ts';
+import { collectTrending } from '../collectors/trending.ts';
 import { collectLineage, DEFAULT_LINEAGE_THRESHOLDS } from '../collectors/lineage.ts';
 import { createGitHubClient, type GitHubClient } from '../lib/github.ts';
 import { createHuggingFaceClient, type HuggingFaceClient } from '../lib/huggingface.ts';
@@ -12,7 +13,9 @@ import {
   writeLineageRoots,
   readActiveWatchlist,
   readContributors,
+  readTrending,
   writeContributors,
+  writeTrending,
   writeMeta,
 } from '../lib/ledger.ts';
 import { utcDate, utcMonth } from '../lib/paths.ts';
@@ -98,6 +101,26 @@ export async function runWeekly(options: WeeklyOptions = {}): Promise<MetaRecord
       result.errors.push(
         `contributors: ${error instanceof Error ? error.message : String(error)}`,
       );
+    }
+  }
+
+  // What somebody else says is trending, with the column their list cannot
+  // carry. OSSInsight is free and unauthenticated and there is no point
+  // competing with ten billion GitHub events — the list is theirs, credited,
+  // and taken unaltered. The bus factor is what this adds.
+  if (options.offline !== true) {
+    try {
+      const github =
+        options.githubClient ??
+        createGitHubClient({ token: process.env['GITHUB_PAT'] ?? '' });
+      const trending = await collectTrending({ now: nowIso, readAt: today, github });
+      // A week that read nothing keeps the week before it. An empty trending
+      // list would read as a week in which nothing trended, which never
+      // happens and would be false if recorded.
+      if (trending.rows.length > 0) writeTrending([...readTrending(), ...trending.rows]);
+      result.errors.push(...trending.errors);
+    } catch (error) {
+      result.errors.push(`trending: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

@@ -25,6 +25,7 @@ import {
   HEALTH_PATH,
   MODELS_PATH,
   CONTRIBUTORS_PATH,
+  TRENDING_PATH,
   HIRING_PATH,
   IMAGES_PATH,
   INCIDENTS_PATH,
@@ -35,6 +36,7 @@ import {
 } from './paths.ts';
 import { MODEL_KEYS, type ModelRow } from '../types/models.ts';
 import { CONTRIBUTOR_KEYS, type ContributorRow } from '../types/contributors.ts';
+import { TRENDING_KEYS, type TrendingRow } from '../types/trending.ts';
 import { HIRING_KEYS, type HiringRow } from '../types/hiring.ts';
 import { IMAGE_KEYS, type ImageRow } from '../types/images.ts';
 import { QUESTION_KEYS, type QuestionRow } from '../types/questions.ts';
@@ -181,6 +183,19 @@ export function readLifecycle(): LifecycleRow[] {
 export function writeLifecycle(rows: readonly LifecycleRow[]): void {
   writeJsonl(LIFECYCLE_PATH, rows, LIFECYCLE_KEYS, {
     sortBy: (row) => [row.product, row.cycle].join(' '),
+    rejectDuplicates: true,
+  });
+}
+
+// ------------------------------------------------------------------- trending
+
+export function readTrending(): TrendingRow[] {
+  return readJsonl(TRENDING_PATH).map((row) => conform<TrendingRow>(row, TRENDING_KEYS));
+}
+
+export function writeTrending(rows: readonly TrendingRow[]): void {
+  writeJsonl(TRENDING_PATH, rows, TRENDING_KEYS, {
+    sortBy: (row) => [row.readAt, row.language, row.id.toLowerCase()].join(' '),
     rejectDuplicates: true,
   });
 }

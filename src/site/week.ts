@@ -166,6 +166,41 @@ ${band(
   'Measured against each repository’s own median gap between releases, not against a fixed period — a project that ships weekly and a project that ships twice a year are both on time when they keep to their own rhythm. Under four releases on record there is no rhythm to be late against, and those are counted as forming rather than guessed at.',
 )}
 
+${
+  index.trending.projects === 0
+    ? ''
+    : band(
+        'Rising, and who is writing it',
+        `<div class="hero-figures">
+    <div class="figure"><span class="figure-value num">${index.trending.projects}</span><span class="label">Rising projects read</span></div>
+    <div class="figure"><span class="figure-value num">${index.trending.singleAuthor}</span><span class="label">Where one person wrote half</span></div>
+    <div class="figure"><span class="figure-value num">${index.trending.measured}</span><span class="label">With a contributor reading</span></div>
+  </div>
+  <div class="wrap"><table class="readout">
+  <caption class="label">Most concentrated first, not most popular first</caption>
+  <thead><tr>
+    <th scope="col">Project</th>
+    <th scope="col">Language</th>
+    <th scope="col" class="n">Stars gained</th>
+    <th scope="col" class="n">Bus factor</th>
+    <th scope="col" class="n">Largest share</th>
+  </tr></thead>
+  <tbody>${index.trending.rising
+    .map(
+      (row) => `<tr>
+      <td><a href="https://github.com/${esc(row.id)}">${esc(row.id)}</a></td>
+      <td class="dim">${esc(row.language)}</td>
+      <td class="n num">+${row.starsGained.toLocaleString('en')}</td>
+      <td class="n">${row.busFactor === null ? '<span class="dim">unread</span>' : `<span class="big num">${row.busFactor}</span>`}</td>
+      <td class="n num">${row.topShare === null ? '<span class="dim">—</span>' : `${row.topShare.toFixed(0)}%`}</td>
+    </tr>`,
+    )
+    .join('')}</tbody>
+</table></div>`,
+        'The list is OSSInsight’s, taken unaltered and credited to them — they read ten billion GitHub events and there is no point competing with that. What is added is the column a momentum ranking cannot carry: how many contributors account for half the commits. Stars gained are over three months, not a total, and not a week — a weekly window is dominated by five-day-old repositories where a bus factor of one is a fact about the calendar. Ordered by concentration rather than momentum, because the interesting case is where the two disagree.',
+      )
+}
+
 ${band(
   'Crossed a major version',
   breaking,

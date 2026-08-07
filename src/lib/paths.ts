@@ -90,6 +90,8 @@ export const QUESTIONS_PATH = join(LIVE_DIR, 'questions.jsonl');
  * a decade of commits does not move in a day.
  */
 export const CONTRIBUTORS_PATH = join(LIVE_DIR, 'contributors.jsonl');
+/** This week's trending repositories, with a bus factor added. Weekly. */
+export const TRENDING_PATH = join(LIVE_DIR, 'trending.jsonl');
 export const META_PATH = join(DATA_DIR, 'meta.json');
 
 /**

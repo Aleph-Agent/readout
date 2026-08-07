@@ -32,6 +32,7 @@ const EMPTY: IndexBundle = {
   images: { tags: 0, images: 0, stalestDays: null, heaviest: [], stalest: [] },
   names: { swept: 0, found: 0, byPackage: [] },
   contributors: { measured: 0, singleAuthor: 0, medianBusFactor: null, concentrated: [] },
+  trending: { readAt: null, projects: 0, measured: 0, singleAuthor: 0, rising: [] },
   divergence: { compared: 0, median: null, used: [], watched: [] },
   health: { scored: 0, unscored: 0, median: null, advisories: 0, weakest: [] },
   lenses: {

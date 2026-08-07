@@ -48,6 +48,7 @@ function index(over: Partial<IndexBundle> = {}): IndexBundle {
   images: { tags: 0, images: 0, stalestDays: null, heaviest: [], stalest: [] },
   names: { swept: 0, found: 0, byPackage: [] },
   contributors: { measured: 0, singleAuthor: 0, medianBusFactor: null, concentrated: [] },
+  trending: { readAt: null, projects: 0, measured: 0, singleAuthor: 0, rising: [] },
     hiring: { month: null, sample: 0, previousMonth: null, previousSample: 0, top: [], rising: [], falling: [] },
     divergence: { compared: 0, median: null, used: [], watched: [] },
     health: { scored: 0, unscored: 0, median: null, advisories: 0, weakest: [] },

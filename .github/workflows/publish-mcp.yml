@@ -80,7 +80,20 @@ jobs:
         run: |
           set -euo pipefail
           ./mcp-publisher login github-oidc
-          ./mcp-publisher publish
+
+          # Republishing a version that is already up is a no-op, not a
+          # failure: the desired state is "this version is listed", and it is.
+          # Treating it as an error stopped the whole job, which took the
+          # deprecation step below down with it — the one thing that actually
+          # needed to run.
+          if output=$(./mcp-publisher publish 2>&1); then
+            echo "${output}"
+          elif echo "${output}" | grep -q 'cannot publish duplicate version'; then
+            echo "Already published at this version. Nothing to do."
+          else
+            echo "${output}" >&2
+            exit 1
+          fi
 
       - name: Retire an entry left behind by a rename
         # Publishing under a new name does not replace the old entry, it adds a

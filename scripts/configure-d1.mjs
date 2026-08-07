@@ -54,6 +54,31 @@ async function call(path, init = {}) {
 
   if (!body.success) {
     const errors = (body.errors ?? []).map((e) => `${e.code}: ${e.message}`).join('; ');
+
+    // The one failure worth naming, because the generic message sends whoever
+    // reads it to the wrong place. A 10000 on a /d1/ path from a token that
+    // verifies as active, on an account whose Pages endpoints answer with the
+    // same token, is not an expired credential — it is a token that was scoped
+    // before D1 was part of this project.
+    if (response.status === 401 && path.includes('/d1/')) {
+      throw new Error(
+        [
+          `${path} → 401 ${errors}`,
+          '',
+          'The token works — Pages accepted it moments ago and /user/tokens/verify',
+          'reports it active. What it lacks is permission for D1.',
+          '',
+          'Add it without changing the token value:',
+          '  Cloudflare dashboard → My Profile → API Tokens',
+          '  → the token this workflow uses → Edit',
+          '  → Add more → Account · D1 · Edit',
+          '  → Continue to summary → Save',
+          '',
+          'Then run this workflow again. Nothing needs to be replaced or re-pasted.',
+        ].join('\n'),
+      );
+    }
+
     throw new Error(`${init.method ?? 'GET'} ${path} → ${response.status} ${errors}`);
   }
 

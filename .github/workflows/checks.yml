@@ -42,11 +42,19 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Tests
-        run: npm test
-
-      # The build reads the committed ledger and renders every page. It catches
-      # what a unit test cannot: a template that throws on real data, a bundle
-      # over the size limit, a repository id that is not a safe path.
+      # Before the tests, not after. Some of them assert on what the build
+      # emits — the CSP hash against the served bytes, the sitemap against the
+      # pages that exist, the account link on every page — and those read dist
+      # at import time. Without a build there is no dist, the module throws
+      # before a single test registers, and the suite reports zero tests and
+      # fails. It did, six runs in a row, while every local run was green
+      # because a build had always just happened by hand.
+      #
+      # The build also catches what no unit test can: a template that throws on
+      # real data, a bundle over the size limit, a repository id that is not a
+      # safe path.
       - name: Build
         run: node scripts/build.ts
+
+      - name: Tests
+        run: npm test

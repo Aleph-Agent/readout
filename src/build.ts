@@ -79,6 +79,7 @@ import { renderEcosystem } from './site/ecosystem.ts';
 import { renderFindings } from './site/findings.ts';
 import { renderWelcome } from './site/welcome.ts';
 import { renderHeaders } from './site/headers.ts';
+import { renderCalendar } from './site/calendar.ts';
 import { renderReadings } from './site/readings-page.ts';
 import { DOORS, READINGS } from './site/readings.ts';
 import { DIGEST_DAYS, renderWeek } from './site/week.ts';
@@ -988,6 +989,11 @@ export function runBuild(options: BuildOptions = {}): BuildResult {
   pages.set('feed.xml', renderFeed(addressable, previous.lastSuccessfulRunAt ?? now.toISOString()));
   pages.set('sitemap.xml', renderSitemap(sitemapPaths));
   pages.set('robots.txt', renderRobots());
+
+  // End-of-life dates as a subscribable calendar. The cheapest useful thing the
+  // lifecycle ledger can do: subscribed once, a support deadline arrives in
+  // somebody's work calendar months ahead without them ever revisiting here.
+  pages.set('eol.ics', renderCalendar(readLifecycle(), { now: now.toISOString() }));
 
   // The canonical channel list, as a file. The site says who it is; this lets
   // anybody — or any agent — check that without trusting the page it is printed

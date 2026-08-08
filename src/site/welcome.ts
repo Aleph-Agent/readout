@@ -131,6 +131,11 @@ ${band(
       <span class="way-what">Every reading, as published. This is what the pages are drawn from.</span>
       <code class="way-addr">${SITE_HOST}/data/index.json</code>
     </a>
+    <a class="way" href="/eol.ics">
+      <span class="way-kind">EOL calendar</span>
+      <span class="way-what">Subscribe once. Support deadlines land in your calendar months ahead.</span>
+      <code class="way-addr">${SITE_HOST}/eol.ics</code>
+    </a>
     <a class="way" href="/feed.xml">
       <span class="way-kind">Feed</span>
       <span class="way-what">Findings as they are confirmed, in a reader rather than a timeline.</span>

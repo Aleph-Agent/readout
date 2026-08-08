@@ -131,6 +131,11 @@ ${band(
       <span class="way-what">Every reading, as published. This is what the pages are drawn from.</span>
       <code class="way-addr">${SITE_HOST}/data/index.json</code>
     </a>
+    <a class="way" href="/method#agents">
+      <span class="way-kind">Badge</span>
+      <span class="way-what">A reading in your README, redrawn every four hours. One image tag.</span>
+      <code class="way-addr">${SITE_HOST}/badge/&lt;owner&gt;/&lt;repo&gt;.svg</code>
+    </a>
     <a class="way" href="/eol.ics">
       <span class="way-kind">EOL calendar</span>
       <span class="way-what">Subscribe once. Support deadlines land in your calendar months ahead.</span>

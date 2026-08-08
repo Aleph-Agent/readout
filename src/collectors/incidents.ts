@@ -151,6 +151,26 @@ export function parseFeed(xml: string, provider: string): IncidentRow[] {
       provider,
       id,
       title,
+      // WRONG FIELD. Verified 2026-08-08 against Statuspage's own JSON API for
+      // incident xvbzmkjbzh0x:
+      //
+      //   started_at   2026-07-22T08:34:31.874Z
+      //   resolved_at  2026-07-22T09:00:25.206Z
+      //   stored here  2026-07-22T09:00:25.000Z   <- matches resolved_at
+      //
+      // An RSS item's pubDate is the time of its most recent update, so for a
+      // closed incident this is when it ended, twenty-six minutes after it
+      // began. Every resolved row in the ledger carries a resolution time in a
+      // field called startedAt, and the site publishes it as an incident date.
+      //
+      // Nothing failed. The dates parse, sort sensibly and render fine — which
+      // is why it survived: a field holding the wrong thing never throws.
+      //
+      // The fix is not a rename. `https://<host>/api/v2/incidents.json` returns
+      // started_at and resolved_at as separate fields for every incident, so
+      // this collector should read that instead of the feed. That also delivers
+      // the resolvedAt needed to compute real uptime, which was the reason for
+      // looking at this at all.
       startedAt: at.toISOString(),
       // The provider's own word, taken from the update they labelled resolved.
       // Absent, this stays false — which covers both "still going" and "never

@@ -31,6 +31,21 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const bundle = JSON.parse(readFileSync(`${ROOT}dist/data/index.json`, 'utf8'));
 const mark = readFileSync(`${ROOT}assets/brand/mark-dark.svg`, 'utf8');
 
+/**
+ * Cycles still ahead of their end-of-life date.
+ *
+ * Counted from the ledger rather than taken from `lifecycle.dated`, which
+ * includes every expired cycle back to 2012. The calendar only carries what is
+ * still coming, so a card quoting 518 beside a feed holding 59 would be a
+ * caption disagreeing with its own artefact — the fastest way to lose the one
+ * thing this product sells.
+ */
+const upcomingEol = readFileSync(`${ROOT}data/live/lifecycle.jsonl`, 'utf8')
+  .trim()
+  .split(String.fromCharCode(10))
+  .map((line) => JSON.parse(line))
+  .filter((row) => !row.ended && /^\d{4}-\d{2}-\d{2}$/.test(String(row.eol ?? ''))).length;
+
 const n = (value) => value.toLocaleString('en');
 
 /**
@@ -195,6 +210,13 @@ const CARDS = [
     figure: n(bundle.staleness.measured),
     unit: 'packages, by real release date',
     say: 'A green commit graph is what a maintainer does for themselves. A release is what reaches you. They are not the same date.',
+  },
+  {
+    file: 'post-6-calendar',
+    eyebrow: 'Calendar · subscribe once, forget about it',
+    figure: n(upcomingEol),
+    unit: 'support deadlines already scheduled',
+    say: 'Announced years ahead. Looked up by almost nobody, and remembered by nobody on the day.',
   },
   {
     file: 'post-5-yourstack',

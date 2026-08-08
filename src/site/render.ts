@@ -441,6 +441,15 @@ function colophonHtml(index: IndexBundle, meta: MetaRecord): string {
   shown raw and marked forming.</p>
   <p>This data is not real-time. Every figure links to its source so it can be checked directly.
   The underlying bundles are published at <a href="/data/index.json">/data/index.json</a>.</p>
+  <!-- The claim underneath every other claim on this site, and the one thing a
+       competitor cannot copy without also giving up the ability to edit their
+       own history. Worth stating plainly rather than leaving in the commit log,
+       which is a credibility argument aimed at people who do not read strangers'
+       commit logs. -->
+  <p>Every reading is committed to a public repository as it is taken. That makes the history the
+  record: a figure published on a date cannot be changed afterwards without the change itself being
+  visible. Nothing here is a database somebody can quietly edit — see
+  <a href="https://github.com/${esc(OFFICIAL.github)}">the commit log</a>.</p>
   ${partial}
 ${officialHtml()}
 </footer>`;

@@ -1592,7 +1592,14 @@ ${band(
   `<form id="stack-form" class="stack-form">
     <textarea id="stack-input" rows="9" spellcheck="false"
       placeholder='{\n  "dependencies": {\n    "react": "^19.0.0",\n    "vite": "^6.0.0"\n  }\n}'></textarea>
-    <button type="submit">Read it</button>
+    <div class="stack-actions">
+      <button type="submit">Read it</button>
+      <!-- Nobody pastes their real manifest into a stranger's site in the first
+           fifteen seconds. They will press one button to see what the answer
+           looks like, and that is the only way this page ever gets tried by
+           somebody arriving cold from a link. -->
+      <button type="button" id="stack-example">Try an example</button>
+    </div>
   </form>
   <div id="stack-out" hidden></div>
   <noscript><p class="notice">This runs entirely in the browser, so it needs scripting. The index it

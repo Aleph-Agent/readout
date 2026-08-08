@@ -78,6 +78,31 @@ if (stackForm) {
     requestAnimationFrame(() => stackForm.requestSubmit());
   }
 
+  // A real manifest, not a toy one. Six dependencies that between them have
+  // advisories, a source-available licence and a package that has not shipped
+  // in a while — so the example returns findings rather than a clean sheet,
+  // which is what somebody pressing it is trying to see.
+  const example = [
+    '{',
+    '  "dependencies": {',
+    '    "react": "^18.2.0",',
+    '    "axios": "^1.6.0",',
+    '    "lodash": "^4.17.21",',
+    '    "moment": "^2.29.4",',
+    '    "request": "^2.88.2",',
+    '    "elasticsearch": "^16.7.3"',
+    '  }',
+    '}',
+  ].join(String.fromCharCode(10));
+
+  const exampleButton = document.getElementById('stack-example');
+  if (exampleButton) {
+    exampleButton.addEventListener('click', () => {
+      field.value = example;
+      stackForm.requestSubmit();
+    });
+  }
+
   stackForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const text = field.value.trim();

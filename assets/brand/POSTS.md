@@ -44,30 +44,46 @@ fastest way to lose the only thing this product is selling.
 
 ## 1 — The film
 
-An introduction, because it is the first post on an account nobody follows yet.
-Every later post assumes the reader knows what this is; this one cannot.
+Longer than the rest on purpose. It is the first post on an account with no
+followers, so it has to do three jobs the others can skip: make somebody
+recognise the problem, name the thing, and say what it costs to try.
 
-> Sighttrue is live.
+> Every dependency you ship is changing while you are not looking.
 >
-> It watches what your dependencies are actually doing and publishes every
-> reading as a file — licence changes, end-of-life dates, provider outages,
-> packages that look busy and have not shipped in a year.
+> A licence quietly becomes source-available, and your legal team finds out
+> during due diligence. A runtime drops out of support, and you hear it from an
+> auditor. A package with a busy commit graph has not actually published a
+> release in fourteen months.
 >
-> Free, no account, nothing to install. Paste a manifest and read your own stack.
+> None of that is in your lockfile. Nobody emails you about any of it.
+>
+> Sighttrue watches all of it and publishes what it finds — licence changes,
+> end-of-life dates, provider outages, real publish dates, advisories, and how
+> many people a project would survive losing.
+>
+> Every figure is written to a file and committed, so any of them can be traced
+> back to the run that produced it. There is no chart here you have to take on
+> faith.
+>
+> Free, no account, nothing to install. Paste a package.json, requirements.txt
+> or Cargo.toml and read your own stack — it never leaves your browser.
 >
 > sighttrue.com
 
 *Attach `film.mp4`.*
 
-**If a reply asks what makes it different**, the answer is the second half of the
-first line: every figure is published as a file and committed, so it can be
-traced back to the run that produced it. Do not lead with that — it is the
-argument, not the hook, and an opening line about auditability sounds like a
-product nobody asked for.
+The structure is deliberate. Three losses first, each specific enough that a
+reader checks their own project while reading. Then the line that names what is
+missing — not in the lockfile, nobody emails you — because that is the gap the
+product fills. Only then the product.
 
-Two things were deliberately left out. No repository count: it describes our
-backlog, not what the reader gets. And no adjectives — a post that opens with
-"powerful" has already lost a developer who has read a thousand of them.
+The auditability line sits fourth, not first. It is the reason to trust this and
+a terrible opening: a post that leads with verifiable figures is answering an
+objection the reader has not made yet.
+
+No repository count, and no adjectives. The count describes our backlog rather
+than what the reader gets, and a developer who has read a thousand launch posts
+has already discounted the one that opens with "powerful".
 
 ## 2 — Outages
 

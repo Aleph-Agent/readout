@@ -141,14 +141,14 @@ figures are still on the cards behind it where each one has a claim attached.
 > directly. It also publishes whether its own detectors have ever been reachable,
 > because a detector nothing has crossed is a broken one, not a quiet one.
 >
-> github.com/kaitzyy-dev/sighttrue
+> github.com/sighttrue/sighttrue
 
 ## If somebody accuses you of being a clone, or you find one
 
 > The only official channels are listed on the site itself, at the bottom of
 > every page, and published as a file: sighttrue.com/data/official.json
 >
-> Site sighttrue.com · X @Sighttruehq · Code github.com/kaitzyy-dev/sighttrue
+> Site sighttrue.com · X @Sighttruehq · Code github.com/sighttrue/sighttrue
 >
 > Anything else is not us.
 

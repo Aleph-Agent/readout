@@ -21,7 +21,7 @@ import type { HiringRow } from '../types/hiring.ts';
 import { sleep } from '../lib/registries.ts';
 
 const API = 'https://hn.algolia.com/api/v1';
-const USER_AGENT = 'sighttrue-agent (+https://github.com/kaitzyy-dev/sighttrue)';
+const USER_AGENT = 'sighttrue-agent (+https://github.com/sighttrue/sighttrue)';
 
 /** Algolia's ceiling for one page, and larger than any thread has ever been. */
 const PAGE_SIZE = 1000;

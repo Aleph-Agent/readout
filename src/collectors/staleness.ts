@@ -16,7 +16,7 @@ import type { AdoptionRow } from '../types/adoption.ts';
 import type { StalenessRow } from '../types/staleness.ts';
 import { sleep, ThrottledError } from '../lib/registries.ts';
 
-const USER_AGENT = 'sighttrue-agent (+https://github.com/kaitzyy-dev/sighttrue)';
+const USER_AGENT = 'sighttrue-agent (+https://github.com/sighttrue/sighttrue)';
 
 /**
  * Homebrew is absent. A formula has a version but no publish date of its own —

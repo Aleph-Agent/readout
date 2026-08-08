@@ -12,7 +12,7 @@ Nothing here is decided by taste alone. Every colour is a measured value from
 
 ## Name
 
-**Sighttrue** · `sighttrue.com` · `github.com/kaitzyy-dev/sighttrue` · token **$SGHT**
+**Sighttrue** · `sighttrue.com` · `github.com/sighttrue/sighttrue` · token **$SGHT**
 
 To sight true is a surveyor's phrase: take the bearing, and get a reading that
 holds against the reference. Not "we watch your dependencies" — we take the

@@ -22,7 +22,7 @@ import { parsePackageId } from './adoption.ts';
 import type { HealthRow } from '../types/health.ts';
 import type { WatchlistEntry } from '../types/watchlist.ts';
 
-const USER_AGENT = 'sighttrue-agent (+https://github.com/kaitzyy-dev/sighttrue)';
+const USER_AGENT = 'sighttrue-agent (+https://github.com/sighttrue/sighttrue)';
 
 /** deps.dev has no batch form, so the whole watchlist is paced through it. */
 export const SCORECARD_DELAY_MS = 150;

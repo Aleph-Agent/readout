@@ -22,7 +22,7 @@
 import type { IncidentRow } from '../types/incidents.ts';
 import { sleep } from '../lib/registries.ts';
 
-const USER_AGENT = 'sighttrue-agent (+https://github.com/kaitzyy-dev/sighttrue)';
+const USER_AGENT = 'sighttrue-agent (+https://github.com/sighttrue/sighttrue)';
 
 /**
  * Curated, and every URL verified rather than guessed.

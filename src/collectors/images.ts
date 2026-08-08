@@ -19,7 +19,7 @@
 import type { ImageRow } from '../types/images.ts';
 import { sleep } from '../lib/registries.ts';
 
-const USER_AGENT = 'sighttrue-agent (+https://github.com/kaitzyy-dev/sighttrue)';
+const USER_AGENT = 'sighttrue-agent (+https://github.com/sighttrue/sighttrue)';
 
 export const DELAY_MS = 200;
 

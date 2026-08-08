@@ -10,7 +10,7 @@ permissions:
 
 steps:
   - uses: actions/checkout@v4
-  - uses: kaitzyy-dev/sighttrue@v1
+  - uses: sighttrue/sighttrue@v1
     with:
       manifest: package.json
       fail-on: archived,relicensed

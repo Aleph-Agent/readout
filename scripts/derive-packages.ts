@@ -29,7 +29,7 @@ import type { WatchlistEntry } from '../src/types/watchlist.ts';
 const WRITE = process.argv.includes('--write');
 
 /** Polite, and crates.io rejects requests without one. */
-const UA = 'readout-agent (+https://github.com/kaitzyy-dev/sighttrue)';
+const UA = 'readout-agent (+https://github.com/sighttrue/sighttrue)';
 
 interface Proposal {
   repo: string;

@@ -408,7 +408,7 @@ instrument, not in the repositories. <a href="/method">How</a></p>`;
 export const OFFICIAL = {
   domain: 'sighttrue.com',
   x: 'Sighttruehq',
-  github: 'kaitzyy-dev/sighttrue',
+  github: 'sighttrue/sighttrue',
 } as const;
 
 function officialHtml(): string {

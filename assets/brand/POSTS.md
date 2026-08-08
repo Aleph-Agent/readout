@@ -44,23 +44,30 @@ fastest way to lose the only thing this product is selling.
 
 ## 1 — The film
 
-> Your dependencies change without telling you.
+An introduction, because it is the first post on an account nobody follows yet.
+Every later post assumes the reader knows what this is; this one cannot.
+
+> Sighttrue is live.
 >
-> A licence quietly becomes source-available. A runtime stops getting security
-> fixes. A package that looks busy has not actually shipped in a year.
+> It watches what your dependencies are actually doing and publishes every
+> reading as a file — licence changes, end-of-life dates, provider outages,
+> packages that look busy and have not shipped in a year.
 >
-> This reads all of it every four hours and publishes every figure as a file —
-> committed, so any of them can be traced back to the run that produced it.
+> Free, no account, nothing to install. Paste a manifest and read your own stack.
 >
 > sighttrue.com
 
 *Attach `film.mp4`.*
 
-The first draft of this opened with "this reads 388 repositories, 20 status
-feeds, 24 runtimes, 247 packages and 387 commit histories". Five counts in one
-sentence is an inventory of our work, and a reader has no way to know whether
-388 is a lot. Three concrete losses land harder than five figures, and the
-figures are still on the cards behind it where each one has a claim attached.
+**If a reply asks what makes it different**, the answer is the second half of the
+first line: every figure is published as a file and committed, so it can be
+traced back to the run that produced it. Do not lead with that — it is the
+argument, not the hook, and an opening line about auditability sounds like a
+product nobody asked for.
+
+Two things were deliberately left out. No repository count: it describes our
+backlog, not what the reader gets. And no adjectives — a post that opens with
+"powerful" has already lost a developer who has read a thousand of them.
 
 ## 2 — Outages
 
